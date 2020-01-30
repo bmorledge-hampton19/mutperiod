@@ -123,3 +123,8 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# Data Files
+/bbglab_data
+/bed_data
+/fasta_data
