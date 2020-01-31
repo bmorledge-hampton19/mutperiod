@@ -27,6 +27,11 @@ while( my $line = <BED> )
 		$nucseq = <NUC>;
 		chomp $nucseq;
 		$head =~ s/^>//;
+        if ($head =~ /\)\(/) {
+            $head =~ s/\([+-]\)//;
+        } else {
+            print STDERR "Strand identifier did not appear twice.\n $head";
+        }
 	}
 	if ( $head eq $field[3] )
 	{
