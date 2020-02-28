@@ -125,6 +125,7 @@ dmypy.json
 .pyre/
 
 # Data Files
-/bbglab_data
-/bed_data
-/fasta_data
+data/
+
+# Dr. Wyrick's Scripts
+scripts/perl_scripts/
