@@ -49,8 +49,8 @@ mutations = ("C>A","C>G","C>T","T>A","T>C","T>G")
 
 #Create the Tkinter UI
 dialog = TkinterDialog(workingDirectory=os.path.join(os.path.dirname(__file__),"..","data"))
-dialog.createFileSelector("Bed Mutation File:",0)
-#dialog.createDropdown("Mutation to omit:",1,0,options=mutations)
+dialog.createFileSelector("Bed Mutation File:",0,("Bed Files",".bed"))
+# DEPRECATED: dialog.createDropdown("Mutation to omit:",1,0,options=mutations)
 dialog.createLabel("Mutations to Omit:",1,0)
 for i,mutation in enumerate(mutations):
     dialog.createCheckbox(mutation, 2+int(i/4), i%4)
