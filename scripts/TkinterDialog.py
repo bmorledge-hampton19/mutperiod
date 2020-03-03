@@ -53,9 +53,9 @@ class TkinterDialog(tk.Frame):
         if sticky: label.grid(sticky = tk.W)
 
 
-    def createFileSelector(self, title: str, row: int, defaultFile = "No file Selected", verbose = False):
+    def createFileSelector(self, title: str, row: int, *fileTypes, defaultFile = "No file Selected", verbose = False):
         """
-        Creates a file selector for choosing relevant files from the dialog.  Returns a tk.Entry object.
+        Creates a file selector for choosing relevant files from the dialog.
         The file selector spans 4 columns:
         The title for the selector occupies the first column.
         The selector itself occupies the second and third columns as a tk.Entry object.
@@ -73,7 +73,7 @@ class TkinterDialog(tk.Frame):
         textField.insert(0, defaultFile)
 
         #Create the "browse" button.
-        tk.Button(self, text = "Browse", command = lambda: self.browseForFile(textField)).grid(row = row, column = 3)
+        tk.Button(self, text = "Browse", command = lambda: self.browseForFile(textField,*fileTypes)).grid(row = row, column = 3)
 
         self.entries.append(textField)
 
@@ -121,10 +121,12 @@ class TkinterDialog(tk.Frame):
         self.createButton("Go",row,column,self.generateSelections, columnSpan=columnSpan)
 
     # Opens a UI for selecting a file starting from the working directory.    
-    def browseForFile(self,textField: tk.Entry):
+    def browseForFile(self,textField: tk.Entry, *fileTypes):
         "Opens a UI for selecting a file starting from the working directory."
 
-        filename = filedialog.askopenfilename(filetypes = (("Any File Type", "*.*"),),
+        fileTypes = fileTypes + (("Any File Type", ".*"),)
+
+        filename = filedialog.askopenfilename(filetypes = fileTypes,
             initialdir = self.workingDirectory)
         if (filename != ""):
             textField.delete(0, tk.END)
@@ -163,11 +165,11 @@ class Selections:
         self.toggleStates = toggleStates
         self.dropdownSelections = dropdownSelections
 
-    def getFilePaths(self) -> list():
+    def getFilePaths(self) -> list:
         return self.filePaths
 
-    def getToggleStates(self) -> list():
+    def getToggleStates(self) -> list:
         return self.toggleStates
 
-    def getDropdownSelections(self) -> list():
+    def getDropdownSelections(self) -> list:
         return self.dropdownSelections
