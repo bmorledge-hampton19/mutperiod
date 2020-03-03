@@ -12,4 +12,4 @@ def reverseCompliment(DNA):
 
 #Determines whether or not a given base is a purine.
 def isPurine(nucleotide: str) -> bool:
-    return (nucleotide.lower() == "g" or nucleotide.lower() == "a")
+    return (nucleotide.upper() == "G" or nucleotide.upper() == "A")
