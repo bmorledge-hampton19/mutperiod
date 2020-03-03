@@ -3,6 +3,7 @@
 # The input files will be selected using a tkinter interface for ease of use.
 
 from TkinterDialog import TkinterDialog, Selections
+from UsefulBioinformaticsFunctions import bedToFasta
 import os, subprocess
 
 # Expands the range of each mutation position in the original mutation file to encompass one extra base on either side.
@@ -28,15 +29,6 @@ def expandBedToTrinucRegion(singleBaseBedFilePath,trinucExpansionFilePath):
 
                 # Write the results to the trinucExpansion file
                 trinucExpansionFile.write("\t".join(choppedUpLine)+"\n")
-
-
-# Uses bedtools to convert the trinuc expansion file to fasta format.
-def generateTrinucFasta(humanGenomeFastaFilePath,trinucExpansionFilePath,trinucReadsFilePath):
-    "Uses bedtools to convert the trinuc expansion file to fasta format."
-
-    print("Calling shell subprocess to use bedtools to generate a fasta file of the trinuc reads...")
-    subprocess.run(" ".join(["bedtools","getfasta","-s","-name","-fi",humanGenomeFastaFilePath,
-        "-bed",trinucExpansionFilePath,">",trinucReadsFilePath]), shell = True, check = True)
 
 
 # Uses the trinuc reads fasta file to create a new bed file with the trinuc mutational context.
@@ -101,7 +93,7 @@ if not os.path.exists(os.path.join(workingDirectory,"intermediate_files")):
 expandBedToTrinucRegion(singleBaseBedFilePath,trinucExpansionFilePath)
 
 # Convert the trinuc coordinates in the bed file to the referenced nucleotides in fasta format.
-generateTrinucFasta(humanGenomeFastaFilePath,trinucExpansionFilePath,trinucReadsFilePath)
+bedToFasta(humanGenomeFastaFilePath,trinucExpansionFilePath,trinucReadsFilePath)
 
 # Using the newly generated fasta file, create a new bed file with the trinucleotide context.
 generateTrinucContext(singleBaseBedFilePath,trinucReadsFilePath,trinucContextFilePath)
