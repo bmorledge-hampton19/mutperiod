@@ -24,15 +24,20 @@ def omitMutations(mutationFilePath,*mutationsToOmit):
                 mutationsToKeep.append(mutation)
 
     # Make the mutation data with omissions directory
-    omissionsDirectory = os.path.join(os.path.dirname(mutationFilePath),"mutations_with_omissions")
-    if not os.path.exists(omissionsDirectory):
-        os.mkdir(omissionsDirectory)
+    omissionsRootDirectory = os.path.join(os.path.dirname(mutationFilePath),"mutations_with_omissions")
+    if not os.path.exists(omissionsRootDirectory):
+        os.mkdir(omissionsRootDirectory)
 
-    # Generate a name for the new file with the selected omissions
+    # Make the subdirectory for this specific omission.
     mutationsAsText = ""
     for mutation in mutationsToOmit: mutationsAsText += (mutation.replace(">","to")) + "_"
+    omissionsSubDirectory = os.path.join(omissionsRootDirectory,mutationsAsText+"omitted")
+    if not os.path.exists(omissionsSubDirectory):
+        os.mkdir(omissionsSubDirectory)
+
+    # Generate a path for the new file with the selected omissions
     omissionsFilename = "".join((mutationsAsText,"omitted_",mutationFilePath.rsplit("/",1)[-1]))
-    omissionsFilePath = os.path.join(omissionsDirectory,omissionsFilename)
+    omissionsFilePath = os.path.join(omissionsSubDirectory,omissionsFilename)
 
     # Write the stored mutations to the new omissions file.
     print("Writing to new file: ", omissionsFilename)
