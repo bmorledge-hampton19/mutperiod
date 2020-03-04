@@ -111,7 +111,8 @@ def generateNucleosomeMutationBackground(strongPosNucleosomeFastaFilePath, mutat
 
                 # Make sure we didn't end the last nucleosome prematurely.
                 if not dyadPos == 74:
-                    raise ValueError("Last nucleosome did not give trinucleotides up to position 73.  "+
+                    raise ValueError("Error in nucleosome positioning file.  " +  
+                                    "Last nucleosome did not give trinucleotides up to position 73.  "+
                                     "Last dyad position was " + str(dyadPos-1))
 
                 # Reset line leftovers and dyad position
@@ -159,7 +160,7 @@ def generateNucleosomeMutationBackground(strongPosNucleosomeFastaFilePath, mutat
 
 #Create the Tkinter UI
 dialog = TkinterDialog(workingDirectory=os.path.join(os.path.dirname(__file__),"..","data"))
-dialog.createFileSelector("Mutation Background File:",0,("Text Files",".txt"))
+dialog.createMultipleFileSelector("Mutation Background Files:",0,("Text Files",".txt"))
 dialog.createFileSelector("Genome Fasta File:",1,("Fasta Files",".fa"))
 dialog.createFileSelector("Strongly Positioned Nucleosome File:",2,("Bed or Fasta Files",".bed .fa"))
 dialog.createReturnButton(3,0,2)
@@ -174,16 +175,10 @@ if dialog.selections is None: quit()
 # Get the user's input from the dialog.
 selections: Selections = dialog.selections
 filePaths = list(selections.getFilePaths())
-mutationBackgroundFilePath = filePaths[0] # The path to the mutation background file
-genomeFilePath = filePaths[1] # The path to the genome fasta file
-strongPosNucleosomeFilePath: str = filePaths[2] # The path to the file containing strongly positioned nucleosomes.
+mutationBackgroundFilePaths = list(selections.getFilePathGroups())[0] # A list of mutation background file paths
+genomeFilePath = filePaths[0] # The path to the genome fasta file
+strongPosNucleosomeFilePath: str = filePaths[1] # The path to the file containing strongly positioned nucleosomes.
 
-# Get some information on the file system and generate file paths for convenience.
-workingDirectory = os.path.dirname(mutationBackgroundFilePath) # The working directory for the current data "group"
-# The name of the mutation data set the background pertains to.
-mutationDataGroup = mutationBackgroundFilePath.rsplit("_mutation_background",1)[0].rsplit('/',1)[-1]
-# A path to the final output file.
-nucleosomeMutationBackgroundFilePath = os.path.join(workingDirectory,mutationDataGroup+"_nucleosome_mutation_background.txt")
 # A path to the fasta file of strongly positioned nucleosome coordinates. 
 if strongPosNucleosomeFilePath.rsplit('.',1)[0].endswith("_expansion"):
     strongPosNucleosomeFastaFilePath = strongPosNucleosomeFilePath.rsplit("_expansion",1)[0] + ".fa"
@@ -193,5 +188,23 @@ else:
 # Make sure we have a fasta file for strongly positioned nucleosome coordinates
 parseStrongPosNucleosomeData(strongPosNucleosomeFilePath,strongPosNucleosomeFastaFilePath)
 
-# Generate the nucleosome mutation background file!
-generateNucleosomeMutationBackground(strongPosNucleosomeFastaFilePath,mutationBackgroundFilePath,nucleosomeMutationBackgroundFilePath)
+# Loop through each given mutation background file path, creating a corresponding nucleosome mutation background for each.
+for mutationBackgroundFilePath in mutationBackgroundFilePaths:
+
+    mutationBackgroundFileName = mutationBackgroundFilePath.rsplit('/',1)[-1]
+    print("Working with file:",mutationBackgroundFileName)
+
+    # Get some information on the file system and generate file paths for convenience.
+    workingDirectory = os.path.dirname(mutationBackgroundFilePath) # The working directory for the current data "group"
+
+    # Does it look like we were given a mutation background file?
+    if not "_mutation_background" in mutationBackgroundFileName: 
+        raise ValueError("Error, expected file with \"_mutation_background\" in the name.")
+    # The name of the mutation data set the background pertains to.
+    mutationDataGroup = mutationBackgroundFileName.rsplit("_mutation_background",1)[0]
+
+    # A path to the final output file.
+    nucleosomeMutationBackgroundFilePath = os.path.join(workingDirectory,mutationDataGroup+"_nucleosome_mutation_background.txt")
+
+    # Generate the nucleosome mutation background file!
+    generateNucleosomeMutationBackground(strongPosNucleosomeFastaFilePath,mutationBackgroundFilePath,nucleosomeMutationBackgroundFilePath)
