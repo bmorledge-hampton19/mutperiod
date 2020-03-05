@@ -9,10 +9,16 @@ from UsefulBioinformaticsFunctions import bedToFasta, reverseCompliment
 # 74 bases on either side of the dyad. (in order to get trinucleotide sequences for positions -73 to 73)
 # Returns the file path to the newly expanded file.
 def expandNucleosomeCoordinates(strongPosNucleosomeFilePath):
-    print("Expanding nucleosome coordinates...")
 
     # Generate a file path for the expanded nucleosome coordinate file.
     strongPosNucleosomeExpansionFilePath = strongPosNucleosomeFilePath.rsplit('.',1)[0] + "_expansion.bed"
+
+    # Check to see if the expansion file already exists.
+    if os.path.exists(strongPosNucleosomeExpansionFilePath):
+        print ("Expanded nucleosome coordinate file already exists.  Not re-expanding.")
+        return strongPosNucleosomeExpansionFilePath
+
+    print("Expanding nucleosome coordinates...")
 
     # Open the files.
     with open(strongPosNucleosomeFilePath,'r') as strongPosNucleosomeFile:
@@ -55,8 +61,9 @@ def parseStrongPosNucleosomeData(strongPosNucleosomeFilePath,strongPosNucleosome
                 strongPosNucleosomeExpandedFilePath = expandNucleosomeCoordinates(strongPosNucleosomeFilePath)
             # If it is expanded, we're already ready to convert to fasta.
             elif not int(choppedUpLine[2]) - int(choppedUpLine[1]) == 149:
-                raise ValueError("Error: Strongly positioned nucleosome data is not in the expected format.  " +  
-                    "Each coordinate should contain the central base pair in the dyad only!")
+                raise ValueError("Error: Strongly positioned nucleosome data is not in the expected format.\n" +  
+                    "Each coordinate should contain the central base pair in the dyad only, " + 
+                    "or in addition, exactly 74 bp on either side.")
 
             # Convert the file to fasta format!
             print("Converting strongly positioned nucleosome coordinates to fasta file...")
