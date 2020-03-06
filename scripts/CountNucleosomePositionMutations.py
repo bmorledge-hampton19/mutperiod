@@ -4,6 +4,85 @@
 import os
 import time
 from TkinterDialog import TkinterDialog, Selections
+from typing import IO
+
+
+# Contains data on a single mutation position obtained by reading the next available line in a given file.
+class MutationData:
+
+    def __init__(self,file: IO):
+        
+        self.file = file # The file containing mutation data.
+
+        # Read in the first line and check that it isn't empty.
+        choppedUpLine = file.readline().strip().split()
+        if len(choppedUpLine) == 0: raise ValueError("Error:  Empty mutation file given.")
+
+        # Initialize class variables
+        self.isEmpty = False # This variable keeps track of when EOF is reached.
+        self.chromosome = choppedUpLine[0] # The chromosome that houses the mutation.
+        self.position = int(choppedUpLine[1]) # The position of the mutation in its chromosome.
+        self.strand = choppedUpLine[5] # Either '+' or '-' depending on which strand houses the mutation.
+
+
+    def readNextMutation(self):
+        
+        # Read in the next line.
+        choppedUpLine = self.file.readline().strip().split()
+
+        # Check if EOF has been reached.
+        if len(choppedUpLine) == 0: 
+            self.isEmpty = True
+            return
+
+        # Assign variables
+        self.chromosome = choppedUpLine[0]
+        self.position = int(choppedUpLine[1])
+        self.strand = choppedUpLine[5]
+
+    # Read in mutations until you reach the given chromosome.
+    def readUntilChromosome(self, chromosome: str):
+        while not self.chromosome == chromosome and not self.isEmpty:
+            self.readNextMutation()
+        
+
+# Contains data on a single nucleosome position obtained by reading the next available line in a given file.
+class NucleosomeData:
+
+    def __init__(self,file: IO):
+        
+        self.file = file # The file containing nucleosome data.
+
+        # Read in the first line and check that it isn't empty.
+        choppedUpLine = file.readline().strip().split()
+        if len(choppedUpLine) == 0: raise ValueError("Error:  Empty nucleosome file given.")
+
+        # Initialize class variables
+        self.isEmpty = False # This variable keeps track of when EOF is reached.
+        self.chromosome = choppedUpLine[0] # The chromosome that houses the nucleosome.
+        self.dyadPosNegative74 = int(choppedUpLine[1]) # The position of the base pair at dyad position -74 for the current nucleosome.
+            
+    
+    def readNextNucleosome(self):
+        
+        # Read in the next line.
+        choppedUpLine = self.file.readline().strip().split()
+
+        # Check if EOF has been reached.
+        if len(choppedUpLine) == 0: 
+            self.isEmpty = True
+            return
+
+        # Assign variables
+        self.chromosome = choppedUpLine[0]
+        self.dyadPosNegative74 = int(choppedUpLine[1])
+
+
+    # Read in nucleosomes until one falls in the given list of acceptable chromosomes.
+    def readUntilChromosomeIn(self, acceptableChromosomes):
+        while not self.chromosome in acceptableChromosomes and not self.isEmpty:
+            self.readNextNucleosome()
+
 
 # This function takes a bed file of strongly positioned nucleosomes and expands their coordinates to encompass
 # 74 bases on either side of the dyad. (in order to get trinucleotide sequences for positions -73 to 73)
@@ -64,9 +143,6 @@ def parseStrongPosNucleosomeData(strongPosNucleosomeFilePath):
 # at each dyad position (-73 to 73) for each strand.  Generates a new file to store these results.
 # NOTE:  It is VITAL that both files are sorted, first by chromosome number and then by starting coordinate.
 #        This code is pretty slick, but it will crash and burn and give you a heap of garbage as output if the inputs aren't sorted.
-# ANOTHER NOTE:  This function got out of hand fast.  I probably should have used some classes to clean up implementation,
-#                but I didn't.  Sorry future me (or whoever is reading this). 
-#                You should probably implement Mutation and Nucleosome classes that initialize by reading a line from a given file.
 def countNucleosomePositionMutations(mutationFilePath, strongPosNucleosomeFilePath, nucleosomeMutationCountsFilePath):
     print("Counting mutations at each nucleosome position...")
 
@@ -77,129 +153,86 @@ def countNucleosomePositionMutations(mutationFilePath, strongPosNucleosomeFilePa
         minusStrandMutationCounts[i] = 0
         plusStrandMutationCounts[i] = 0
 
-    mutationChromosome = '' # The chromosome that houses the mutation being checked against the current nucleosome.
-    mutationPos = 0 # The position of the mutation being checked against the current nucleosome.
-    strand = '' # Either '+' or '-' depending on which strand houses the mutation.
-
-    nucleosomeChromosome = '' # The chromosome that houses the nucleosome currently being checked against.
-    dyadPosNegative74 = 0 # The position of the base pair at dyad position -74 for the current nucleosome.
-
     chromosomesWithMutations = list() # A list of all the chromosomes containing mutations.
 
     # Keeps track of mutations in the current and previous nucleosomes to catch mutations that span overlapping nucleosomes.
-    # Each item in the list is a tuple containing the mutation position followed by its strand.
+    # Each muation is a tuple containing the mutation position and the strand it is housed on.
     mutationsInCurrentNucleosome = list()
     mutationsInPreviousNucleosome = list()
-    
+
+    # A function which checks to see if a given mutation falls within the given nucleosome and if it does, adds it to the counts.
+    def addMutationIfInNucleosome(mutationPosition, mutationStrand, dyadPosNegative74):
+
+        if mutationPosition - dyadPosNegative74 > 0:
+            if mutationStrand == '+': plusStrandMutationCounts[mutationPosition-dyadPosNegative74 - 74] += 1
+            elif mutationStrand == '-': minusStrandMutationCounts[mutationPosition-dyadPosNegative74 - 74] += 1
+            else:  raise ValueError("Error:  No strandedness found for mutation")
+            
+            # Add the mutation to the list of mutations in the current nucleosome
+            mutationsInCurrentNucleosome.append((mutationPosition,mutationStrand))
+
+    # Determines whether or not the given mutation is past the range of the given nucleosome.
+    def isMutationPastNucleosome(mutation: MutationData, nucleosome: NucleosomeData):
+        if mutation.position-nucleosome.dyadPosNegative74 > 147:
+            return True
+        elif not mutation.chromosome == nucleosome.chromosome:
+            print("Counting in",mutation.chromosome)
+            return True
+        else: 
+            return False
+
     # Record which chromosomes have at least one mutation in them.
     with open(mutationFilePath, 'r') as mutationFile:
         for line in mutationFile:
             if line.split()[0] not in chromosomesWithMutations: chromosomesWithMutations.append(line.split()[0])
 
-    # A function to check whether or not the given mutation could be in a nucleosome further down the sorted list.
-    def isMutationPastNucleosome():
-
-        # First, check to see if we are on the same chromosome or not.
-        if not mutationChromosome == nucleosomeChromosome:
-            return True
-        # Then, check to see if we are past dyad position 73.
-        elif mutationPos-dyadPosNegative74 > 147:
-            return True
-        else:
-            return False
-
+    # Open the mutation and nucleosome files to compare against one another.
     with open(mutationFilePath, 'r') as mutationFile:
         with open(strongPosNucleosomeFilePath,'r') as strongPosNucleosomeFile:
 
-            # A function which retrieves data from the next line in the mutation data file.
-            def readMutationData():
-
-                choppedUpLine = mutationFile.readline().strip().split('\t')
-
-                # Set the value for the chromosome housing the mutation, or set it as an empty string if EOF.
-                nonlocal mutationChromosome
-                mutationChromosome = choppedUpLine[0]
-                if mutationChromosome == '': return
-
-                # Set the values for the position of the mutation and the strand it is on.
-                nonlocal mutationPos
-                mutationPos = int(choppedUpLine[1])
-                nonlocal strand
-                strand = choppedUpLine[5]
-
-            # A function which retrieves data from the next line in the nucleosome data file.
-            def readNucleosomeData():
-
-                choppedUpLine = strongPosNucleosomeFile.readline().strip().split('\t')
-                
-                nonlocal nucleosomeChromosome
-                nonlocal dyadPosNegative74
-                nonlocal mutationsInCurrentNucleosome
-
-                # Check and see if we have moved on to a new chromosome.
-                # If so, we need to find the next chromosome that has both recorded nucleosome positions and mutations!
-                if not choppedUpLine[0] == nucleosomeChromosome:
-                    nucleosomeChromosome = choppedUpLine[0]
-                    if nucleosomeChromosome == '': return
-
-                    print("Searching for mutations in nucleosomes in",nucleosomeChromosome)
-
-                    # If we are switching chromosomes, overlap is impossible between this and the last nucleosome.
-                    mutationsInCurrentNucleosome.clear()
-
-                    # Update dyadPos so it does not overwrite the values set by later function calls which may be invoked
-                    # as this function searches for the next chromosome with both mutations and nucleosome positions
-                    dyadPosNegative74 = int(choppedUpLine[1])
-
-                    # If there are no mutations on the new chromosome, keep going until we get to a chromosome that has some.
-                    while not nucleosomeChromosome in chromosomesWithMutations: readNucleosomeData()
-
-                    # Read down the list of mutations until we get to the first one in the current chromosome, or reach EOF.
-                    while not mutationChromosome == nucleosomeChromosome and not mutationChromosome == '': readMutationData()
-
-                # We don't want to overwrite the global dyad position after just changing chromosomes as another
-                # call of this function may have updated it to a more current value.
-                else: dyadPosNegative74 = int(choppedUpLine[1])
-
-
             #Get data on the first mutation and nucleosome to start things off.
-            readMutationData()             
-            readNucleosomeData()   
+            currentMutation = MutationData(mutationFile)            
+            currentNucleosome = NucleosomeData(strongPosNucleosomeFile) 
+            if currentNucleosome.chromosome == currentMutation.chromosome: print("Counting in",currentNucleosome.chromosome)
 
             # The core loop goes through each nucleosome one at a time and checks mutation positions against it until 
             # one exceeds its rightmost position or is on a different chromosome.  Then, the next nucleosome is checked, etc.
-            while not nucleosomeChromosome == '':
+            while not currentNucleosome.isEmpty:
 
-                # Make sure that none of the mutations in the last nucleosome are present in the current nucleosome due to overlap.
+                # Make sure that the current mutation and nucleosome are on the same chromosome
+                if not currentMutation.chromosome == currentNucleosome.chromosome:
+
+                    # First, make sure that the chromsome for the nucleosome has at least one mutation.
+                    if not currentNucleosome.chromosome in chromosomesWithMutations:
+                        currentNucleosome.readUntilChromosomeIn(chromosomesWithMutations)
+                        if currentNucleosome.isEmpty: break
+
+                    print("Counting in",currentNucleosome.chromosome)
+
+                    # Next, read through mutations until the chromsomes match!
+                    if not currentMutation.chromosome == currentNucleosome.chromosome:
+                        currentMutation.readUntilChromosome(currentNucleosome.chromosome)
+
+                    # Reset the mutationsInCurrentNucleosome list since we are in a new chromosome.
+                    mutationsInCurrentNucleosome.clear()
+                    
+                # Check to see if any of the mutations in the last nucleosome are present in the current nucleosome due to overlap.
                 mutationsInPreviousNucleosome = mutationsInCurrentNucleosome.copy()
                 mutationsInCurrentNucleosome.clear()
                 for mutation in mutationsInPreviousNucleosome:
-                    if mutation[0] - dyadPosNegative74 > 0:
-                        if mutation[1] == '+': plusStrandMutationCounts[mutation[0]-dyadPosNegative74 - 74] += 1
-                        elif mutation[1] == '-': minusStrandMutationCounts[mutation[0]-dyadPosNegative74 - 74] += 1
-                        else:  raise ValueError("Error:  No strandedness found for mutation")
-                        mutationsInCurrentNucleosome.append(mutation)
+                    addMutationIfInNucleosome(mutation[0],mutation[1],currentNucleosome.dyadPosNegative74)
 
-                # Make sure the mutation isn't past the range of the current nucleosome.
-                while not isMutationPastNucleosome():
+                # Read mutations until the mutation is past the range of the current nucleosome.
+                while not isMutationPastNucleosome(currentMutation,currentNucleosome):
 
-                    # Look for mutations that fall within dyad positions -73 to 73, and add them to the counts!
-                    if mutationPos - dyadPosNegative74 > 0:
-                        if strand == '+': plusStrandMutationCounts[mutationPos-dyadPosNegative74 - 74] += 1
-                        elif strand == '-': minusStrandMutationCounts[mutationPos-dyadPosNegative74 - 74] += 1
-                        else:  raise ValueError("Error:  No strandedness found for mutation")
-                        
-                        # Add the mutation to the list of mutations in the current nucleosome
-                        mutationsInCurrentNucleosome.append((mutationPos,strand))
-
-                        # print("Mutation at position",mutationPos,"in",mutationChromosome,"on the",strand,"strand",
-                        #         " was found at dyad position", str(mutationPos-dyadPosNegative74-74))
+                    # Check and see if we need to add the mutation to our lists.
+                    addMutationIfInNucleosome(currentMutation.position,currentMutation.strand,currentNucleosome.dyadPosNegative74)
 
                     #Get data on the next mutation.
-                    readMutationData()
+                    currentMutation.readNextMutation()
 
                 # Read in the next nucleosome
-                readNucleosomeData()
+                currentNucleosome.readNextNucleosome()
 
     # Write the results to the output file.
     with open(nucleosomeMutationCountsFilePath,'w') as nucleosomeMutationCountsFile:
