@@ -215,8 +215,8 @@ class MultipleFileSelector(tk.Frame):
         filePaths = filedialog.askopenfilenames(filetypes = fileTypes,
             initialdir = self.workingDirectory, title = title)
 
-        # Change the working directory to the wherever a file was selected.
-        if len(filePaths) > 0: self.workingDirectory = os.path.dirname(filePaths[0])
+        # Change the working directory to one directory up from wherever the last file was selected.
+        if len(filePaths) > 0: self.workingDirectory = os.path.join(os.path.dirname(filePaths[0]),"..")
 
         # Add the selected file paths to the list of file path displays (only new paths)
         for filePath in filePaths:
