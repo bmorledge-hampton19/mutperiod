@@ -1,6 +1,7 @@
 # This script takes a mutation file and the coordinates for DNA bases around nucleosomes and calculates how many
 # mutations occured at each dyad position for each (and both) strands.
-# NOTE:  Both input files must be sorted for this script to run properly.
+# NOTE:  Both input files must be sorted for this script to run properly. 
+#        (Sorted first by chromosome (string) and then by nucleotide position (numeric))
 import os
 import time
 from TkinterDialog import TkinterDialog, Selections
@@ -39,11 +40,6 @@ class MutationData:
         self.chromosome = choppedUpLine[0]
         self.position = int(choppedUpLine[1])
         self.strand = choppedUpLine[5]
-
-    # Read in mutations until you reach the given chromosome.
-    def readUntilChromosome(self, chromosome: str):
-        while not self.chromosome == chromosome and not self.isEmpty:
-            self.readNextMutation()
         
 
 # Contains data on a single nucleosome position obtained by reading the next available line in a given file.
@@ -78,12 +74,6 @@ class NucleosomeData:
         self.dyadPosNegative74 = int(choppedUpLine[1])
 
 
-    # Read in nucleosomes until one falls in the given list of acceptable chromosomes.
-    def readUntilChromosomeIn(self, acceptableChromosomes):
-        while not self.chromosome in acceptableChromosomes and not self.isEmpty:
-            self.readNextNucleosome()
-
-
 # This function takes a bed file of strongly positioned nucleosomes and expands their coordinates to encompass
 # 74 bases on either side of the dyad. (in order to get trinucleotide sequences for positions -73 to 73)
 # Returns the file path to the newly expanded file.
@@ -115,6 +105,27 @@ def expandNucleosomeCoordinates(strongPosNucleosomeFilePath):
     return strongPosNucleosomeExpansionFilePath
 
 
+# Takes a mutation object and nucleosome object which have unequal chromosomes and read through data until they are equal.
+def reconcileChromosomes(mutation: MutationData, nucleosome: NucleosomeData):
+    
+    # Until the chromosomes are the same for both mutations and 
+    while not mutation.chromosome == nucleosome.chromosome and not (mutation.isEmpty or nucleosome.isEmpty):
+        if mutation.chromosome < nucleosome.chromosome: mutation.readNextMutation()
+        else: nucleosome.readNextNucleosome()
+
+    if not (nucleosome.isEmpty or mutation.isEmpty): print("Counting in chromosome",nucleosome.chromosome)
+
+
+# Determines whether or not the given mutation is past the range of the given nucleosome.
+def isMutationPastNucleosome(mutation: MutationData, nucleosome: NucleosomeData):
+    if mutation.position-nucleosome.dyadPosNegative74 > 147:
+        return True
+    elif not mutation.chromosome == nucleosome.chromosome:
+        return True
+    else: 
+        return False
+
+
 # Checks to see whether or not the given nucleosome positioning data needs to be expanded, 
 # and calls the necessary function to expand it if needed.
 def parseStrongPosNucleosomeData(strongPosNucleosomeFilePath):
@@ -142,6 +153,7 @@ def parseStrongPosNucleosomeData(strongPosNucleosomeFilePath):
 # Uses the given nucleosome position file and mutation file to count the number of mutations 
 # at each dyad position (-73 to 73) for each strand.  Generates a new file to store these results.
 # NOTE:  It is VITAL that both files are sorted, first by chromosome number and then by starting coordinate.
+#        (Sorted first by chromosome (string) and then by nucleotide position (numeric))
 #        This code is pretty slick, but it will crash and burn and give you a heap of garbage as output if the inputs aren't sorted.
 def countNucleosomePositionMutations(mutationFilePath, strongPosNucleosomeFilePath, nucleosomeMutationCountsFilePath):
     print("Counting mutations at each nucleosome position...")
@@ -153,14 +165,12 @@ def countNucleosomePositionMutations(mutationFilePath, strongPosNucleosomeFilePa
         minusStrandMutationCounts[i] = 0
         plusStrandMutationCounts[i] = 0
 
-    chromosomesWithMutations = list() # A list of all the chromosomes containing mutations.
-
     # Keeps track of mutations in the current and previous nucleosomes to catch mutations that span overlapping nucleosomes.
     # Each muation is a tuple containing the mutation position and the strand it is housed on.
     mutationsInCurrentNucleosome = list()
     mutationsInPreviousNucleosome = list()
 
-    # A function which checks to see if a given mutation falls within the given nucleosome and if it does, adds it to the counts.
+    # A function which checks to see if a given mutation falls within the given nucleosome and if it does, adds it to the given list.
     def addMutationIfInNucleosome(mutationPosition, mutationStrand, dyadPosNegative74):
 
         if mutationPosition - dyadPosNegative74 > 0:
@@ -171,50 +181,20 @@ def countNucleosomePositionMutations(mutationFilePath, strongPosNucleosomeFilePa
             # Add the mutation to the list of mutations in the current nucleosome
             mutationsInCurrentNucleosome.append((mutationPosition,mutationStrand))
 
-    # Determines whether or not the given mutation is past the range of the given nucleosome.
-    def isMutationPastNucleosome(mutation: MutationData, nucleosome: NucleosomeData):
-        if mutation.position-nucleosome.dyadPosNegative74 > 147:
-            return True
-        elif not mutation.chromosome == nucleosome.chromosome:
-            print("Counting in",mutation.chromosome)
-            return True
-        else: 
-            return False
-
-    # Record which chromosomes have at least one mutation in them.
-    with open(mutationFilePath, 'r') as mutationFile:
-        for line in mutationFile:
-            if line.split()[0] not in chromosomesWithMutations: chromosomesWithMutations.append(line.split()[0])
-
     # Open the mutation and nucleosome files to compare against one another.
     with open(mutationFilePath, 'r') as mutationFile:
         with open(strongPosNucleosomeFilePath,'r') as strongPosNucleosomeFile:
 
-            #Get data on the first mutation and nucleosome to start things off.
+            #Get data on the first mutation and nucleosome and reconcile their chromosomes if necessary to start things off.
             currentMutation = MutationData(mutationFile)            
             currentNucleosome = NucleosomeData(strongPosNucleosomeFile) 
             if currentNucleosome.chromosome == currentMutation.chromosome: print("Counting in",currentNucleosome.chromosome)
+            else: reconcileChromosomes(currentMutation, currentNucleosome)
 
             # The core loop goes through each nucleosome one at a time and checks mutation positions against it until 
-            # one exceeds its rightmost position or is on a different chromosome.  Then, the next nucleosome is checked, etc.
-            while not currentNucleosome.isEmpty:
-
-                # Make sure that the current mutation and nucleosome are on the same chromosome
-                if not currentMutation.chromosome == currentNucleosome.chromosome:
-
-                    # First, make sure that the chromsome for the nucleosome has at least one mutation.
-                    if not currentNucleosome.chromosome in chromosomesWithMutations:
-                        currentNucleosome.readUntilChromosomeIn(chromosomesWithMutations)
-                        if currentNucleosome.isEmpty: break
-
-                    print("Counting in",currentNucleosome.chromosome)
-
-                    # Next, read through mutations until the chromsomes match!
-                    if not currentMutation.chromosome == currentNucleosome.chromosome:
-                        currentMutation.readUntilChromosome(currentNucleosome.chromosome)
-
-                    # Reset the mutationsInCurrentNucleosome list since we are in a new chromosome.
-                    mutationsInCurrentNucleosome.clear()
+            # one exceeds its rightmost position or is on a different chromosome.  
+            # Then, the next nucleosome is checked until either no mutations or no nucleosomes remain.
+            while not (currentNucleosome.isEmpty or currentMutation.isEmpty):
                     
                 # Check to see if any of the mutations in the last nucleosome are present in the current nucleosome due to overlap.
                 mutationsInPreviousNucleosome = mutationsInCurrentNucleosome.copy()
@@ -231,8 +211,14 @@ def countNucleosomePositionMutations(mutationFilePath, strongPosNucleosomeFilePa
                     #Get data on the next mutation.
                     currentMutation.readNextMutation()
 
-                # Read in the next nucleosome
-                currentNucleosome.readNextNucleosome()
+                # If no recnociliation is necessary at the moment, read in a new nucleosome.
+                if currentMutation.chromosome == currentNucleosome.chromosome: currentNucleosome.readNextNucleosome()
+
+                # Reconcile the mutation data and chromosome data if necessary to be sure
+                # that they are looking at the same chromosome for the next iteration
+                if not currentMutation.chromosome == currentNucleosome.chromosome:
+                    reconcileChromosomes(currentMutation, currentNucleosome)
+                    mutationsInCurrentNucleosome.clear() # Nucleosomes can't overlap on different chromosomes.
 
     # Write the results to the output file.
     with open(nucleosomeMutationCountsFilePath,'w') as nucleosomeMutationCountsFile:
@@ -279,7 +265,7 @@ for mutationFilePath in mutationFilePaths:
     mutationGroupName = os.path.split(mutationFilePath)[1].rsplit("_trinuc",1)[0].rsplit("_singlenuc",1)[0]
     # Double check that the mutation group name was generated correctly.
     if '.' in mutationGroupName: raise ValueError("Error, expected mutation file with \"trinuc\" or \"singlenuc\" in the name.")
-    nucleosomeMutationCountsFilePath = os.path.join(workingDirectory,mutationGroupName+"_nucleosome_mutation_counts.txt")
+    nucleosomeMutationCountsFilePath = os.path.join(workingDirectory,mutationGroupName+"_nucleosome_mutation_counts.tsv")
 
     # Ready, set, go!
     countNucleosomePositionMutations(mutationFilePath, strongPosNucleosomeFilePath, nucleosomeMutationCountsFilePath)
