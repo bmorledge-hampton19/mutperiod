@@ -210,8 +210,8 @@ def generateMutationBackgroundFile(genomeTrinucFrequencyFilePath, mutationTrinuc
 
 #Create the Tkinter UI
 dialog = TkinterDialog(workingDirectory=os.path.join(os.path.dirname(__file__),"..","data"))
-dialog.createFileSelector("Bed Mutation File:",0)
-dialog.createFileSelector("Genome fasta File:",1)
+dialog.createMultipleFileSelector("Bed Trinuc Mutation Files:",0,("Bed Files",".bed"))
+dialog.createFileSelector("Genome fasta File:",1,("Fasta Files",".fa"))
 dialog.createReturnButton(2,0,2)
 dialog.createQuitButton(2,2,2)
 
@@ -223,56 +223,44 @@ if dialog.selections is None: quit()
 
 # Get the user's input from the dialog.
 selections: Selections = dialog.selections
-mutationFilePath: str = list(selections.getFilePaths())[0] # The path to the bed mutation file
-genomeFilePath = list(selections.getFilePaths())[1] # The path to the bed mutation file
+mutationFilePaths = list(selections.getFilePathGroups())[0] # A list of paths to the bed mutation files
+genomeFilePath = list(selections.getIndividualFilePaths())[0] # The path to the bed mutation file
 
-# Get some information on the file system and generate file paths for convenience.
-workingDirectory = os.path.dirname(mutationFilePath) # The working directory for the current data "group"
+for mutationFilePath in mutationFilePaths:
 
-# The name of the mutation group used to designate data files (between "/" and "_trinuc").
-mutationGroupName = mutationFilePath.rsplit("_trinuc",1)[0].rsplit('/',1)[-1]
-# Double check that the mutation group name was generated correctly.
-if '.' in mutationGroupName: raise ValueError("Error, expected mutation file with \"trinuc\" in the name.")
+    print("\nWorking in:",os.path.split(mutationFilePath)[1])
+    if not "_trinuc_context" in os.path.split(mutationFilePath)[1]:
+        raise ValueError("Error:  Expected file with \"_trinuc_context\" in the name.")
 
-# Generate the file path for the genome trinuc frequency file.
-genomeTrinucFrequencyFilePath = genomeFilePath.rsplit(".")[0] + "_trinuc_frequency.txt"
-# Generate the file path for the mutation trinuc frequency file.
-mutationTrinucFrequencyFilePath = os.path.join(workingDirectory,"intermediate_files",mutationGroupName+"_trinuc_frequencies.txt")
-# Generate the file path for the background mutation rate file.
-mutationBackgroundFilePath = os.path.join(workingDirectory,mutationGroupName + "_mutation_background.txt")
+    # Get some information on the file system and generate file paths.
+    workingDirectory = os.path.dirname(mutationFilePath) # The working directory for the current data "group"
 
-# If the genome trinuc frequency file doesn't exist, create it.
-if not os.path.exists(genomeTrinucFrequencyFilePath):
-    print("Genome trinuc frequency file not found at path:",genomeTrinucFrequencyFilePath)
-    print("Generating genome trinuc frequency file...")
-    generateGenomeTrinucFrequencyFile(genomeFilePath, genomeTrinucFrequencyFilePath)
+    # Extract the name of the mutation group used to designate data files.
+    mutationGroupName = os.path.split(mutationFilePath)[1].split("_trinuc_context")[0]
 
-# If the mutation trinuc frequency file doesn't exist, create it.
-if not os.path.exists(mutationTrinucFrequencyFilePath):
-    print("Mutation trinuc frequency file not found at path:",mutationTrinucFrequencyFilePath)
+    # Generate the file path for the genome trinuc frequency file.
+    genomeTrinucFrequencyFilePath = genomeFilePath.rsplit(".")[0] + "_trinuc_frequency.tsv"
+    # Generate the file path for the mutation trinuc frequency file.
+    mutationTrinucFrequencyFilePath = os.path.join(workingDirectory,"intermediate_files",mutationGroupName+"_trinuc_frequencies.tsv")
+    # Generate the file path for the background mutation rate file.
+    mutationBackgroundFilePath = os.path.join(workingDirectory,mutationGroupName + "_mutation_background.tsv")
 
-    # Create a directory for intermediate files if it does not already exist...
-    if not os.path.exists(os.path.join(workingDirectory,"intermediate_files")):
-        os.mkdir(os.path.join(workingDirectory,"intermediate_files"))
+    # If the genome trinuc frequency file doesn't exist, create it.
+    if not os.path.exists(genomeTrinucFrequencyFilePath):
+        print("Genome trinuc frequency file not found at path:",genomeTrinucFrequencyFilePath)
+        print("Generating genome trinuc frequency file...")
+        generateGenomeTrinucFrequencyFile(genomeFilePath, genomeTrinucFrequencyFilePath)
 
-    print("Generating mutation trinuc frequency file...")
-    generateMutationTrinucFrequencyFile(mutationFilePath,mutationTrinucFrequencyFilePath)
+    # If the mutation trinuc frequency file doesn't exist, create it.
+    if not os.path.exists(mutationTrinucFrequencyFilePath):
+        print("Mutation trinuc frequency file not found at path:",mutationTrinucFrequencyFilePath)
 
-# Generate the mutation background file.
-generateMutationBackgroundFile(genomeTrinucFrequencyFilePath,mutationTrinucFrequencyFilePath,mutationBackgroundFilePath)
-print("Done!")
+        # Create a directory for intermediate files if it does not already exist...
+        if not os.path.exists(os.path.join(workingDirectory,"intermediate_files")):
+            os.mkdir(os.path.join(workingDirectory,"intermediate_files"))
 
+        print("Generating mutation trinuc frequency file...")
+        generateMutationTrinucFrequencyFile(mutationFilePath,mutationTrinucFrequencyFilePath)
 
-
-
-
-# Sanity check :  Do the plus and minus strands have similar trinucleotide frequencies?
-
-# def printFrequencies(trinucFrequencies):
-#     for trinuc in sorted(trinucFrequencies):
-#         print(trinuc,": ",trinucFrequencies[trinuc])
-
-# print('\n')
-# printFrequencies(getGenomeTrinucFrequency(genomeTrinucFrequencyFilePath,countMinusStrand=False))
-# print('\n')
-# printFrequencies(getGenomeTrinucFrequency(genomeTrinucFrequencyFilePath,countPlusStrand=False))
+    # Generate the mutation background file.
+    generateMutationBackgroundFile(genomeTrinucFrequencyFilePath,mutationTrinucFrequencyFilePath,mutationBackgroundFilePath)
