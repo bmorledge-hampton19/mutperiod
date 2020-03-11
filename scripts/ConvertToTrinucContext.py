@@ -60,8 +60,8 @@ def generateTrinucContext(singleBaseBedFilePath,trinucReadsFilePath,trinucContex
 
 # Create the Tkinter dialog.
 dialog = TkinterDialog(workingDirectory=os.path.join(os.path.dirname(__file__),"..","data"))
-dialog.createFileSelector("Single-Base Bed File:",0)
-dialog.createFileSelector("Human Genome Fasta File:",1)
+dialog.createMultipleFileSelector("Single-Base Bed File:",0,("Bed Files",".bed"))
+dialog.createFileSelector("Human Genome Fasta File:",1,("Fasta Files",".fa"))
 dialog.createReturnButton(2,0,2)
 dialog.createQuitButton(2,2,2)
 
@@ -73,27 +73,33 @@ if dialog.selections is None: quit()
 
 # Get the user's input from the dialog.
 selections: Selections = dialog.selections
-singleBaseBedFilePath = list(selections.getFilePaths())[0] # The path to the original bed mutation file
-humanGenomeFastaFilePath = list(selections.getFilePaths())[1] # The path to the human genome fasta file
+singleBaseBedFilePaths = list(selections.getFilePathGroups())[0] # A list of paths to original bed mutation files
+humanGenomeFastaFilePath = list(selections.getIndividualFilePaths())[0] # The path to the human genome fasta file
 
-# Get some information on the file system and generate file paths for convenience.
-workingDirectory = os.path.dirname(singleBaseBedFilePath) # The working directory for the current data "group"
-dataGroupName = workingDirectory.rsplit("/",1)[-1] # The name of data group used to designate data files.
-trinucExpansionFilePath = os.path.join(workingDirectory,"intermediate_files",dataGroupName+"_trinuc_expansion.bed")
-    # The path to an intermediate file fed to bedtools to generate the trinucleotide sequence.
-trinucReadsFilePath = os.path.join(workingDirectory,"intermediate_files",dataGroupName+"_trinuc_reads.fa")
-    # The path to an intermediate fasta file that contains the trinuc reads generated from the locations in the trinucExpansion file.
-trinucContextFilePath = os.path.join(workingDirectory,dataGroupName+"_trinuc_context.bed")
+for singleBaseBedFilePath in singleBaseBedFilePaths:
 
-# Create a directory for intermediate files if it does not already exist...
-if not os.path.exists(os.path.join(workingDirectory,"intermediate_files")):
-    os.mkdir(os.path.join(workingDirectory,"intermediate_files"))
+    print("\nWorking in:",os.path.split(singleBaseBedFilePath)[1])
+    if not "_singlenuc_context" in os.path.split(singleBaseBedFilePath)[1]:
+        raise ValueError("Error:  Expected file with \"_singlenuc_context\" in the name.")
 
-# Expand the nucleotide coordinates in the singlenuc context bed file to encompass a trinuc span.
-expandBedToTrinucRegion(singleBaseBedFilePath,trinucExpansionFilePath)
+    # Get some information on the file system and generate file paths for convenience.
+    workingDirectory = os.path.dirname(singleBaseBedFilePath) # The working directory for the current data group
+    dataGroupName = os.path.split(singleBaseBedFilePath)[1].split("_singlenuc_context")[0] # The name of mutation data group
+    trinucExpansionFilePath = os.path.join(workingDirectory,"intermediate_files",dataGroupName+"_trinuc_expansion.bed")
+        # The path to an intermediate file fed to bedtools to generate the trinucleotide sequence.
+    trinucReadsFilePath = os.path.join(workingDirectory,"intermediate_files",dataGroupName+"_trinuc_reads.fa")
+        # The path to an intermediate fasta file that contains the trinuc reads generated from the locations in the trinucExpansion file.
+    trinucContextFilePath = os.path.join(workingDirectory,dataGroupName+"_trinuc_context.bed") # The final output file.
 
-# Convert the trinuc coordinates in the bed file to the referenced nucleotides in fasta format.
-bedToFasta(humanGenomeFastaFilePath,trinucExpansionFilePath,trinucReadsFilePath)
+    # Create a directory for intermediate files if it does not already exist...
+    if not os.path.exists(os.path.join(workingDirectory,"intermediate_files")):
+        os.mkdir(os.path.join(workingDirectory,"intermediate_files"))
 
-# Using the newly generated fasta file, create a new bed file with the trinucleotide context.
-generateTrinucContext(singleBaseBedFilePath,trinucReadsFilePath,trinucContextFilePath)
+    # Expand the nucleotide coordinates in the singlenuc context bed file to encompass a trinuc span.
+    expandBedToTrinucRegion(singleBaseBedFilePath,trinucExpansionFilePath)
+
+    # Convert the trinuc coordinates in the bed file to the referenced nucleotides in fasta format.
+    bedToFasta(trinucExpansionFilePath,humanGenomeFastaFilePath,trinucReadsFilePath)
+
+    # Using the newly generated fasta file, create a new bed file with the trinucleotide context.
+    generateTrinucContext(singleBaseBedFilePath,trinucReadsFilePath,trinucContextFilePath)
