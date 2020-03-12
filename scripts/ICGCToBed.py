@@ -63,6 +63,7 @@ def ICGCToBed(ICGCFilePath, bedFilePath):
                     if mutationID in mutations: continue
 
                     chromosome = "chr" + choppedUpLine[8]
+                    if chromosome == "chrMT": chromosome = "chrM" # Standardize the naming of mitochondrial chromosomes.
                     mutationPos1Base = choppedUpLine[9]
 
                     mutationPos0Base = str(int(mutationPos1Base)-1)
