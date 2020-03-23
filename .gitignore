@@ -130,3 +130,5 @@ data/
 # Dr. Wyrick's Scripts
 scripts/perl_scripts/
 scripts/test.py
+.Rproj.user
+R_scripts/MSI_Analysis/Hg19repeats.rda
