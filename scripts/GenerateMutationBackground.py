@@ -31,6 +31,10 @@ def generateGenomeTrinucFrequencyFile(genomeFilePath, genomeTrinucFrequencyFileP
                 # Check and make sure that the sequence is one we actually want to count.
                 if not '_' in sequenceTitle and not "chrM" in sequenceTitle and not "pUC19" in sequenceTitle:
 
+                    if not sequenceTitle.lower().startswith("chr"):
+                        raise ValueError(sequenceTitle + " does not appear to be a chromosome (does not start with \"chr\").  " + 
+                                        "Did you provide a genome fasta file?")
+
                     print ("Counting trinucleotide sequences in ",sequenceTitle,"...",sep='')
                     lineLeftovers = ''
                     willCount = True

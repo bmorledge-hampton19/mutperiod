@@ -80,6 +80,8 @@ def getTrinucMutationRate(mutationBackgroundFilePath):
         mutationBackgroundFile.readline() # Skip the line with headers.
         for line in mutationBackgroundFile:
             choppedUpLine = line.strip().split('\t')
+            if len(choppedUpLine[0]) != 3:
+                raise ValueError("Error: found \"" + choppedUpLine[0] + "\" in " + mutationBackgroundFilePath + " but expected a trinucleotide sequence.")
             trinucMutationRate[choppedUpLine[0]] = float(choppedUpLine[1])
     
     return trinucMutationRate
