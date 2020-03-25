@@ -145,7 +145,7 @@ selections: Selections = dialog.selections
 ICGCFilePaths = list(selections.getFilePathGroups())[0] # A list of ICGC mutation file paths
 convertToBed = list(selections.getToggleStates())[0]
 convertToMSIseq = list(selections.getToggleStates())[1]
-if not convertToBed or convertToMSIseq: raise ValueError("Error: no output format selected.")
+if not (convertToBed or convertToMSIseq): raise ValueError("Error: no output format selected.")
 
 # Run the parser for each ICGC file given.
 for ICGCFilePath in ICGCFilePaths:
