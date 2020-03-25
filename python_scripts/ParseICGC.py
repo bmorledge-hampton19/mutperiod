@@ -172,7 +172,7 @@ for ICGCFilePath in ICGCFilePaths:
     if convertToMSIseq:
         unsortedMSIseqDataFilePath = os.path.join(os.path.dirname(ICGCFilePath),"intermediate_files",
             mutationGroupName+"_unsorted_MSIseq_data.bed")
-        sortedMSIseqDataFilePath = os.path.join(os.path.dirname(ICGCFilePath),mutationGroupName+"_MSIseq_data.bed")
+        sortedMSIseqDataFilePath = os.path.join(os.path.dirname(ICGCFilePath),mutationGroupName+"_MSIseq_data.tsv")
 
     # Parse the files!
     with gzip.open(ICGCFilePath, 'r') as ICGCFile:
