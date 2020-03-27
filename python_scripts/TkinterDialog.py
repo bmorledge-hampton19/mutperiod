@@ -114,7 +114,7 @@ class TkinterDialog(tk.Frame):
         self.checkboxVars.append(checkboxIntVar)
 
         # Create the checkbox
-        tk.Checkbutton(self, text = text, variable = checkboxIntVar).grid(row = row, column = column, columnspan = columnSpan, pady = 3)
+        tk.Checkbutton(self, text = text, variable = checkboxIntVar).grid(row = row, column = column, columnspan = columnSpan, pady = 3, sticky = tk.W)
 
 
     # Create a button to execute a given function.
