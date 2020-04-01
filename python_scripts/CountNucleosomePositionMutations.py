@@ -113,7 +113,7 @@ def reconcileChromosomes(mutation: MutationData, nucleosome: NucleosomeData):
         if mutation.chromosome < nucleosome.chromosome: mutation.readNextMutation()
         else: nucleosome.readNextNucleosome()
 
-    if not (nucleosome.isEmpty or mutation.isEmpty): print("Counting in chromosome",nucleosome.chromosome)
+    if not (nucleosome.isEmpty or mutation.isEmpty): print("Counting in",nucleosome.chromosome)
 
 
 # Determines whether or not the given mutation is past the range of the given nucleosome.
