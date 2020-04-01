@@ -87,7 +87,7 @@ def getTrinucMutationRate(mutationBackgroundFilePath):
     return trinucMutationRate
 
 
-# This function takes generates a nucleosome mutation background file from a general mutation background file
+# This function generates a nucleosome mutation background file from a general mutation background file
 # and a file of strongly positioned nucleosome coordinates.
 def generateNucleosomeMutationBackground(strongPosNucleosomeFastaFilePath, mutationBackgroundFilePath,
     nucleosomeMutationBackgroundFilePath):
