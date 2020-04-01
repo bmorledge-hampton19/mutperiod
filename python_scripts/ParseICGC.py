@@ -165,11 +165,16 @@ class ICGCParserFileManager:
         microsatteliteDirectory = os.path.join(self.localRootDirectory,"microsatellite_analysis")
         if not os.path.exists(microsatteliteDirectory): os.mkdir(microsatteliteDirectory)
 
+        MSIDirectory = os.path.join(microsatteliteDirectory,"MSI")
+        if not os.path.exists(MSIDirectory): os.mkdir(MSIDirectory)
+        MSSDirectory = os.path.join(microsatteliteDirectory,"MSS")
+        if not os.path.exists(MSSDirectory): os.mkdir(MSSDirectory)
+
         self.MSIMutationGroupName = "MSI_" + self.mutationGroupName
         self.MSSMutationGroupName = "MSS_" + self.mutationGroupName
 
-        self.MSIBedFilePath = os.path.join(microsatteliteDirectory,self.MSIMutationGroupName+"_singlenuc_context.bed")
-        self.MSSBedFilePath = os.path.join(microsatteliteDirectory,self.MSSMutationGroupName+"_singlenuc_context.bed")
+        self.MSIBedFilePath = os.path.join(MSIDirectory,self.MSIMutationGroupName+"_singlenuc_context.bed")
+        self.MSSBedFilePath = os.path.join(MSSDirectory,self.MSSMutationGroupName+"_singlenuc_context.bed")
 
         if createIndividualDonorFiles:
 
