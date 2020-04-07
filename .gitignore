@@ -128,11 +128,12 @@ dmypy.json
 
 ##### R Ignores #####
 # History files
-.Rhistory
+*.Rhistory
 .Rapp.history
+R_scripts/MSI_Analysis/.Rhistory
 
 # R Data files
-.rda
+*.rda
 
 # Session Data files
 .RData
