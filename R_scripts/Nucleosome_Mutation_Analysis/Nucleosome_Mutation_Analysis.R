@@ -40,7 +40,7 @@ for (i in 1:length(filePrefixes)) {
   # Write the normalized data to a new file.
   fwrite(normalizedData, sep = '\t',
               file = paste0("Data/Normalized Counts/",filePrefixes[i],
-                            "ESAD-UK_nucleosome_mutation_counts_normalized.txt"))
+                            "_nucleosome_mutation_counts_normalized.txt"))
   
   ##### Periodicity Analysis #####
   
