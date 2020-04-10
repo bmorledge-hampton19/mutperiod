@@ -3,6 +3,7 @@
 
 from TkinterDialog import TkinterDialog, Selections
 import os, subprocess
+from typing import Dict
 from UsefulBioinformaticsFunctions import bedToFasta, reverseCompliment
 
 # This function takes a bed file of strongly positioned nucleosomes and expands their coordinates to encompass
@@ -87,27 +88,23 @@ def getTrinucMutationRate(mutationBackgroundFilePath):
     return trinucMutationRate
 
 
-# This function generates a nucleosome mutation background file from a general mutation background file
-# and a file of strongly positioned nucleosome coordinates.
-def generateNucleosomeMutationBackground(strongPosNucleosomeFastaFilePath, mutationBackgroundFilePath,
-    nucleosomeMutationBackgroundFilePath):
-    print("Generating nucleosome mutation background file...")
+# This function generates a file of trinuc counts in the genome for each dyad position.
+def generateDyadPosTrinucCounts(strongPosNucleosomeFastaFilePath, dyadPosTrinucCountsFilePath):
 
-    # Dictionaries of expected mutations for every dyad position from -73 to 73, one for each strand.
-    plusStrandNucleosomeMutationBackground = dict() 
-    minusStrandNucleosomeMutationBackground = dict()
+    # Dictionary of trinuc counts for every dyad position from -73 to 73 on the plus strand.
+    plusStrandNucleosomeDyadPosTrinucCounts = dict() 
+
+    # Hash table of observed trinucleotide sequences.
+    observedTrinucs = dict()
 
     # Initialize the dictionary
     for dyadPos in range(-73,74): 
-        plusStrandNucleosomeMutationBackground[dyadPos] = 0
-        minusStrandNucleosomeMutationBackground[dyadPos] = 0
+        plusStrandNucleosomeDyadPosTrinucCounts[dyadPos] = dict()
 
-    # Get the trinuc mutation rate dictionary.
-    trinucMutationRate = getTrinucMutationRate(mutationBackgroundFilePath)
     # Initialize the counter for dyad position
     dyadPos = 74
 
-    # Read through the file, adding the mutation rate for every dyad position to the running total in the dictionary
+    # Read through the file, counging trinucs for every dyad position to the running total in the dictionary
     with open(strongPosNucleosomeFastaFilePath, 'r') as strongPosNucleosomeFastaFile:
 
         for line in strongPosNucleosomeFastaFile:
@@ -135,18 +132,93 @@ def generateNucleosomeMutationBackground(strongPosNucleosomeFastaFilePath, mutat
 
                 # Count all available trinuc sequences.
                 for i in range(0,len(currentSequence)-2):
+
                     trinuc = currentSequence[i:i+3]
-                    reverseTrinuc = reverseCompliment(trinuc)
+                    if trinuc not in observedTrinucs: observedTrinucs[trinuc] = None
                     
-                    # Add the trinuc's mutation rate to the running total in the background dictionaries.
-                    plusStrandNucleosomeMutationBackground[dyadPos] += trinucMutationRate[trinuc]
-                    minusStrandNucleosomeMutationBackground[dyadPos] += trinucMutationRate[reverseTrinuc]
+                    # Add the trinuc to the running total in the counts dictionary.
+                    plusStrandNucleosomeDyadPosTrinucCounts[dyadPos][trinuc] = plusStrandNucleosomeDyadPosTrinucCounts[dyadPos].setdefault(trinuc, 0) + 1
 
                     # Increment the dyadPos counter
                     dyadPos += 1
 
                 # Don't forget about the leftovers for this line!
                 lineLeftovers = line[-2:]
+
+    # Write the trinuc counts for every dyad position on the plus strand in the output file
+    with open(dyadPosTrinucCountsFilePath, 'w') as dyadPosTrinucCountsFile:
+
+        # Write the header for the file
+        dyadPosTrinucCountsFile.write("Dyad_Pos\t" + '\t'.join(observedTrinucs.keys()) + '\n')
+
+        for dyadPos in plusStrandNucleosomeDyadPosTrinucCounts.keys():
+            
+            dyadPosTrinucCountsFile.write(str(dyadPos))
+
+            for trinuc in observedTrinucs.keys():
+                if trinuc in plusStrandNucleosomeDyadPosTrinucCounts[dyadPos]:
+                    dyadPosTrinucCountsFile.write('\t' + str(plusStrandNucleosomeDyadPosTrinucCounts[dyadPos][trinuc]))
+                else: dyadPosTrinucCountsFile.write('\t0')
+
+            dyadPosTrinucCountsFile.write('\n')
+            
+    
+# This function retrieves the trinuc counts for each dyad position in a genome from a given file.
+# The data is returned as a dictionary of dictionaries, with the first key being dyad position and the second
+# being a trinucleotide sequence.
+def getDyadPosTrinucCounts(dyadPosTrinucCountsFilePath):
+    with open(dyadPosTrinucCountsFilePath, 'r') as dyadPosTrinucCountsFile:
+        
+        trinucSequences = list()
+        headersHaveBeenRead = False
+        dyadPosTrinucCounts= dict()
+
+        for line in dyadPosTrinucCountsFile:
+
+            if not headersHaveBeenRead:
+                headersHaveBeenRead = True
+                trinucSequences = line.strip().split('\t')[1:]
+    
+            else: 
+                choppedUpLine = line.strip().split('\t')
+                dyadPos = int(choppedUpLine[0])
+                dyadPosTrinucCounts[dyadPos] = dict()
+                for i,trinuc in enumerate(trinucSequences):
+                    dyadPosTrinucCounts[dyadPos][trinuc] = int(choppedUpLine[i+1])
+
+    return dyadPosTrinucCounts
+
+
+# This function generates a nucleosome mutation background file from a general mutation background file
+# and a file of strongly positioned nucleosome coordinates.
+def generateNucleosomeMutationBackground(dyadPosTrinucCountsFilePath, mutationBackgroundFilePath,
+    nucleosomeMutationBackgroundFilePath):
+    print("Generating nucleosome mutation background file...")
+
+    # Dictionaries of expected mutations for every dyad position from -73 to 73, one for each strand.
+    plusStrandNucleosomeMutationBackground = dict() 
+    minusStrandNucleosomeMutationBackground = dict()
+
+    # Initialize the dictionary
+    for dyadPos in range(-73,74): 
+        plusStrandNucleosomeMutationBackground[dyadPos] = 0
+        minusStrandNucleosomeMutationBackground[dyadPos] = 0
+
+    # Get the trinuc mutation rate dictionary.
+    trinucMutationRate = getTrinucMutationRate(mutationBackgroundFilePath)
+    # Get the dyad position trinuc counts dictionary.
+    dyadPosTrinucCounts = getDyadPosTrinucCounts(dyadPosTrinucCountsFilePath)
+
+    # Calculate the expected mutation rates for each dyad position based on the trinuc counts at that position and that trinuc's mutation rate
+    for dyadPos in dyadPosTrinucCounts:
+
+        for trinuc in dyadPosTrinucCounts[dyadPos]:
+
+            reverseTrinuc = reverseCompliment(trinuc)
+            
+            # Add the trinuc's mutation rate to the running total in the background dictionaries.
+            plusStrandNucleosomeMutationBackground[dyadPos] += trinucMutationRate[trinuc] * dyadPosTrinucCounts[dyadPos][trinuc]
+            minusStrandNucleosomeMutationBackground[dyadPos] += trinucMutationRate[trinuc] * dyadPosTrinucCounts[dyadPos][reverseTrinuc]
 
     # Write the results of the dictionary to the nucleosome mutation background file.
     with open(nucleosomeMutationBackgroundFilePath, 'w') as nucleosomeMutationBackgroundFile:
@@ -188,14 +260,23 @@ mutationBackgroundFilePaths = list(selections.getFilePathGroups())[0] # A list o
 genomeFilePath = filePaths[0] # The path to the genome fasta file
 strongPosNucleosomeFilePath: str = filePaths[1] # The path to the file containing strongly positioned nucleosomes.
 
-# A path to the fasta file of strongly positioned nucleosome coordinates. 
+# Generate a path to the fasta file of strongly positioned nucleosome coordinates. 
 if strongPosNucleosomeFilePath.rsplit('.',1)[0].endswith("_expansion"):
     strongPosNucleosomeFastaFilePath = strongPosNucleosomeFilePath.rsplit("_expansion",1)[0] + ".fa"
 else:
     strongPosNucleosomeFastaFilePath = strongPosNucleosomeFilePath.rsplit('.',1)[0] + ".fa"
 
+# Generate the path to the tsv file of dyad position trinuc counts
+dyadPosTrinucCountsFilePath = genomeFilePath.rsplit(".",1)[0] + "_dyad_pos_trinuc_counts.tsv"
+
 # Make sure we have a fasta file for strongly positioned nucleosome coordinates
 parseStrongPosNucleosomeData(strongPosNucleosomeFilePath,strongPosNucleosomeFastaFilePath)
+
+# Make sure we have a tsv file with trinuc counts at each dyad position.
+if not os.path.exists(dyadPosTrinucCountsFilePath): 
+    print("Dyad position trinuc counts file not found at",dyadPosTrinucCountsFilePath)
+    print("Generating genome wide dyad position trinuc counts file...")
+    generateDyadPosTrinucCounts(strongPosNucleosomeFastaFilePath, dyadPosTrinucCountsFilePath)
 
 # Loop through each given mutation background file path, creating a corresponding nucleosome mutation background for each.
 for mutationBackgroundFilePath in mutationBackgroundFilePaths:
@@ -215,4 +296,4 @@ for mutationBackgroundFilePath in mutationBackgroundFilePaths:
     nucleosomeMutationBackgroundFilePath = os.path.join(workingDirectory,mutationDataGroup+"_nucleosome_mutation_background.tsv")
 
     # Generate the nucleosome mutation background file!
-    generateNucleosomeMutationBackground(strongPosNucleosomeFastaFilePath,mutationBackgroundFilePath,nucleosomeMutationBackgroundFilePath)
+    generateNucleosomeMutationBackground(dyadPosTrinucCountsFilePath,mutationBackgroundFilePath,nucleosomeMutationBackgroundFilePath)
