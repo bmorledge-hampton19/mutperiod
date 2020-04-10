@@ -4,45 +4,51 @@ import os
 
 # This function creates the mutation files with omissions, given the mutation to omit and 
 # the original mutation file path.
-def omitMutations(mutationFilePath,*mutationsToOmit):
+def filterMutations(mutationFilePath,omit,*mutationsToFilter):
     '''
     This function actually creates the mutation files with omissions, given the mutation to omit and 
     the original mutation file path.
     '''
-
-    print("Preparing to omit", mutationsToOmit, "mutations.")
+    if omit: print("Preparing to omit", mutationsToFilter, "mutations.")
+    else: print("Preparing to keep", mutationsToFilter, "mutations and omit others.")
 
     mutationsToKeep = list() # This is where we'll store the mutations NOT of the specified omission type.
 
     # Access the given mutation File
     with open(mutationFilePath, 'r') as mutationFile:
 
-        # Store all of the lines that DON'T have the given mutation
-        print("Omitting unwanted mutations.")
+        # Store all of the lines that satisfy the given conditions
+        print("Filtering...")
         for mutation in mutationFile:
-            if mutation.split()[4] not in mutationsToOmit:
+            if omit and mutation.split()[4] not in mutationsToFilter:
+                mutationsToKeep.append(mutation)
+            elif not omit and mutation.split()[4] in mutationsToFilter:
                 mutationsToKeep.append(mutation)
 
-    # Make the mutation data with omissions directory
-    omissionsRootDirectory = os.path.join(os.path.dirname(mutationFilePath),"mutations_with_omissions")
-    if not os.path.exists(omissionsRootDirectory):
-        os.mkdir(omissionsRootDirectory)
+    # Make the filtered by mutations directory
+    filteredRootDirectory = os.path.join(os.path.dirname(mutationFilePath),"filtered_by_mutations")
+    if not os.path.exists(filteredRootDirectory):
+        os.mkdir(filteredRootDirectory)
 
-    # Make the subdirectory for this specific omission.
+    # Make the subdirectory for this specific filtering.
     mutationsAsText = ""
-    for mutation in mutationsToOmit: mutationsAsText += (mutation.replace(">","to")) + "_"
-    omissionsSubDirectory = os.path.join(omissionsRootDirectory,mutationsAsText+"omitted")
-    if not os.path.exists(omissionsSubDirectory):
-        os.mkdir(omissionsSubDirectory)
+    for mutation in mutationsToFilter: mutationsAsText += (mutation.replace(">","to")) + "_"
+
+    if omit: filteredSubDirectory = os.path.join(filteredRootDirectory,mutationsAsText+"omitted")
+    else: filteredSubDirectory = os.path.join(filteredRootDirectory,"just_"+mutationsAsText[:-1])
+
+    if not os.path.exists(filteredSubDirectory):
+        os.mkdir(filteredSubDirectory)
 
     # Generate a path for the new file with the selected omissions
-    omissionsFilename = "".join((mutationsAsText,"omitted_",mutationFilePath.rsplit("/",1)[-1]))
-    omissionsFilePath = os.path.join(omissionsSubDirectory,omissionsFilename)
+    if omit: filteredFilename = "".join((mutationsAsText,"omitted_",os.path.split(mutationFilePath)[1]))
+    else: filteredFilename = "".join(("just_",mutationsAsText,os.path.split(mutationFilePath)[1]))
+    filteredFilePath = os.path.join(filteredSubDirectory,filteredFilename)
 
     # Write the stored mutations to the new omissions file.
-    print("Writing to new file: ", omissionsFilename)
-    with open(omissionsFilePath, 'w') as omissionsFile:
-        omissionsFile.writelines(mutationsToKeep)
+    print("Writing to new file: ", filteredFilename)
+    with open(filteredFilePath, 'w') as filteredFile:
+        filteredFile.writelines(mutationsToKeep)
 
 
 
@@ -56,12 +62,15 @@ mutations = ("C>A","C>G","C>T","T>A","T>C","T>G")
 dialog = TkinterDialog(workingDirectory=os.path.join(os.path.dirname(__file__),"..","data"))
 dialog.createFileSelector("Bed Mutation File:",0,("Bed Files",".bed"))
 # DEPRECATED: dialog.createDropdown("Mutation to omit:",1,0,options=mutations)
-dialog.createLabel("Mutations to Omit:",1,0)
+dialog.createLabel("Mutations:",1,0)
 for i,mutation in enumerate(mutations):
     dialog.createCheckbox(mutation, 2+int(i/4), i%4)
-dialog.createCheckbox("One file for each omission", 3, 2, 2)
-dialog.createReturnButton(4,0,2)
-dialog.createQuitButton(4,2,2)
+dialog.createLabel("Actions:",4,0)
+dialog.createCheckbox("Omit selected mutations", 5, 0, 2)
+dialog.createCheckbox("Keep selected mutations and omit others", 5, 2, 2)
+dialog.createCheckbox("Create one file for each selected mutation", 6, 0, 2)
+dialog.createReturnButton(7,0,2)
+dialog.createQuitButton(7,2,2)
 
 # Run the UI
 dialog.mainloop()
@@ -72,13 +81,19 @@ if dialog.selections is None: quit()
 # Get the user's input from the dialog.
 selections: Selections = dialog.selections
 mutationFilePath = list(selections.getFilePaths())[0] # The path to the original bed mutation file
-shouldMutationsBeOmitted = list(selections.getToggleStates())[0:6] # A list of the bool values telling what mutations to omit.
-createManyFiles = list(selections.getToggleStates())[6] # Should the mutations omitted one at a time, or all together, in one file?
-mutationsToOmit = list() # If mutations need to be omitted all at once, we need to keep track of them.
+shouldMutationsBeFiltered = list(selections.getToggleStates())[0:6] # A list of the bool values telling what mutations to filter.
+omit = list(selections.getToggleStates())[6] # Should the selected mutations be omitted
+keep = list(selections.getToggleStates())[7] # Should the selected mutations be kept, and others omitted.
+createManyFiles = list(selections.getToggleStates())[8] # Should the mutations omitted one at a time, or all together, in one file?
+mutationsToFilter = list() # If mutations need to be filtered all at once, we need to keep track of them.
 
-# Send the selected mutations to the omitMutation function to be kicked to the curb.
-for i,shouldMutationBeOmitted in enumerate(shouldMutationsBeOmitted):
-    if shouldMutationBeOmitted and createManyFiles: omitMutations(mutationFilePath, mutations[i])
-    elif shouldMutationBeOmitted: mutationsToOmit.append(mutations[i])
+if omit == keep: raise ValueError("Error: You must select only one option, omit OR keep.")
 
-if not createManyFiles: omitMutations(mutationFilePath, *mutationsToOmit)
+print("Working in file",os.path.split(mutationFilePath)[1])
+
+# Send the selected mutations to the filterMutations function to be kicked to the curb.
+for i,shouldMutationBeFiltered in enumerate(shouldMutationsBeFiltered):
+    if shouldMutationBeFiltered and createManyFiles: filterMutations(mutationFilePath, omit, mutations[i])
+    elif shouldMutationBeFiltered: mutationsToFilter.append(mutations[i])
+
+if not createManyFiles: filterMutations(mutationFilePath, omit, *mutationsToFilter)
