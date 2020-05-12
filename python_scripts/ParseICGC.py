@@ -271,13 +271,19 @@ if separatebyMSI:
 for ICGCFilePath in ICGCFilePaths:
 
     print("\nWorking in:",os.path.split(ICGCFilePath)[1])
+
     if not str(ICGCFilePath).endswith(".gz"):
-        raise ValueError("Error:  Expected gzipped file.")
+        raise ValueError("Error:  Expected ICGC file to be gzipped (.gz file format).")
     if not "simple_somatic_mutation" in os.path.split(ICGCFilePath)[1]:
-        raise ValueError("Error:  Expected file with \"simple_somatic_mutation\" in the name.")
+        raise ValueError("Error:  Expected ICGC file with \"simple_somatic_mutation\" in the name.\n" +
+                         "Note: if a directory was specified to search for ICGC input files, all files ending in .tsv.gz\
+                          are considered valid.")
 
     # Prepare the file system...
     fileManager = ICGCParserFileManager(ICGCFilePath, convertToBed, convertToMSIseq, convertToMutSig, separatebyMSI, createIndividualDonorFiles)
+
+    if separatebyMSI and fileManager.localRootDirectory not in MSIDonorDicts:
+        raise ValueError("Error: Separate by MSI was specified, but no corresponding MSI donor list was given")
 
     # This function handles the writing of mutation data to individual donor files.
     def writeIndividualDonorFile(donorID, mutations):
