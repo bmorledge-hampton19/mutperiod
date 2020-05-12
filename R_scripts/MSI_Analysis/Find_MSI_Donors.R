@@ -24,7 +24,7 @@ setnames(inputData,colnames(inputData),c("Chrom","Start_Position","End_Position"
                                          "Variant_Type","Tumor_Sample_Barcode"))
 
 # Remove mitochondrial mutations.
-inputData = inputData[Chromosome != "chrM"]
+inputData = inputData[Chrom != "chrM"]
 
 # Get mutation counts for input data.
 mutationCounts = Compute.input.variables(inputData,Hg19repeats,captureLength)
@@ -38,4 +38,6 @@ if (nrow(PolEDeficientResults) > 0) {
 
 # Export the MSI-H results to a text file.
 MSIResults = result[MSI_status == "MSI-H",Tumor_Sample_Barcode]
-write(as.character(MSIResults),sep = '\n', file = paste0(dirname(inputDataPath),"/MSI_donors.txt"))
+write(as.character(MSIResults),sep = '\n', file = paste0(dirname(inputDataPath),'/',
+                                                         unlist(strsplit(basename(inputDataPath),'_'))[1],
+                                                         "_MSI_donors.txt"))
