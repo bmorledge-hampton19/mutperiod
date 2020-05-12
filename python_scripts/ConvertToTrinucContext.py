@@ -60,7 +60,7 @@ def generateTrinucContext(singleBaseBedFilePath,trinucReadsFilePath,trinucContex
 
 # Create the Tkinter dialog.
 dialog = TkinterDialog(workingDirectory=os.path.join(os.path.dirname(__file__),"..","data"))
-dialog.createMultipleFileSelector("Single-Base Bed File:",0,("Bed Files",".bed"))
+dialog.createMultipleFileSelector("Single-Base Bed File:",0,"singlenuc_context.bed",("Bed Files",".bed"))
 dialog.createFileSelector("Human Genome Fasta File:",1,("Fasta Files",".fa"))
 dialog.createReturnButton(2,0,2)
 dialog.createQuitButton(2,2,2)

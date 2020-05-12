@@ -220,12 +220,12 @@ class ICGCParserFileManager:
 
 #Create the Tkinter UI
 dialog = TkinterDialog(workingDirectory=os.path.join(os.path.dirname(__file__),"..","data"))
-dialog.createMultipleFileSelector("ICGC Mutation Files:",0,("gzip files",".gz"))
+dialog.createMultipleFileSelector("ICGC Mutation Files:",0,".tsv.gz",("gzip files",".gz"))
 dialog.createCheckbox("Convert to Bed SNPs", 1, 0)
 dialog.createCheckbox("Convert to MSIseq format", 1, 1)
 dialog.createCheckbox("Also Create individual bed files for each donor.",2,0)
 dialog.createCheckbox("Convert to MutSig format", 2, 1)
-dialog.createMultipleFileSelector("MSI Donor Lists (Optional)",3,("text files",".txt"))
+dialog.createMultipleFileSelector("MSI Donor Lists (Optional)",3,"MSI_donors.txt",("text files",".txt"))
 dialog.createCheckbox("Also Separate Bed Mutations by Microsatellite Stability",4,0)
 dialog.createReturnButton(5,0)
 dialog.createQuitButton(5,2)

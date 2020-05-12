@@ -235,7 +235,7 @@ def countNucleosomePositionMutations(mutationFilePath, strongPosNucleosomeFilePa
 
 #Create the Tkinter UI
 dialog = TkinterDialog(workingDirectory=os.path.join(os.path.dirname(__file__),"..","data"))
-dialog.createMultipleFileSelector("Mutation Files:",0,("Bed Files",".bed"))
+dialog.createMultipleFileSelector("Mutation Files:",0,"trinuc_context.bed",("Bed Files",".bed"))
 dialog.createFileSelector("Strongly Positioned Nucleosome File:",1,("Bed Files",".bed"))
 dialog.createReturnButton(2,0,2)
 dialog.createQuitButton(2,2,2)

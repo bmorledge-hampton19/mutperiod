@@ -214,7 +214,7 @@ def generateMutationBackgroundFile(genomeTrinucFrequencyFilePath, mutationTrinuc
 
 #Create the Tkinter UI
 dialog = TkinterDialog(workingDirectory=os.path.join(os.path.dirname(__file__),"..","data"))
-dialog.createMultipleFileSelector("Bed Trinuc Mutation Files:",0,("Bed Files",".bed"))
+dialog.createMultipleFileSelector("Bed Trinuc Mutation Files:",0,"trinuc_context.bed",("Bed Files",".bed"))
 dialog.createFileSelector("Genome fasta File:",1,("Fasta Files",".fa"))
 dialog.createReturnButton(2,0,2)
 dialog.createQuitButton(2,2,2)
@@ -245,7 +245,7 @@ for mutationFilePath in mutationFilePaths:
     # Generate the file path for the genome trinuc frequency file.
     genomeTrinucFrequencyFilePath = genomeFilePath.rsplit(".")[0] + "_trinuc_frequency.tsv"
     # Generate the file path for the mutation trinuc frequency file.
-    mutationTrinucFrequencyFilePath = os.path.join(workingDirectory,"intermediate_files",mutationGroupName+"_trinuc_frequencies.tsv")
+    mutationTrinucFrequencyFilePath = os.path.join(workingDirectory,"intermediate_files",mutationGroupName+"_trinuc_mutation_frequencies.tsv")
     # Generate the file path for the background mutation rate file.
     mutationBackgroundFilePath = os.path.join(workingDirectory,mutationGroupName + "_mutation_background.tsv")
 

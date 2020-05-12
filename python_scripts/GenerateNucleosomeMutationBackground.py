@@ -241,7 +241,7 @@ def generateNucleosomeMutationBackground(dyadPosTrinucCountsFilePath, mutationBa
 
 #Create the Tkinter UI
 dialog = TkinterDialog(workingDirectory=os.path.join(os.path.dirname(__file__),"..","data"))
-dialog.createMultipleFileSelector("Mutation Background Files:",0,("Tab Seperated Values Files",".tsv"))
+dialog.createMultipleFileSelector("Mutation Background Files:",0,"mutation_background.tsv",("Tab Seperated Values Files",".tsv"))
 dialog.createFileSelector("Genome Fasta File:",1,("Fasta Files",".fa"))
 dialog.createFileSelector("Strongly Positioned Nucleosome File:",2,("Bed or Fasta Files",".bed .fa"))
 dialog.createReturnButton(3,0,2)
