@@ -8,7 +8,7 @@ runExtremeAnalysisSuite = function(data, maxes = TRUE, dyadPosCutoff = 73) {
   extremeDyadLocations = getDyadLocationsOfExtremes(data, maxes = maxes, dyadPosCutoff = dyadPosCutoff)
   extremes = extremeDyadLocationsToValue(data, extremeDyadLocations)
   names(extremes) = extremeDyadLocations
-  analyzeExtremeAssymetry(extremes)
+  analyzeExtremeAsymmetry(extremes)
   
 }
 
@@ -91,7 +91,7 @@ extremeDyadLocationsToValue = function(data, extremeDyadLocations) {
 
 # Given a named vector of extreme values, split the vector into two halves (roughly centered about the dyad)
 # and perform a paired t-test on the obtained values.
-analyzeExtremeAssymetry = function(extremes) {
+analyzeExtremeAsymmetry = function(extremes) {
   
   # Two vectors to store each of the halves of the data.
   # The floor and celing functions work to exclude the middle extreme from either half
@@ -100,7 +100,7 @@ analyzeExtremeAssymetry = function(extremes) {
   secondHalf = rev(extremes[ (ceiling(length(extremes)/2)+1) : length(extremes) ])
 
   # Run the paired t-test
-  return(t.test(firstHalf,secondHalf))
+  return(t.test(firstHalf,secondHalf,paired = T))
   
 }
 
