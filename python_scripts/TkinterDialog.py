@@ -1,5 +1,7 @@
 import tkinter as tk
 from tkinter import filedialog
+from typing import List
+from UsefulFileSystemFunctions import *
 import os
 
 #A modular dialog window used to select relevant files and options for a script.
@@ -79,11 +81,11 @@ class TkinterDialog(tk.Frame):
         self.entries.append(textField)
 
     # Create a file selector which can dynamically add and remove multiple file paths to a given group.
-    def createMultipleFileSelector(self, title: str, row: int, *fileTypes):
+    def createMultipleFileSelector(self, title: str, row: int, fileEnding, *fileTypes):
         "Create a file selector which can dynamically add and remove multiple file paths to a given group."
 
         # Create an instance of the the MultipleFileSelector class, and place it in the dialog at the given row.
-        multipleFileSelector = MultipleFileSelector(self, title, self.workingDirectory, *fileTypes)
+        multipleFileSelector = MultipleFileSelector(self, title, self.workingDirectory, fileEnding, *fileTypes)
         multipleFileSelector.grid(row = row, columnspan = 4, sticky = tk.W)
 
         # Keep track of the file selector so we can access the file paths it contains later.
@@ -173,7 +175,7 @@ class TkinterDialog(tk.Frame):
 class MultipleFileSelector(tk.Frame):
     "A Widget for a Tkinter dialog that allows for the selection of multiple files."
 
-    def __init__(self, master, title, workingDirectory, *fileTypes):
+    def __init__(self, master, title, workingDirectory, fileEnding, *fileTypes):
 
         # Base class initialization
         super().__init__(master)
@@ -184,6 +186,9 @@ class MultipleFileSelector(tk.Frame):
         self.title = title
         self.workingDirectory = workingDirectory
         self.fileTypes = fileTypes
+        self.fileEnding = fileEnding # The expected ending for the files the dialog is requesting.  
+                                     # (Used when sifting through directories for relevant files)
+        self.directories = list()
 
         # Set the indentation for the list of file paths displays.
         self.grid_columnconfigure(0, minsize = 40)
@@ -197,13 +202,18 @@ class MultipleFileSelector(tk.Frame):
         #Create the title for the selector.
         tk.Label(self,text = self.title).grid(row = 0, column = 0, columnspan = 2, sticky = "w")
 
-        #Create the "Add Files" button.
-        tk.Button(self, text = "Add Files", command = lambda: self.browseForFiles(self.title,*self.fileTypes)).grid(
+        #Create the "Add Files" and "Add Directories" buttons.
+        tk.Button(self, text = "Add Files", command = lambda: self.browseForPaths(self.title,0,*self.fileTypes)).grid(
             row = 0, column = 2, sticky = "w")
+        tk.Button(self, text = "Add Directory", command = lambda: self.browseForPaths(self.title,1)).grid(
+            row = 0, column = 3, sticky = "w")
+
 
     # A modification of the TkinterDialog function, "browseForFile".
-    # This function allows for the selection of multiple files and adds new files to the list of file path displays.
-    def browseForFiles(self,title,*fileTypes):
+    # This function allows for the selection of multiple files or a directory
+    # and adds the result to the list of file path displays.
+    # fileOrDirectory = 0 for file selection and 1 for directory selection.
+    def browseForPaths(self,title,fileOrDirectory,*fileTypes):
         '''
         A modification of the TkinterDialog function, "browseForFile".
         This function allows for the selection of multiple files and adds new files to the list of file path displays.
@@ -211,58 +221,84 @@ class MultipleFileSelector(tk.Frame):
 
         fileTypes = fileTypes + (("Any File Type", ".*"),) # Acceptable file types.
 
-        # Open up a file dialog to select files.
-        filePaths = filedialog.askopenfilenames(filetypes = fileTypes,
-            initialdir = self.workingDirectory, title = title)
+        # Open up a file dialog to select files or a directory.
+        if fileOrDirectory == 0:
+            paths = filedialog.askopenfilenames(filetypes = fileTypes,
+                initialdir = self.workingDirectory, title = title)
+        elif fileOrDirectory == 1:
+            path = filedialog.askdirectory(initialdir = self.workingDirectory, title = title)
 
-        # Change the working directory to one directory up from wherever the last file was selected.
-        if len(filePaths) > 0: self.workingDirectory = os.path.join(os.path.dirname(filePaths[0]),"..")
+        # Change the working directory to one directory up from wherever the last file was selected (for file selection)
+        # or the same directory as where the directory was selected (for directory selection)
+        if fileOrDirectory == 0:
+            if len(paths) > 0: self.workingDirectory = os.path.join(os.path.dirname(paths[0]),"..")
+        elif fileOrDirectory == 1:
+            if len(path) > 0: self.workingDirectory = os.path.dirname(path)
+            print(self.workingDirectory)
 
         # Add the selected file paths to the list of file path displays (only new paths)
-        for filePath in filePaths:
-            if not filePath in self.getFilePaths(): self.addFilePath(filePath)
-    
-    # Adds a FilePathDisplay object to the UI for the given file path.
-    def addFilePath(self, filePath):
-        "Adds a FilePathDisplay object to the UI for the given file path."
+        if fileOrDirectory == 0:
+            for path in paths:
+                if not path in self.getPaths(): self.addPathDisplay(path)
+        elif fileOrDirectory == 1:
+            if len(path) > 0 and not path in self.getPaths(): self.addPathDisplay(path)
+
+
+    # Adds a PathDisplay object to the UI for the given file path.
+    def addPathDisplay(self, Path):
+        "Adds a PathDisplay object to the UI for the given file path."
 
         # Create the new object.
-        FilePathDisplay(self, filePath).grid(column = 1, columnspan = 3, sticky = tk.W)   
+        PathDisplay(self, Path).grid(column = 1, columnspan = 3, sticky = tk.W)   
 
         # Force an update on the toplevel window.
         # RIP: The last hour and a half of my life spent finding these two lines of code
         self.master.master.update()
         self.master.master.geometry("")
     
-    # Retrieves the file paths associated with each of the FilePathDisplay objects in the file selector
-    def getFilePaths(self):
-        "Retrieves the file paths associated with each of the FilePathDisplay objects in the file selector"
+
+    # Retrieves the file paths associated with each of the PathDisplay objects in the file selector
+    def getPaths(self):
+        "Retrieves the file paths associated with each of the PathDisplay objects in the file selector"
         
-        filePaths = list() # The file paths to be returned.
+        paths = list() # The file paths to be returned.
 
         # Get all widgets in the file selector.
         children = self.winfo_children()
 
-        # Find the FilePathDisplay objects in the file selector's widgets, and get their file paths.  Then, return them.
+        # Find the PathDisplay objects in the file selector's widgets, and get their file paths.  Then, return them.
         for child in children:
-            if isinstance(child, FilePathDisplay):
-                filePaths.append(child.filePath)
-        return filePaths
+            if isinstance(child, PathDisplay):
+                paths.append(child.path)
+        return paths
+
+    # Returns all the file paths associated with the MultipleFileSelector.
+    def getFilePaths(self):
+        """Returns all the file paths associated with the MultipleFileSelector."""
+        filePaths = list()
+
+        for path in self.getPaths():
+            if os.path.isdir(path):
+                filePaths += getFilesInDirectory(path,self.fileEnding)
+            else:
+                filePaths.append(path)
+        
+        return list(set(filePaths))
 
 
 # A Tk widget that that displays the end of a file path with a button which deletes itself.
-class FilePathDisplay(tk.Frame):
+class PathDisplay(tk.Frame):
     "A Tk widget that that displays the end of a file path with a button which deletes itself."
 
-    def __init__(self, master, filePath):
+    def __init__(self, master, path):
 
         # Base class initialization
         super().__init__(master)
-        self.filePath = filePath
+        self.path = path
 
         # Truncate the file path name to 60 characters, if necessary.
-        if len(filePath) < 60: displayName = filePath
-        else: displayName = "..." + filePath[-60:]
+        if len(path) < 60: displayName = path
+        else: displayName = "..." + path[-60:]
 
         # Standardize the size of the file path name column, so that the proceeding buttons line up nicely.
         self.grid_columnconfigure(0,minsize = 500)
