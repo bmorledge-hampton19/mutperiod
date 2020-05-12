@@ -52,8 +52,10 @@ for (i in 1:length(filePrefixes)) {
   periodicityPValues[i] = lombResult$p.value
   
   # Calculate the SNR
-  #timeSeries = as.ts(normalizedData[,.(Dyad_Position,Normalized_Both_Strands)])
-  #test = bspec(timeSeries)
+  noiseBooleanVector = (lombResult$scanned < lombResult$peak.at[1] - 0.5
+                        | lombResult$scanned > lombResult$peak.at[1] + 0.5)
+  periodicitySNRs[i] = lombResult$peak / median(lombResult$power[noiseBooleanVector])
+  
   #PSDEstimate = welchPSD(timeSeries, seglength = 10)
   #SNRResult = snr(timeSeries, PSDEstimate$power)
   
