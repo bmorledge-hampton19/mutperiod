@@ -258,7 +258,7 @@ strongPosNucleosomeFilePath = parseStrongPosNucleosomeData(strongPosNucleosomeFi
 # Loop through each given mutation file path, creating a corresponding nucleosome mutation count file for each.
 for mutationFilePath in mutationFilePaths:
 
-    print("Working with",os.path.split(mutationFilePath)[1])
+    print("\nWorking with",os.path.split(mutationFilePath)[1])
 
     # Make the file path for the output file
     workingDirectory = os.path.split(mutationFilePath)[0]
