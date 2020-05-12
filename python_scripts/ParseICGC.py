@@ -251,12 +251,21 @@ if not (convertToBed or convertToMSIseq or convertToMutSig): raise ValueError("E
 if separatebyMSI and not convertToBed: raise ValueError("Error: Cannot separate by MSI without converting to bed.")
 if createIndividualDonorFiles and not convertToBed: raise ValueError("Error: Cannot create individual bed files without converting to bed.")
 
-# If we are separating by microsattelite instability, read all the MSI donors into a dictionary for easy lookup.
+# If we are separating by microsattelite instability, read all of the MSI donors from each list into their own dictionaries 
+# for easy lookup, and store those dictionaries in a larger dictionary to pair each list with its respective data.
+# The donor lists will be indexed by the name of the directory containing them, which should also be the root name for all data within.
 if separatebyMSI: 
-    MSIDonors = dict()
+    MSIDonorDicts = dict()  
+
     for MSIDonorFilePath in MSIDonorFilePaths:
+
+        parentDir = os.path.dirname(MSIDonorFilePath)
+        if parentDir in MSIDonorDicts: 
+            raise ValueError("Error: multiple MSI Donor lists found with the same parent directory: " + parentDir)
+        else: MSIDonorDicts[parentDir] = dict()
+
         with open(MSIDonorFilePath, 'r') as MSIDonorFile:
-            for donor in MSIDonorFile: MSIDonors[donor.strip()] = None
+            for donor in MSIDonorFile: MSIDonorDicts[parentDir][donor.strip()] = None
 
 # Run the parser for each ICGC file given.
 for ICGCFilePath in ICGCFilePaths:
@@ -276,7 +285,8 @@ for ICGCFilePath in ICGCFilePaths:
         # Get the file paths
         individualDonorBedFilePath = fileManager.getIndividualDonorFilePath(donorID)
         if separatebyMSI:
-            if donorID in MSIDonors: individualDonorMSBedFilePath = fileManager.getIndividualDonorFilePath(donorID,MSI = True)
+            if donorID in MSIDonorDicts[fileManager.localRootDirectory]: 
+                individualDonorMSBedFilePath = fileManager.getIndividualDonorFilePath(donorID,MSI = True)
             else: individualDonorMSBedFilePath = fileManager.getIndividualDonorFilePath(donorID,MSI = False)
 
         # Open
@@ -323,7 +333,8 @@ for ICGCFilePath in ICGCFilePaths:
                 bedFile.write(mutation.formatForBed() + '\n')
 
                 if separatebyMSI:
-                    if mutation.donorID in MSIDonors: MSIBedFile.write(mutation.formatForBed() + '\n')
+                    if mutation.donorID in MSIDonorDicts[fileManager.localRootDirectory]: 
+                        MSIBedFile.write(mutation.formatForBed() + '\n')
                     else: MSSBedFile.write(mutation.formatForBed() + '\n')
 
             if convertToMSIseq: MSIseqDataFile.write(mutation.formatForMSIseq() + '\n')
