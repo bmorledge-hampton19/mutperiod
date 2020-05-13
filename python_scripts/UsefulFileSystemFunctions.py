@@ -2,7 +2,7 @@
 import os
 
 # Recursively searches the given directory for files with the specified ending. Returns a list of the resulting file paths.
-def getFilesInDirectory(directory,validEnding):
+def getFilesInDirectory(directory,validEnding, *additionalValidEndings):
     """Recursively searches the given directory(ies) for files of the specified type."""
 
     filePaths = list() # The files to return.
@@ -13,9 +13,17 @@ def getFilesInDirectory(directory,validEnding):
 
         if os.path.isdir(path):
 
-            filePaths += getFilesInDirectory(path,validEnding)
+            filePaths += getFilesInDirectory(path,validEnding, *additionalValidEndings)
 
         # Send gzipped files to the copyBedData function to be converted
-        elif path.endswith(validEnding): filePaths.append(path)
+        else:
+
+            if path.endswith(validEnding): filePaths.append(path)
+
+            else:
+                for additionalValidEnding in additionalValidEndings:
+                    if path.endswith(additionalValidEnding): 
+                        filePaths.append(path)
+                        break
 
     return filePaths

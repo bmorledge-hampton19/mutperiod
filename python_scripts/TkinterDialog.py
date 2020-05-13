@@ -81,11 +81,11 @@ class TkinterDialog(tk.Frame):
         self.entries.append(textField)
 
     # Create a file selector which can dynamically add and remove multiple file paths to a given group.
-    def createMultipleFileSelector(self, title: str, row: int, fileEnding, *fileTypes):
+    def createMultipleFileSelector(self, title: str, row: int, fileEnding, *fileTypes, additionalFileEndings = list()):
         "Create a file selector which can dynamically add and remove multiple file paths to a given group."
 
         # Create an instance of the the MultipleFileSelector class, and place it in the dialog at the given row.
-        multipleFileSelector = MultipleFileSelector(self, title, self.workingDirectory, fileEnding, *fileTypes)
+        multipleFileSelector = MultipleFileSelector(self, title, self.workingDirectory, fileEnding, additionalFileEndings, *fileTypes)
         multipleFileSelector.grid(row = row, columnspan = 4, sticky = tk.W)
 
         # Keep track of the file selector so we can access the file paths it contains later.
@@ -175,7 +175,7 @@ class TkinterDialog(tk.Frame):
 class MultipleFileSelector(tk.Frame):
     "A Widget for a Tkinter dialog that allows for the selection of multiple files."
 
-    def __init__(self, master, title, workingDirectory, fileEnding, *fileTypes):
+    def __init__(self, master, title, workingDirectory, fileEnding, additionalFileEndings, *fileTypes):
 
         # Base class initialization
         super().__init__(master)
@@ -188,6 +188,7 @@ class MultipleFileSelector(tk.Frame):
         self.fileTypes = fileTypes
         self.fileEnding = fileEnding # The expected ending for the files the dialog is requesting.  
                                      # (Used when sifting through directories for relevant files)
+        self.additionalFileEndings = additionalFileEndings
         self.directories = list()
 
         # Set the indentation for the list of file paths displays.
@@ -279,7 +280,7 @@ class MultipleFileSelector(tk.Frame):
 
         for path in self.getPaths():
             if os.path.isdir(path):
-                filePaths += getFilesInDirectory(path,self.fileEnding)
+                filePaths += getFilesInDirectory(path,self.fileEnding,*self.additionalFileEndings)
             else:
                 filePaths.append(path)
         
