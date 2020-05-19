@@ -12,7 +12,7 @@ from CountNucleosomePositionMutations import countNucleosomePositionMutations
 # Create the Tkinter dialog.
 dialog = TkinterDialog(workingDirectory=os.path.join(os.path.dirname(__file__),"..","data"))
 dialog.createMultipleFileSelector("Singlenuc/Trinuc Bed Files:",0,"singlenuc_context.bed",("Bed Files",".bed"),
-                                  additionalFileEndings=(("trinuc_context.bed")))
+                                  additionalFileEndings=(("trinuc_context.bed",)))
 dialog.createFileSelector("Genome Fasta File:",1,("Fasta Files",".fa"))
 dialog.createFileSelector("Strongly Positioned Nucleosome File:",2,("Bed Files",".bed"))
 dialog.createReturnButton(3,0,2)
