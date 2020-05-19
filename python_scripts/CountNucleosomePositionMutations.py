@@ -3,7 +3,6 @@
 # NOTE:  Both input files must be sorted for this script to run properly. 
 #        (Sorted first by chromosome (string) and then by nucleotide position (numeric))
 import os
-import time
 from TkinterDialog import TkinterDialog, Selections
 from typing import IO
 
@@ -34,6 +33,9 @@ class MutationData:
         # Check if EOF has been reached.
         if len(choppedUpLine) == 0: 
             self.isEmpty = True
+            self.chromosome = None
+            self.position = None
+            self.strand = None
             return
 
         # Assign variables
@@ -67,6 +69,8 @@ class NucleosomeData:
         # Check if EOF has been reached.
         if len(choppedUpLine) == 0: 
             self.isEmpty = True
+            self.chromosome = None
+            self.dyadPosNegative74 = None
             return
 
         # Assign variables
@@ -118,7 +122,9 @@ def reconcileChromosomes(mutation: MutationData, nucleosome: NucleosomeData):
 
 # Determines whether or not the given mutation is past the range of the given nucleosome.
 def isMutationPastNucleosome(mutation: MutationData, nucleosome: NucleosomeData):
-    if mutation.position-nucleosome.dyadPosNegative74 > 147:
+    if mutation.isEmpty:
+        return True
+    elif mutation.position-nucleosome.dyadPosNegative74 > 147:
         return True
     elif not mutation.chromosome == nucleosome.chromosome:
         return True
