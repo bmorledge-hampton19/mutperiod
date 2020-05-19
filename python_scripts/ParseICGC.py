@@ -4,6 +4,8 @@ import os, gzip, subprocess
 from TkinterDialog import TkinterDialog, Selections
 from UsefulBioinformaticsFunctions import reverseCompliment, isPurine
 from typing import IO, List
+from rpy2 import robjects
+from rpy2.robjects.packages import importr
 
 
 # This class represents the mutation data obtained from ICGC in a more precise form.
@@ -139,7 +141,7 @@ class ICGCIterator:
 # which determines what directories and file paths need to be generated.
 class ICGCParserFileManager:
 
-    def __init__(self, ICGCFilePath, convertToBed: bool, convertToMSIseq: bool, convertToMutSig: bool, separatebyMSI: bool, createIndividualDonorFiles: bool):
+    def __init__(self, ICGCFilePath, convertToBed: bool, convertToMutSig: bool, separatebyMSI: bool, createIndividualDonorFiles: bool):
 
         self.localRootDirectory = os.path.dirname(ICGCFilePath) # The root directory for this localized file system
         self.mutationGroupName = os.path.split(ICGCFilePath)[1].rsplit('.',3)[-3] # The name of the mutation group the directory pertains to
@@ -148,7 +150,6 @@ class ICGCParserFileManager:
             self.prepForBedFileOutput(createIndividualDonorFiles)
             if separatebyMSI: self.prepForMSISeparation(createIndividualDonorFiles)
 
-        if convertToMSIseq: self.prepForMSIseqFileOutput()
         if convertToMutSig: self.prepForMutSigFileOutput()
 
 
@@ -160,14 +161,17 @@ class ICGCParserFileManager:
 
         if createIndividualDonorFiles:
 
-            self.individualDonorsDirectory = os.path.join(self.localRootDirectory,"individual_donors")
-            if not os.path.exists(self.individualDonorsDirectory): os.mkdir(self.individualDonorsDirectory)
+            self.individualDonorsDirectory = os.path.join(self.localRootDirectory,"individual_donors","non-stratified")
+            if not os.path.exists(self.individualDonorsDirectory): os.makedirs(self.individualDonorsDirectory)
 
 
     # Prepare the file system to separate bed files based on microsatellite stability and generate the paths to output files.
     # (Optionally, also prepare the system to output individual donor files)
     def prepForMSISeparation(self, createIndividualDonorFiles):
         
+        self.MSIseqDataFilePath = os.path.join(self.localRootDirectory,self.mutationGroupName+"_MSIseq_data.tsv")
+        self.MSIDonorListFilePath = os.path.join(self.localRootDirectory,self.mutationGroupName+"_MSI_donors.txt")
+
         microsatteliteDirectory = os.path.join(self.localRootDirectory,"microsatellite_analysis")
         if not os.path.exists(microsatteliteDirectory): os.mkdir(microsatteliteDirectory)
 
@@ -184,20 +188,17 @@ class ICGCParserFileManager:
 
         if createIndividualDonorFiles:
 
-            self.individualMSIDonorsDirectory = os.path.join(microsatteliteDirectory,"individual_donors","MSI")
-            self.individualMSSDonorsDirectory = os.path.join(microsatteliteDirectory,"individual_donors","MSS")
+            self.individualMSIDonorsDirectory = os.path.join(os.path.dirname(self.individualDonorsDirectory),"MSI")
+            self.individualMSSDonorsDirectory = os.path.join(os.path.dirname(self.individualDonorsDirectory),"MSS")
 
             if not os.path.exists(self.individualMSIDonorsDirectory): os.makedirs(self.individualMSIDonorsDirectory)
             if not os.path.exists(self.individualMSSDonorsDirectory): os.makedirs(self.individualMSSDonorsDirectory)
 
 
-    # Prepare the file system for MSIseq output.
-    def prepForMSIseqFileOutput(self):
-        self.MSIseqDataFilePath = os.path.join(self.localRootDirectory,self.mutationGroupName+"_MSIseq_data.tsv")
-
     # Prepare the file system for MutSig (deconstructSigs R package) output..
     def prepForMutSigFileOutput(self):
         self.mutSigDataFilePath = os.path.join(self.localRootDirectory,self.mutationGroupName+"_MutSig_data.tsv")
+
 
     # Generates a file path for the given donor and returns it.
     # If MSI is NoneType, the file is made without specification of microsatellite stability.
@@ -218,167 +219,174 @@ class ICGCParserFileManager:
         return os.path.join(donorDirectory,donorFile)
 
 
-#Create the Tkinter UI
-dialog = TkinterDialog(workingDirectory=os.path.join(os.path.dirname(__file__),"..","data"))
-dialog.createMultipleFileSelector("ICGC Mutation Files:",0,".tsv.gz",("gzip files",".gz"))
-dialog.createCheckbox("Convert to Bed SNPs", 1, 0)
-dialog.createCheckbox("Convert to MSIseq format", 1, 1)
-dialog.createCheckbox("Also Create individual bed files for each donor.",2,0)
-dialog.createCheckbox("Convert to MutSig format", 2, 1)
-dialog.createMultipleFileSelector("MSI Donor Lists (Optional)",3,"MSI_donors.txt",("text files",".txt"))
-dialog.createCheckbox("Also Separate Bed Mutations by Microsatellite Stability",4,0)
-dialog.createReturnButton(5,0)
-dialog.createQuitButton(5,2)
-
-# Run the UI
-dialog.mainloop()
-
-# If no input was received (i.e. the UI was terminated prematurely), then quit!
-if dialog.selections is None: quit()
-
-# Get the user's input from the dialog.
-selections: Selections = dialog.selections
-ICGCFilePaths = list(selections.getFilePathGroups())[0] # A list of ICGC mutation file paths
-MSIDonorFilePaths = list(selections.getFilePathGroups())[1]
-convertToBed = list(selections.getToggleStates())[0]
-convertToMSIseq = list(selections.getToggleStates())[1]
-createIndividualDonorFiles = list(selections.getToggleStates())[2]
-convertToMutSig = list(selections.getToggleStates())[3]
-separatebyMSI = list(selections.getToggleStates())[4]
-
-
-if not (convertToBed or convertToMSIseq or convertToMutSig): raise ValueError("Error: No output format selected.")
-if separatebyMSI and not convertToBed: raise ValueError("Error: Cannot separate by MSI without converting to bed.")
-if createIndividualDonorFiles and not convertToBed: raise ValueError("Error: Cannot create individual bed files without converting to bed.")
-
-# If we are separating by microsattelite instability, read all of the MSI donors from each list into their own dictionaries 
-# for easy lookup, and store those dictionaries in a larger dictionary to pair each list with its respective data.
-# The donor lists will be indexed by the name of the directory containing them, which should also be the root name for all data within.
-if separatebyMSI: 
-    MSIDonorDicts = dict()  
-
-    for MSIDonorFilePath in MSIDonorFilePaths:
-
-        parentDir = os.path.dirname(MSIDonorFilePath)
-        if parentDir in MSIDonorDicts: 
-            raise ValueError("Error: multiple MSI Donor lists found with the same parent directory: " + parentDir)
-        else: MSIDonorDicts[parentDir] = dict()
-
-        with open(MSIDonorFilePath, 'r') as MSIDonorFile:
-            for donor in MSIDonorFile: MSIDonorDicts[parentDir][donor.strip()] = None
-
-# Run the parser for each ICGC file given.
-for ICGCFilePath in ICGCFilePaths:
-
-    print("\nWorking in:",os.path.split(ICGCFilePath)[1])
-
-    if not str(ICGCFilePath).endswith(".gz"):
-        raise ValueError("Error:  Expected ICGC file to be gzipped (.gz file format).")
-    if not "simple_somatic_mutation" in os.path.split(ICGCFilePath)[1]:
-        raise ValueError("Error:  Expected ICGC file with \"simple_somatic_mutation\" in the name.\n" +
-                         "Note: if a directory was specified to search for ICGC input files, all files ending in .tsv.gz\
-                          are considered valid.")
-
-    # Prepare the file system...
-    fileManager = ICGCParserFileManager(ICGCFilePath, convertToBed, convertToMSIseq, convertToMutSig, separatebyMSI, createIndividualDonorFiles)
-
-    if separatebyMSI and fileManager.localRootDirectory not in MSIDonorDicts:
-        raise ValueError("Error: Separate by MSI was specified, but no corresponding MSI donor list was given")
-
-    # This function handles the writing of mutation data to individual donor files.
-    def writeIndividualDonorFile(donorID, mutations):
-
-        # Get the file paths
-        individualDonorBedFilePath = fileManager.getIndividualDonorFilePath(donorID)
-        if separatebyMSI:
-            if donorID in MSIDonorDicts[fileManager.localRootDirectory]: 
-                individualDonorMSBedFilePath = fileManager.getIndividualDonorFilePath(donorID,MSI = True)
-            else: individualDonorMSBedFilePath = fileManager.getIndividualDonorFilePath(donorID,MSI = False)
-
-        # Open
-        individualDonorBedFile = open(individualDonorBedFilePath,'w')
-        if separatebyMSI: individualDonorMSBedFile = open(individualDonorMSBedFilePath,'w')
-
-        # Write
-        for mutation in mutations:
-
-            if mutation.isValidForBed():
-                individualDonorBedFile.write(mutation.formatForBed() + '\n')
-                if separatebyMSI: individualDonorMSBedFile.write(mutation.formatForBed() + '\n')
-
-        # Close
-        individualDonorBedFile.close()
-        if separatebyMSI: individualDonorMSBedFile.close()
-
-        # Sort
-        subprocess.run(" ".join(("sort","-k1,1","-k2,2n",individualDonorBedFilePath,"-o",individualDonorBedFilePath)), shell = True, check = True)
-        if separatebyMSI: subprocess.run(" ".join(("sort","-k1,1","-k2,2n",individualDonorMSBedFilePath,"-o",individualDonorMSBedFilePath)),
-                                            shell = True, check = True)     
-
-    # Parse the file!
+# Creates an MSI donor list by parsing the ICGC file for MSIseq and running the result through the corresponding R script.
+def generateMSIDonorList(ICGCFilePath, fileManager: ICGCParserFileManager):
+    
+    # Generate the MSIseq input file.
+    print("Creating MSIseq input file...")
     with gzip.open(ICGCFilePath, 'r') as ICGCFile:
+        with open(fileManager.MSIseqDataFilePath, 'w') as MSIseqDataFile:
+            iterator = ICGCIterator(ICGCFile)
+            for mutation in iterator:
+                MSIseqDataFile.write(mutation.formatForMSIseq() + '\n')
 
-        # Open the files to write to.
-        if convertToBed: 
-            bedFile = open(fileManager.bedFilePath, 'w')
+    # Sort the data
+    print("Sorting MSIseq data...")
+    subprocess.run(" ".join(("sort","-k5,5","-k2,2n",fileManager.MSIseqDataFilePath,"-o",fileManager.MSIseqDataFilePath)), 
+                   shell = True, check = True)
 
-            if separatebyMSI: 
-                MSIBedFile = open(fileManager.MSIBedFilePath, 'w')
-                MSSBedFile = open(fileManager.MSSBedFilePath, 'w')
+    # Pass the path to the newly created MSIseq data file to the R script to generate the MSI Donor list
+    print("Calling MSIseq to generate MSI donor list...")
+    subprocess.run(" ".join(("Rscript",os.path.join(os.path.dirname(__file__),"..","R_scripts","MSI_Analysis","Find_MSI_Donors.R"),
+                   fileManager.MSIseqDataFilePath)), shell = True, check = True)
 
-        if convertToMSIseq: MSIseqDataFile = open(fileManager.MSIseqDataFilePath, 'w')
-        if convertToMutSig: mutSigDataFile = open(fileManager.mutSigDataFilePath, 'w')
-        
-        iterator = ICGCIterator(ICGCFile) # The object to read through the ICGC data and discard duplicate mutations for each donor.
-        currentDonorID = None # Keeps track of when all of a donor's data has been read.       
 
-        # Loop through the ICGC data, writing data to the opened files.
-        for mutation in iterator:
+# Handles the basic parsing of the script.
+def parseICGC(ICGCFilePaths, convertToBed, separateByMSI, createIndividualDonorFiles, convertToMutSig):
 
-            if convertToBed and mutation.isValidForBed(): 
-                bedFile.write(mutation.formatForBed() + '\n')
+    if not (convertToBed or convertToMutSig): raise ValueError("Error: No output format selected.")
+    if separateByMSI and not convertToBed: raise ValueError("Error: Cannot separate by MSI without converting to bed.")
+    if createIndividualDonorFiles and not convertToBed: raise ValueError("Error: Cannot create individual bed files without converting to bed.")
 
-                if separatebyMSI:
-                    if mutation.donorID in MSIDonorDicts[fileManager.localRootDirectory]: 
-                        MSIBedFile.write(mutation.formatForBed() + '\n')
-                    else: MSSBedFile.write(mutation.formatForBed() + '\n')
+    # Run the parser for each ICGC file given.
+    for ICGCFilePath in ICGCFilePaths:
 
-            if convertToMSIseq: MSIseqDataFile.write(mutation.formatForMSIseq() + '\n')
-            if convertToMutSig: mutSigDataFile.write(mutation.formatForMutSig() + '\n')
+        print("\nWorking in:",os.path.split(ICGCFilePath)[1])
 
-            # Take these extra steps to stratify data by donorID if it was requested by the user and we have read all of a donor's data.
-            if currentDonorID is None: currentDonorID = mutation.donorID
-            elif createIndividualDonorFiles and mutation.donorID != currentDonorID:
-                writeIndividualDonorFile(currentDonorID, iterator.previousDonorMutations)
-                currentDonorID = mutation.donorID
+        if not str(ICGCFilePath).endswith(".gz"):
+            raise ValueError("Error:  Expected ICGC file to be gzipped (.gz file format).")
+        if not "simple_somatic_mutation" in os.path.split(ICGCFilePath)[1]:
+            raise ValueError("Error:  Expected ICGC file with \"simple_somatic_mutation\" in the name.\n" +
+                            "Note: if a directory was specified to search for ICGC input files, all files ending in .tsv.gz\
+                            are considered valid.")
 
-        # Make sure we don't miss the last donor for individual files!
-        if createIndividualDonorFiles: writeIndividualDonorFile(currentDonorID, iterator.currentDonorMutations.values())
+        # Prepare the file system...
+        fileManager = ICGCParserFileManager(ICGCFilePath, convertToBed, convertToMutSig, separateByMSI, createIndividualDonorFiles)
 
-        # Close the files that were opened.
-        if convertToBed: 
-            bedFile.close()
+        # Create the MSI donor list if necessary.
+        if separateByMSI and not os.path.exists(fileManager.MSIDonorListFilePath):
+            print("MSI donor list not found at ", fileManager.MSIDonorListFilePath,".",sep='')
+            print("Generating MSI donor list...")
+            generateMSIDonorList(ICGCFilePath,fileManager)
 
-            if separatebyMSI: 
-                MSIBedFile.close()
-                MSSBedFile.close()
+        # Read the MSI donor list into a dictionary object.
+        MSIDonors = dict()
+        if separateByMSI:
+            with open(fileManager.MSIDonorListFilePath, 'r') as MSIDonorListFile:
+                for donor in MSIDonorListFile: MSIDonors[donor.strip()] = None
 
-        if convertToMSIseq: MSIseqDataFile.close()
-        if convertToMutSig: mutSigDataFile.close()
 
-    # Sort the mutation data using linux sort, because it's not quite so greedy with memory usage...
-    if convertToBed:
-        print("Sorting bed data...")
-        subprocess.run(" ".join(("sort","-k1,1","-k2,2n",fileManager.bedFilePath,"-o",fileManager.bedFilePath)), shell = True, check = True)
+        # This function handles the writing of mutation data to individual donor files.
+        def writeIndividualDonorFile(donorID, mutations):
 
-        if separatebyMSI:
-            subprocess.run(" ".join(("sort","-k1,1","-k2,2n",fileManager.MSIBedFilePath,"-o",fileManager.MSIBedFilePath)), shell = True, check = True)
-            subprocess.run(" ".join(("sort","-k1,1","-k2,2n",fileManager.MSSBedFilePath,"-o",fileManager.MSSBedFilePath)), shell = True, check = True)
+            # Get the file paths
+            if separateByMSI:
+                if donorID in MSIDonors: individualDonorBedFilePath = fileManager.getIndividualDonorFilePath(donorID,MSI = True)
+                else: individualDonorBedFilePath = fileManager.getIndividualDonorFilePath(donorID,MSI = False)
+            else: individualDonorBedFilePath = fileManager.getIndividualDonorFilePath(donorID)
 
-    if convertToMSIseq:
-        print("Sorting MSIseq data...")
-        subprocess.run(" ".join(("sort","-k5,5","-k2,2n",fileManager.MSIseqDataFilePath,"-o",fileManager.MSIseqDataFilePath)), shell = True, check = True)
+            # Open
+            individualDonorBedFile = open(individualDonorBedFilePath,'w')           
 
-    if convertToMutSig:
-        print("Sorting MutSig data...")
-        subprocess.run(" ".join(("sort","-k2,2","-k3,3n",fileManager.mutSigDataFilePath,"-o",fileManager.mutSigDataFilePath)), shell = True, check = True)
+            # Write
+            for mutation in mutations:
+
+                if mutation.isValidForBed():
+                    individualDonorBedFile.write(mutation.formatForBed() + '\n')
+
+            # Close
+            individualDonorBedFile.close()
+
+            # Sort
+            subprocess.run(" ".join(("sort","-k1,1","-k2,2n",individualDonorBedFilePath,"-o",individualDonorBedFilePath)),
+                           shell = True, check = True)
+
+        # Parse the file!
+        with gzip.open(ICGCFilePath, 'r') as ICGCFile:
+
+            # Open the files to write to.
+            if convertToBed: 
+                bedFile = open(fileManager.bedFilePath, 'w')
+
+                if separateByMSI: 
+                    MSIBedFile = open(fileManager.MSIBedFilePath, 'w')
+                    MSSBedFile = open(fileManager.MSSBedFilePath, 'w')
+
+            if convertToMutSig: mutSigDataFile = open(fileManager.mutSigDataFilePath, 'w')
+            
+            iterator = ICGCIterator(ICGCFile) # The object to read through the ICGC data and discard duplicate mutations for each donor.
+            currentDonorID = None # Keeps track of when all of a donor's data has been read.       
+
+            # Loop through the ICGC data, writing data to the opened files.
+            for mutation in iterator:
+
+                if convertToBed and mutation.isValidForBed(): 
+                    bedFile.write(mutation.formatForBed() + '\n')
+
+                    if separateByMSI:
+                        if mutation.donorID in MSIDonors: 
+                            MSIBedFile.write(mutation.formatForBed() + '\n')
+                        else: MSSBedFile.write(mutation.formatForBed() + '\n')
+
+                if convertToMutSig: mutSigDataFile.write(mutation.formatForMutSig() + '\n')
+
+                # Take these extra steps to stratify data by donorID if it was requested by the user and we have read all of a donor's data.
+                if currentDonorID is None: currentDonorID = mutation.donorID
+                elif createIndividualDonorFiles and mutation.donorID != currentDonorID:
+                    writeIndividualDonorFile(currentDonorID, iterator.previousDonorMutations)
+                    currentDonorID = mutation.donorID
+
+            # Make sure we don't miss the last donor for individual files!
+            if createIndividualDonorFiles: writeIndividualDonorFile(currentDonorID, iterator.currentDonorMutations.values())
+
+            # Close the files that were opened.
+            if convertToBed: 
+                bedFile.close()
+
+                if separateByMSI: 
+                    MSIBedFile.close()
+                    MSSBedFile.close()
+
+            if convertToMutSig: mutSigDataFile.close()
+
+        # Sort the mutation data using linux sort, because it's not quite so greedy with memory usage...
+        if convertToBed:
+            print("Sorting bed data...")
+            subprocess.run(" ".join(("sort","-k1,1","-k2,2n",fileManager.bedFilePath,"-o",fileManager.bedFilePath)), shell = True, check = True)
+
+            if separateByMSI:
+                subprocess.run(" ".join(("sort","-k1,1","-k2,2n",fileManager.MSIBedFilePath,"-o",fileManager.MSIBedFilePath)), shell = True, check = True)
+                subprocess.run(" ".join(("sort","-k1,1","-k2,2n",fileManager.MSSBedFilePath,"-o",fileManager.MSSBedFilePath)), shell = True, check = True)
+
+        if convertToMutSig:
+            print("Sorting MutSig data...")
+            subprocess.run(" ".join(("sort","-k2,2","-k3,3n",fileManager.mutSigDataFilePath,"-o",fileManager.mutSigDataFilePath)), shell = True, check = True)
+
+
+if __name__ == "__main__":
+
+    #Create the Tkinter UI
+    dialog = TkinterDialog(workingDirectory=os.path.join(os.path.dirname(__file__),"..","data"))
+    dialog.createMultipleFileSelector("ICGC Mutation Files:",0,".tsv.gz",("gzip files",".gz"))
+    dialog.createCheckbox("Convert to Bed SNPs", 1, 0)
+    dialog.createCheckbox("Separate Bed Mutations by Microsatellite Stability", 1, 1)
+    dialog.createCheckbox("Also Create individual bed files for each donor.",2,0)
+    dialog.createCheckbox("Convert to MutSig format", 2, 1)
+    dialog.createReturnButton(3,0)
+    dialog.createQuitButton(3,2)
+
+    # Run the UI
+    dialog.mainloop()
+
+    # If no input was received (i.e. the UI was terminated prematurely), then quit!
+    if dialog.selections is None: quit()
+
+    # Get the user's input from the dialog.
+    selections: Selections = dialog.selections
+    ICGCFilePaths = list(selections.getFilePathGroups())[0] # A list of ICGC mutation file paths
+    convertToBed = list(selections.getToggleStates())[0]
+    separateByMSI = list(selections.getToggleStates())[1]
+    createIndividualDonorFiles = list(selections.getToggleStates())[2]
+    convertToMutSig = list(selections.getToggleStates())[3]
+
+    parseICGC(ICGCFilePaths, convertToBed, separateByMSI, createIndividualDonorFiles, convertToMutSig)
