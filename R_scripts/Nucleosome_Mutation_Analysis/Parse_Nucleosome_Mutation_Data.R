@@ -1,3 +1,6 @@
+##############################################################################
+# DEPRECATED.  Now included in Normalize_Nucleosome_Mutation_Counts_Module.R #
+##############################################################################
 # Given Dr. Wyrick's nucleosome mutation data and background mutation data, 
 # returns a data.table of base and normalized mutation data with respect to dyad position.
 library(data.table)
