@@ -3,12 +3,15 @@ Type: Package
 Title: What the Package Does (Title Case)
 Version: 0.1.0
 Author: Who wrote it
-Maintainer: b.morledge-hampton@wsu.edu
+Authors@R: person("Ben", "Morledge-Hampton", email = "b.morledge-hampton@wsu.edu",
+  role = c("aut", "cre"))
 Description: More about what it does (maybe more than one line)
     Use four spaces when indenting paragraphs within the Description.
 License: ??
 Encoding: UTF-8
 LazyData: true
 Imports:
-  data.table
-  lomb
+  data.table,
+  lomb,
+  MSIseq
+RoxygenNote: 7.1.0
