@@ -181,3 +181,6 @@ data/
 # Dr. Wyrick's Scripts
 scripts/perl_scripts/
 scripts/test.py
+
+# Ignores "at least" R package source files
+*.tar.gz
