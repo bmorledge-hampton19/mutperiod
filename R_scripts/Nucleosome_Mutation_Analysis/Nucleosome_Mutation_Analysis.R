@@ -12,15 +12,16 @@ library(lomb)
 library(data.table)
 library(bspec)
 
-source("Parse_Nucleosome_Mutation_Data.R")
+source("Normalize_Nucleosome_Mutation_Counts_Module.R")
 source("Asymmetry_Analysis.R")
 
-filePaths = choose.files(caption = "Select Raw Nucleosome Mutation Data.",
-                         filters = c(c("Tab Separated Values (*.tsv)","Any files"),c("*.tsv","*.*")), index = 1)
-dataDir = dirname(dirname(filePaths[1]))
+rawCountsFilePaths = choose.files(caption = "Select Raw Nucleosome Mutation Data.",
+                                  filters = c(c("Tab Separated Values (*.tsv)","Any files"),
+                                              c("*.tsv","*.*")), index = 1)
+dataDir = dirname(dirname(rawCountsFilePaths[1]))
 
 # Generate a list of prefixes for the data files so that iterating through them is easier later.
-filePrefixes = sapply(strsplit(basename(filePaths),"_nucleosome"), function(x) x[1])
+filePrefixes = sapply(strsplit(basename(rawCountsFilePaths),"_nucleosome"), function(x) x[1])
 
 peakPeriodicities = numeric(length(filePrefixes))
 periodicityPValues = numeric(length(filePrefixes))
@@ -37,17 +38,9 @@ valleyAsymmetryPValue = numeric(length(filePrefixes))
 
 for (i in 1:length(filePrefixes)) {
   
-  ##### Parse Data #####
+  ##### Parse and normalize data #####
   
-  # Parse the data into a normalized format
-  normalizedData = parseBMHNucleosomeMutationData(
-    paste0(dataDir,"/Raw Counts/",filePrefixes[i],"_nucleosome_mutation_counts.tsv"),
-    paste0(dataDir,"/Background Data/",filePrefixes[i],"_nucleosome_mutation_background.tsv"))
-  
-  # Write the normalized data to a new file.
-  fwrite(normalizedData, sep = '\t',
-              file = paste0("Data/Normalized Counts/",filePrefixes[i],
-                            "_nucleosome_mutation_counts_normalized.txt"))
+  normalizeNucleosomeMutationCounts(rawCountsFilePaths[i])
   
   ##### Periodicity Analysis #####
   
