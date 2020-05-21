@@ -13,7 +13,7 @@ findMSIDonors = function(inputDataPath, verbose = TRUE) {
   load(file)
 
   # Get the input data
-  inputData = fread(inputDataPath)
+  inputData = data.table::fread(inputDataPath)
   setnames(inputData,colnames(inputData),c("Chrom","Start_Position","End_Position",
                                            "Variant_Type","Tumor_Sample_Barcode"))
 
@@ -22,8 +22,8 @@ findMSIDonors = function(inputDataPath, verbose = TRUE) {
 
   # Get mutation counts for input data.
   if (verbose) print("Running analysis...")
-  mutationCounts = Compute.input.variables(inputData,Hg19repeats,captureLength)
-  result = as.data.table(MSIseq.classify(mutationCounts))
+  mutationCounts = MSIseq::Compute.input.variables(inputData,Hg19repeats,captureLength)
+  result = data.table::as.data.table(MSIseq::MSIseq.classify(mutationCounts))
 
   # Check for polE deficiency.
   PolEDeficientResults = result[Likely_POLE_deficiency == "Yes"]
