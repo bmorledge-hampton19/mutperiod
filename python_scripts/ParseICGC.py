@@ -4,9 +4,6 @@ import os, gzip, subprocess
 from TkinterDialog import TkinterDialog, Selections
 from UsefulBioinformaticsFunctions import reverseCompliment, isPurine
 from typing import IO, List
-from rpy2 import robjects
-from rpy2.robjects.packages import importr
-
 
 # This class represents the mutation data obtained from ICGC in a more precise form.
 # It also contains functions to represent that data in the exact format required for bed files or MSIseq, if they are valid.
@@ -237,7 +234,7 @@ def generateMSIDonorList(ICGCFilePath, fileManager: ICGCParserFileManager):
 
     # Pass the path to the newly created MSIseq data file to the R script to generate the MSI Donor list
     print("Calling MSIseq to generate MSI donor list...")
-    subprocess.run(" ".join(("Rscript",os.path.join(os.path.dirname(__file__),"..","R_scripts","MSI_Analysis","Find_MSI_Donors.R"),
+    subprocess.run(" ".join(("Rscript",os.path.join(os.path.dirname(__file__),"..","R_scripts","RunNucPeriod","FindMSIDonors.R"),
                    fileManager.MSIseqDataFilePath)), shell = True, check = True)
 
 
