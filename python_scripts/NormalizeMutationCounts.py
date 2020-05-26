@@ -13,13 +13,13 @@ def normalizeMutationCounts(rawNucleosomeMutationCountsFilePaths: List[str]):
 
         # Pass the path to the raw counts file to the R script to generate the normalized counts file.
         print("Calling R script to generate normalized counts...")
-        subprocess.run(" ".join(("Rscript",os.path.join(os.path.dirname(__file__),"..","R_scripts","Nucleosome_Mutation_Analysis",
-                                                        "Normalize_Nucleosome_Mutation_Counts.R"),
+        subprocess.run(" ".join(("Rscript",os.path.join(os.path.dirname(__file__),"..","R_scripts","RunNucPeriod",
+                                                        "NormalizeNucleosomeMutationCounts.R"),
                                  rawNucleosomeMutationCountsFilePath)), shell = True, check = True)
 
         # Generate the path to the normalized file.
         normalizedNucleosomeMutationCountsFilePath = rawNucleosomeMutationCountsFilePath.rsplit("mutation_counts.tsv")[0]
-        normalizedNucleosomeMutationCountsFilePath += "normalized_mutation_counts.tsv"
+        normalizedNucleosomeMutationCountsFilePath += "mutation_counts_normalized.tsv"
         if not os.path.exists(normalizedNucleosomeMutationCountsFilePath):
             raise ValueError("Normalized counts file should have been generated at " + normalizedNucleosomeMutationCountsFilePath + 
                              " but the file does not exist.")
