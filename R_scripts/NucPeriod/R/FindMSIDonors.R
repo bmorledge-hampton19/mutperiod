@@ -14,8 +14,8 @@ findMSIDonors = function(inputDataPath, verbose = TRUE) {
 
   # Get the input data
   inputData = data.table::fread(inputDataPath)
-  setnames(inputData,colnames(inputData),c("Chrom","Start_Position","End_Position",
-                                           "Variant_Type","Tumor_Sample_Barcode"))
+  data.table::setnames(inputData,colnames(inputData),c("Chrom","Start_Position","End_Position",
+                                                       "Variant_Type","Tumor_Sample_Barcode"))
 
   # Remove mitochondrial mutations.
   inputData = inputData[Chrom != "chrM"]
