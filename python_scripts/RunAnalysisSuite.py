@@ -8,6 +8,7 @@ from ConvertToTrinucContext import convertToTrinucContext
 from GenerateMutationBackground import generateMutationBackground
 from GenerateNucleosomeMutationBackground import generateNucleosomeMutationBackground
 from CountNucleosomePositionMutations import countNucleosomePositionMutations
+from NormalizeMutationCounts import normalizeMutationCounts
 
 # Create the Tkinter dialog.
 dialog = TkinterDialog(workingDirectory=os.path.join(os.path.dirname(__file__),"..","data"))
@@ -43,7 +44,7 @@ for mutationFilePath in mutationFilePaths:
                             The file should end in either \"trinuc_context.bed\" or \"singlenuc_context.bed\".")
 
 # Convert to trinuc context where necessary.
-print("Converting singlenuc mutation files to trinuc context...")
+print("\nConverting singlenuc mutation files to trinuc context...\n")
 for singlenucMutationFilePath in singlenucMutationFilePaths:
     correspondingTrinucPath = singlenucMutationFilePath.rsplit("singlenuc_context.bed",1)[0] + "trinuc_context.bed"
     if not correspondingTrinucPath in trinucMutationFilePaths: 
@@ -51,12 +52,15 @@ for singlenucMutationFilePath in singlenucMutationFilePaths:
 
 ### Run the rest of the analysis.
 
-print("Generating genome-wide mutation background...")
+print("\nGenerating genome-wide mutation background...\n")
 mutationBackgroundFilePaths = generateMutationBackground(trinucMutationFilePaths,genomeFastaFilePath)
 
-print("Generating nucleosome mutation background...")
+print("\nGenerating nucleosome mutation background...\n")
 nucleosomeMutationBackgroundFilePaths = generateNucleosomeMutationBackground(mutationBackgroundFilePaths, genomeFastaFilePath,
                                                                              strongPosNucleosomeFilePath)
 
-print("Counting mutations at each dyad position...")                                                                             
+print("\nCounting mutations at each dyad position...\n")                                                                             
 nucleosomeMutationCountsFilePaths = countNucleosomePositionMutations(trinucMutationFilePaths, strongPosNucleosomeFilePath)
+
+print("\nNormalizing counts with nucleosome background data...\n")
+normalizedNucleosomeMutationCountsFilePaths = normalizeMutationCounts(nucleosomeMutationCountsFilePaths)
