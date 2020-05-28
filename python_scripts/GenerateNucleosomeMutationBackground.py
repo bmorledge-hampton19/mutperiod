@@ -38,7 +38,7 @@ def expandNucleosomeCoordinates(strongPosNucleosomeFilePath):
 
 
 # The user could have given a nucleosome positioning file in one of three reasonable formats... Parse away!
-def parseStrongPosNucleosomeData(strongPosNucleosomeFilePath,strongPosNucleosomeFastaFilePath):
+def parseStrongPosNucleosomeData(strongPosNucleosomeFilePath,strongPosNucleosomeFastaFilePath,genomeFilePath):
 
     # The fasta format should already be formatted correctly, so no further formatting should be necessary.
     if strongPosNucleosomeFilePath.endswith(".fa"):
@@ -251,7 +251,7 @@ def generateNucleosomeMutationBackground(mutationBackgroundFilePaths, genomeFile
     dyadPosTrinucCountsFilePath = strongPosNucleosomeFastaFilePath.rsplit(".",1)[0] + "_dyad_pos_trinuc_counts.tsv"
 
     # Make sure we have a fasta file for strongly positioned nucleosome coordinates
-    parseStrongPosNucleosomeData(strongPosNucleosomeFilePath,strongPosNucleosomeFastaFilePath)
+    parseStrongPosNucleosomeData(strongPosNucleosomeFilePath,strongPosNucleosomeFastaFilePath,genomeFilePath)
 
     # Make sure we have a tsv file with trinuc counts at each dyad position.
     if not os.path.exists(dyadPosTrinucCountsFilePath): 
@@ -309,3 +309,4 @@ if __name__ == "__main__":
     genomeFilePath = filePaths[0] # The path to the genome fasta file
     strongPosNucleosomeFilePath: str = filePaths[1] # The path to the file containing strongly positioned nucleosomes.
 
+    generateNucleosomeMutationBackground(mutationBackgroundFilePaths, genomeFilePath, strongPosNucleosomeFilePath)
