@@ -56,7 +56,7 @@ class TkinterDialog(tk.Frame):
         if sticky: label.grid(sticky = tk.W)
 
 
-    def createFileSelector(self, title: str, row: int, *fileTypes, defaultFile = "No file Selected", verbose = False):
+    def createFileSelector(self, title: str, row: int, *fileTypes, defaultFile = "No file Selected", verbose = False, newFile = False):
         """
         Creates a file selector for choosing relevant files from the dialog.
         The file selector spans 4 columns:
@@ -76,7 +76,7 @@ class TkinterDialog(tk.Frame):
         textField.insert(0, defaultFile)
 
         #Create the "browse" button.
-        tk.Button(self, text = "Browse", command = lambda: self.browseForFile(textField,title,*fileTypes)).grid(row = row, column = 3)
+        tk.Button(self, text = "Browse", command = lambda: self.browseForFile(textField,title,newFile,*fileTypes)).grid(row = row, column = 3)
 
         self.entries.append(textField)
 
@@ -86,7 +86,7 @@ class TkinterDialog(tk.Frame):
 
         # Create an instance of the the MultipleFileSelector class, and place it in the dialog at the given row.
         multipleFileSelector = MultipleFileSelector(self, title, self.workingDirectory, fileEnding, additionalFileEndings, *fileTypes)
-        multipleFileSelector.grid(row = row, columnspan = 4, sticky = tk.W)
+        multipleFileSelector.grid(row = row, columnspan = 4, sticky = tk.W, pady = 10)
 
         # Keep track of the file selector so we can access the file paths it contains later.
         self.multipleFileSelectors.append(multipleFileSelector)
@@ -134,14 +134,36 @@ class TkinterDialog(tk.Frame):
         "Create a button that returns the user input to the selections object"
         self.createButton("Go",row,column,self.generateSelections, columnSpan=columnSpan)
 
+    # Creates a editable text field.
+    def createTextField(self, labelText, row, column, columnSpan = 2, defaultText = "Type here"):
+        "Creates a editable text field."
+
+        # Create an instance of the the text field, and place it in the dialog at the given row.
+        textField = tk.Frame(master = self)
+        textField.grid()
+        textField.grid(row = row, column = column, columnspan = columnSpan, pady = 10, sticky = tk.W)
+
+        # Create the label and text box in the text field object.
+        tk.Label(textField, text = labelText).grid(row = 0, column = 0, sticky = tk.W)
+        textBox = tk.Entry(textField, width = 20)
+        textBox.grid(row = 1, columnspan = 2, pady = 2, padx = 5)
+        textBox.insert(0, defaultText)
+
+        self.entries.append(textBox)
+
     # Opens a UI for selecting a file starting from the working directory.    
-    def browseForFile(self,textField: tk.Entry, title, *fileTypes):
+    def browseForFile(self,textField: tk.Entry, title, newFile, *fileTypes):
         "Opens a UI for selecting a file starting from the working directory."
 
         fileTypes = fileTypes + (("Any File Type", ".*"),)
+        
+        if not newFile:
+            filename = filedialog.askopenfilename(filetypes = fileTypes,
+                initialdir = self.workingDirectory, title = title)
+        else:
+            filename = filedialog.asksaveasfilename(filetypes = fileTypes,
+                initialdir = self.workingDirectory, title = title)
 
-        filename = filedialog.askopenfilename(filetypes = fileTypes,
-            initialdir = self.workingDirectory, title = title)
         if (filename != ""):
             textField.delete(0, tk.END)
             textField.insert(0, filename)
@@ -235,7 +257,6 @@ class MultipleFileSelector(tk.Frame):
             if len(paths) > 0: self.workingDirectory = os.path.join(os.path.dirname(paths[0]),"..")
         elif fileOrDirectory == 1:
             if len(path) > 0: self.workingDirectory = os.path.dirname(path)
-            print(self.workingDirectory)
 
         # Add the selected file paths to the list of file path displays (only new paths)
         if fileOrDirectory == 0:
