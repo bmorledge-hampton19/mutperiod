@@ -3,4 +3,4 @@
 export(findMSIDonors)
 export(generateNucPeriodData)
 export(normalizeNucleosomeMutationCounts)
-importFrom(data.table,":=")
+import(data.table)

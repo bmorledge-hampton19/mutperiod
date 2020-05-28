@@ -1,49 +1,73 @@
 #' @export
 generateNucPeriodData = function(mutationCountsFilePaths, outputFilePath,
                                  MSIFilePaths = '', MSSFilePaths = '',
+                                 nucleosomeMutationCutoff = 5000,
                                  enforceInputNamingConventions = FALSE,
                                  outputGraphs = FALSE) {
 
-  # Generate a list of prefixes for the data files as identifiers.
-  filePrefixes = sapply(strsplit(basename(mutationCountsFilePaths),"_nucleosome"), function(x) x[1])
+  # Get the raw mutation counts for each given mutation counts file.
+  # If naming conventions aren't enforced, it is assumed that the given mutation counts file will suffice.
+  if (enforceInputNamingConventions) {
+    rawCountsFilePaths = sapply(strsplit(mutationCountsFilePaths,"_nucleosome_mutation_counts"),
+                                function(x) paste0(x[1],"_nucleosome_mutation_counts.tsv"))
+  } else rawCountsFilePaths = mutationCountsFilePaths
+
+  dataSetNames = getDataSetNames(rawCountsFilePaths, enforceInputNamingConventions)
+  rawNucleosomeMutationCounts = sapply(rawCountsFilePaths, getRawNucleosomeMutationCounts)
+
+  mutationCountsTable = data.table::data.table(File_Path = mutationCountsFilePaths,
+                                               Data_Set = dataSetNames,
+                                               Raw_Nucleosome_Mutation_Counts = rawNucleosomeMutationCounts)
+
+  # If a cutoff greater than 0 was given for nucleosome mutation counts, enforce it.
+  if (nucleosomeMutationCutoff > 0) {
+
+    filteredCountsTable = mutationCountsTable[Raw_Nucleosome_Mutation_Counts >= nucleosomeMutationCutoff]
+    validFilePaths = filteredCountsTable$File_Path
+    validDataSetNames = filteredCountsTable$Data_Set
+
+  } else {
+    validFilePaths = mutationCountsPaths
+    validDataSetNames = dataSetNames
+  }
 
   # Prep for MSI vs MSS analysis if the respective file path lists were given.
   compareMS = (MSIFilePaths != '' && MSSFilePaths != '')
   if (compareMS) {
-    MSIFilePrefixes = sapply(strsplit(basename(MSIFilePaths),"_nucleosome"), function(x) x[1])
-    MSSFilePrefixes = sapply(strsplit(basename(MSSFilePaths),"_nucleosome"), function(x) x[1])
+    MSIDataSetNames = sapply(strsplit(basename(MSIFilePaths),"_nucleosome"), function(x) x[1])
+    MSSDataSetNames = sapply(strsplit(basename(MSSFilePaths),"_nucleosome"), function(x) x[1])
   }
 
-  peakPeriodicities = numeric(length(filePrefixes))
-  periodicityPValues = numeric(length(filePrefixes))
-  periodicitySNRs = numeric(length(filePrefixes))
+  peakPeriodicities = numeric(length(validFilePaths))
+  periodicityPValues = numeric(length(validFilePaths))
+  periodicitySNRs = numeric(length(validFilePaths))
 
-  generalAsymmetryTValue = numeric(length(filePrefixes))
-  generalAsymmetryPValue = numeric(length(filePrefixes))
+  generalAsymmetryTValue = numeric(length(validFilePaths))
+  generalAsymmetryPValue = numeric(length(validFilePaths))
 
-  peakAsymmetryTValue = numeric(length(filePrefixes))
-  peakAsymmetryPValue = numeric(length(filePrefixes))
+  peakAsymmetryTValue = numeric(length(validFilePaths))
+  peakAsymmetryPValue = numeric(length(validFilePaths))
 
-  valleyAsymmetryTValue = numeric(length(filePrefixes))
-  valleyAsymmetryPValue = numeric(length(filePrefixes))
+  valleyAsymmetryTValue = numeric(length(validFilePaths))
+  valleyAsymmetryPValue = numeric(length(validFilePaths))
 
-  for (i in 1:length(filePrefixes)) {
+  for (i in 1:length(validFilePaths)) {
 
-    print(paste("Working with", filePrefixes[i]))
+    print(paste("Working with", validDataSetNames[i]))
 
     # Read in the data, and normalize it if necessary.
 
     if (enforceInputNamingConventions) {
-      if (endsWith(mutationCountsFilePaths[i],"counts.tsv")) {
-        normalizedData = normalizeNucleosomeMutationCounts(mutationCountsFilePaths[i])
-      } else if (endsWith(mutationCountsFilePaths[i],"normalized.tsv")) {
-        normalizedData = data.table::fread(file = mutationCountsFilePaths[i])
+      if (endsWith(validFilePaths[i],"counts.tsv")) {
+        normalizedData = normalizeNucleosomeMutationCounts(validFilePaths[i])
+      } else if (endsWith(validFilePaths[i],"normalized.tsv")) {
+        normalizedData = data.table::fread(file = validFilePaths[i])
       } else {
-        stop(paste("The file,", mutationCountsFilePaths,
+        stop(paste("The file,", validFilePaths[i],
                    "does not follow naming conventions for raw or normalized nucleosome mutation counts."))
       }
     } else {
-      normalizedData = data.table::fread(file = mutationCountsFilePaths[i])
+      normalizedData = data.table::fread(file = validFilePaths[i])
     }
 
 
@@ -55,7 +79,7 @@ generateNucPeriodData = function(mutationCountsFilePaths, outputFilePath,
     lombResult = lomb::lsp(normalizedData[,.(Dyad_Position,Normalized_Both_Strands)],
                      type = "period", from = 2, to = 50, ofac = 100, plot = outputGraphs)
     if (outputGraphs) {
-      plot(normalizedData[,.(Dyad_Position,Normalized_Both_Strands)],type = 'b', main = filePrefixes[i])
+      plot(normalizedData[,.(Dyad_Position,Normalized_Both_Strands)],type = 'b', main = validDataSetNames[i])
     }
     # Store the relevant results!
     peakPeriodicities[i] = lombResult$peak.at[1]
@@ -108,10 +132,10 @@ generateNucPeriodData = function(mutationCountsFilePaths, outputFilePath,
   }
 
   # Create data.tables for all the results.
-  periodicityResults = data.table::data.table(Data_Set=filePrefixes,Peak_Periodicity=peakPeriodicities,
+  periodicityResults = data.table::data.table(Data_Set=validDataSetNames,Peak_Periodicity=peakPeriodicities,
                                               PValue=periodicityPValues,SNR=periodicitySNRs)
 
-  asymmetryResults = data.table::data.table(Data_Set=filePrefixes,
+  asymmetryResults = data.table::data.table(Data_Set=validDataSetNames,
                                             General_Asymmetry_TValue = generalAsymmetryTValue,
                                             General_Asymmetry_PValue = generalAsymmetryPValue,
                                             Peak_Asymmetry_TValue = peakAsymmetryTValue,
@@ -124,8 +148,8 @@ generateNucPeriodData = function(mutationCountsFilePaths, outputFilePath,
 
     print("Comparing periodicity results based on microsatellite stability.")
 
-    MSS_SNR = periodicityResults[Data_Set %in% MSSFilePrefixes, SNR]
-    MSI_SNR = periodicityResults[Data_Set %in% MSIFilePrefixes, SNR]
+    MSS_SNR = periodicityResults[Data_Set %in% MSSDataSetNames, SNR]
+    MSI_SNR = periodicityResults[Data_Set %in% MSIDataSetNames, SNR]
 
     if ( length(MSS_SNR) + length(MSI_SNR) > nrow(periodicityResults)) {
       warning("The sum of the MSS and MSI Data is greater than the total number of SNR values")
@@ -140,11 +164,30 @@ generateNucPeriodData = function(mutationCountsFilePaths, outputFilePath,
 
   # Create the data object to return
   if (compareMS) {
-    nucPeriodData = list(periodicityResults = periodicityResults, asymmetryResults = asymmetryResults,
-                         MSIInputs = MSIFilePrefixes, MSSInputs = MSSFilePrefixes, wilcoxinResult = wilcoxinResult)
+    nucPeriodData = list(countsData = mutationCountsTable,
+                         periodicityResults = periodicityResults, asymmetryResults = asymmetryResults,
+                         MSIInputs = MSIDataSetNames, MSSInputs = MSSDataSetNames, wilcoxinResult = wilcoxinResult)
   } else {
-    nucPeriodData = list(periodicityResults = periodicityResults, asymmetryResults = asymmetryResults)
+    nucPeriodData = list(countsData = mutationCountsTable,
+                         periodicityResults = periodicityResults, asymmetryResults = asymmetryResults)
   }
   save(nucPeriodData, file = outputFilePath)
+
+}
+
+getDataSetNames = function(mutationCountsFilePaths, enforceInputNamingConventions) {
+
+  if (enforceInputNamingConventions) {
+    return(sapply(strsplit(basename(mutationCountsFilePaths),"_nucleosome"), function(x) x[1]))
+  } else {
+    return(sapply(strsplit(basename(mutationCountsFilePaths),'.', fixed = TRUE), function(x) x[1]))
+  }
+
+}
+
+getRawNucleosomeMutationCounts = function(countsFilePath) {
+
+  countsTable = data.table::fread(file = countsFilePath)
+  return(sum(countsTable$Both_Strands_Counts))
 
 }
