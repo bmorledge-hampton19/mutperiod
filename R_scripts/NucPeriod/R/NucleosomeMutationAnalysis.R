@@ -1,10 +1,3 @@
-# The class to hold the data resulting from the periodicity and asymmetry analyses.
-#' @export
-NucPeriodData = setClass("NucPeriodData", slots = list(periodicityResults = className("data.table","data.table"),
-                                                       asymmetryResults = className("data.table","data.table"),
-                                                       MSIInputs = "character", MSSInputs = "character",
-                                                       wilcoxinResult = "list"))
-
 #' @export
 generateNucPeriodData = function(mutationCountsFilePaths, outputFilePath,
                                  MSIFilePaths = '', MSSFilePaths = '',
