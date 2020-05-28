@@ -1,7 +1,8 @@
 #' @export
 generateNucPeriodData = function(mutationCountsFilePaths, outputFilePath,
                                  MSIFilePaths = '', MSSFilePaths = '',
-                                 enforceInputNamingConventions = FALSE) {
+                                 enforceInputNamingConventions = FALSE,
+                                 outputGraphs = FALSE) {
 
   # Generate a list of prefixes for the data files as identifiers.
   filePrefixes = sapply(strsplit(basename(mutationCountsFilePaths),"_nucleosome"), function(x) x[1])
@@ -28,6 +29,8 @@ generateNucPeriodData = function(mutationCountsFilePaths, outputFilePath,
 
   for (i in 1:length(filePrefixes)) {
 
+    print(paste("Working with", filePrefixes[i]))
+
     # Read in the data, and normalize it if necessary.
 
     if (enforceInputNamingConventions) {
@@ -46,10 +49,14 @@ generateNucPeriodData = function(mutationCountsFilePaths, outputFilePath,
 
     ##### Periodicity Analysis #####
 
+    print("Running periodicity analysis...")
+
     # Calculate the periodicity of the data using a Lomb-Scargle periodiagram.
     lombResult = lomb::lsp(normalizedData[,.(Dyad_Position,Normalized_Both_Strands)],
-                     type = "period", from = 2, to = 50, ofac = 100, plot = F)
-    plot(normalizedData[,.(Dyad_Position,Normalized_Both_Strands)],type = 'b', main = filePrefixes[i])
+                     type = "period", from = 2, to = 50, ofac = 100, plot = outputGraphs)
+    if (outputGraphs) {
+      plot(normalizedData[,.(Dyad_Position,Normalized_Both_Strands)],type = 'b', main = filePrefixes[i])
+    }
     # Store the relevant results!
     peakPeriodicities[i] = lombResult$peak.at[1]
     periodicityPValues[i] = lombResult$p.value
@@ -62,6 +69,8 @@ generateNucPeriodData = function(mutationCountsFilePaths, outputFilePath,
 
     ##### Asymmetry Analysis #####
 
+    print("Running asymmetry analysis")
+
     # Run asymmetry analysis on the aligned strand counts.
     generalAsymmetryResult =
       t.test(normalizedData$Normalized_Aligned_Strands[6:73],
@@ -70,16 +79,27 @@ generateNucPeriodData = function(mutationCountsFilePaths, outputFilePath,
     generalAsymmetryPValue[i] = generalAsymmetryResult$p.value
 
     # Run asymmetry analysis on the peaks and valleys of the aligned strands.
+    # If there is not enough data to derive peaks and valleys (e.g. for individual donors)
+    # the result will be NA.
     peakAsymmetryResult =
       runExtremeAnalysisSuite(normalizedData$Normalized_Aligned_Strands, dyadPosCutoff = 68)
-    peakAsymmetryTValue[i] = peakAsymmetryResult$statistic
-    peakAsymmetryPValue[i] = peakAsymmetryResult$p.value
-
+    if (any(!is.na(peakAsymmetryResult))) {
+      peakAsymmetryTValue[i] = peakAsymmetryResult$statistic
+      peakAsymmetryPValue[i] = peakAsymmetryResult$p.value
+    } else {
+      peakAsymmetryTValue[i] = NA
+      peakAsymmetryPValue[i] = NA
+    }
 
     valleyAsymmetryResult =
       runExtremeAnalysisSuite(normalizedData$Normalized_Aligned_Strands, maxes = FALSE, dyadPosCutoff = 68)
-    valleyAsymmetryTValue[i] = valleyAsymmetryResult$statistic
-    valleyAsymmetryPValue[i] = valleyAsymmetryResult$p.value
+    if (any(!is.na(valleyAsymmetryResult))) {
+      valleyAsymmetryTValue[i] = valleyAsymmetryResult$statistic
+      valleyAsymmetryPValue[i] = valleyAsymmetryResult$p.value
+    } else {
+      valleyAsymmetryTValue[i] = NA
+      valleyAsymmetryPValue[i] = NA
+    }
 
     # # Negative controls for asymmetry analysis on peaks and valleys
     # runExtremeAnalysisSuite(normalizedData$Normalized_Both_Strands, dyadPosCutof = 68)
@@ -102,17 +122,29 @@ generateNucPeriodData = function(mutationCountsFilePaths, outputFilePath,
   # Run the SNR wilcoxin's test if necessary.
   if (compareMS) {
 
+    print("Comparing periodicity results based on microsatellite stability.")
+
     MSS_SNR = periodicityResults[Data_Set %in% MSSFilePrefixes, SNR]
     MSI_SNR = periodicityResults[Data_Set %in% MSIFilePrefixes, SNR]
 
-    wilcoxinResult = wilcox.test(MSS_SNR, MSI_SNR)
+    if ( length(MSS_SNR) + length(MSI_SNR) > nrow(periodicityResults)) {
+      warning("The sum of the MSS and MSI Data is greater than the total number of SNR values")
+    } else if ( length(MSS_SNR) + length(MSI_SNR) < nrow(periodicityResults)) {
+      warning("The sum of the MSS and MSI Data is less than the total number of SNR values")
+    }
 
-  } else wilcoxinResult = list()
+    wilcoxinResult = wilcox.test(MSS_SNR, MSI_SNR)
+    print(paste("wilcoxin test p-value:", wilcoxinResult$p.value))
+
+  }
 
   # Create the data object to return
-  nucPeriodData = NucPeriodData(periodicityResults = periodicityResults, asymmetryResults = asymmetryResults,
-                                MSIInputs = MSIFilePaths, MSSInputs = MSSFilePaths, wilcoxinResult = wilcoxinResult)
+  if (compareMS) {
+    nucPeriodData = list(periodicityResults = periodicityResults, asymmetryResults = asymmetryResults,
+                         MSIInputs = MSIFilePrefixes, MSSInputs = MSSFilePrefixes, wilcoxinResult = wilcoxinResult)
+  } else {
+    nucPeriodData = list(periodicityResults = periodicityResults, asymmetryResults = asymmetryResults)
+  }
   save(nucPeriodData, file = outputFilePath)
-  return(nucPeriodData)
 
 }
