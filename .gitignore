@@ -185,3 +185,6 @@ scripts/test.py
 
 # Ignores "at least" R package source files
 *.tar.gz
+
+# Ignore temporary input file
+R_scripts/RunNucPeriod/inputs.txt
