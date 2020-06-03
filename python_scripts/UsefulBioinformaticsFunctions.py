@@ -20,5 +20,10 @@ def bedToFasta(bedFilePath, genomeFilePath, fastaOutputFilePath):
     "Uses bedtools to convert a bed file to fasta format."
 
     print("Calling shell subprocess to use bedtools to generate a fasta file from the given bed file...")
-    subprocess.run(" ".join(["bedtools","getfasta","-s","-name","-fi",genomeFilePath,
-        "-bed",bedFilePath,">",fastaOutputFilePath]), shell = True, check = True)
+
+    if incorporateBedName:
+        subprocess.run(" ".join(["bedtools","getfasta","-s","-name","-fi",genomeFilePath,
+            "-bed",bedFilePath,">",fastaOutputFilePath]), shell = True, check = True)
+    else:
+        subprocess.run(" ".join(["bedtools","getfasta","-s","-fi",genomeFilePath,
+            "-bed",bedFilePath,">",fastaOutputFilePath]), shell = True, check = True)
