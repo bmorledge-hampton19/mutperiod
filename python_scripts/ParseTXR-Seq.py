@@ -2,6 +2,7 @@
 # file of estimated lesion locations.
 from TkinterDialog import Selections, TkinterDialog
 from UsefulBioinformaticsFunctions import bedToFasta, FastaFileIterator
+from UsefulFileSystemFunctions import getIsolatedParentDir
 from typing import List
 import os, subprocess
 
@@ -124,7 +125,7 @@ def parseTXRSeq(tXRSeqReadsFilePathPairs, humanGenomeFastaFilePath):
 
         # Store useful paths and names.
         localRootDirectory = os.path.dirname(tXRSeqReadsFilePathPair[0])
-        dataGroupName = localRootDirectory.split(os.path.sep)[-1]
+        dataGroupName = getIsolatedParentDir(tXRSeqReadsFilePathPair[0])
 
         # Create the intermediate files directory if necessary
         intermediateFilesDirectory = os.path.join(localRootDirectory,"intermediate_files")
