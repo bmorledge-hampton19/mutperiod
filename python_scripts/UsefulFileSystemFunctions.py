@@ -27,3 +27,8 @@ def getFilesInDirectory(directory,validEnding, *additionalValidEndings):
                         break
 
     return filePaths
+
+
+# Returns just the name of the first directory above a given path. (e.g. test/file/path.txt would return "file")
+def getIsolatedParentDir(filePath: str):
+    return filePath.rsplit(os.path.sep,2)[-2]
