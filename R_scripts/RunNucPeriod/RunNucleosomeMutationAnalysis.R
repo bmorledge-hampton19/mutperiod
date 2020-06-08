@@ -49,7 +49,7 @@ if (length(args) == 1) {
   }
   
 } else if (length(args) == 0) {
-  
+  selectInputAndRun()
 } else {
   stop("Invalid number of command line arguments passed.  Expected 1 argument for input data file path, 
         or no arguments to select input manually")
