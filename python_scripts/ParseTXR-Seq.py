@@ -76,7 +76,7 @@ def trimTXRSeqData(tXRSeqBedGraphReadsFilePathPair: List[str], trimmedReadsFileP
 # The exclusion values represent how many bases around the expected lesion location should be free of G's for the lesion 
 #    to be considered valid.
 # The function outputs the index of the lesion in the input sequence if it is found or "None" if it is not.
-def findBPDEdGLesion(sequence, lesionThreePrimeShift = 7, upstreamExclusion = 3, downstreamExclusion = 4):
+def findBPDEdGLesion(sequence, lesionThreePrimeShift = 7, upstreamExclusion = 0, downstreamExclusion = 0):
 
     if sequence[-lesionThreePrimeShift] != 'G': return None
 
