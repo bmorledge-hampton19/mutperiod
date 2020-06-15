@@ -3,7 +3,7 @@
 # The input files will be selected using a tkinter interface for ease of use.
 
 from TkinterDialog import TkinterDialog, Selections
-from UsefulBioinformaticsFunctions import bedToFasta
+from UsefulBioinformaticsFunctions import bedToFasta, FastaFileIterator
 import os
 
 # Expands the range of each mutation position in the original mutation file to encompass one extra base on either side.
@@ -27,8 +27,9 @@ def expandBedToTrinucRegion(singleBaseBedFilePath,trinucExpansionFilePath):
                 choppedUpLine[1] = str(int(choppedUpLine[1]) - 1)
                 choppedUpLine[2] = str(int(choppedUpLine[2]) + 1)
 
-                # Write the results to the trinucExpansion file
-                trinucExpansionFile.write("\t".join(choppedUpLine)+"\n")
+                # Write the results to the trinucExpansion file as long as it is not at the start of the chromosome.
+                # NOTE: May need to incorporate checking at the end too in the future?
+                if int(choppedUpLine[1]) != -1: trinucExpansionFile.write("\t".join(choppedUpLine)+"\n")
 
 
 # Uses the trinuc reads fasta file to create a new bed file with the trinuc mutational context.
@@ -42,17 +43,28 @@ def generateTrinucContext(singleBaseBedFilePath,trinucReadsFilePath,trinucContex
             with open(trinucContextFilePath, 'w') as trinucContextFile:
 
                 # Work through the singlenuc context bed file one mutation at a time.
-                for line in singleBaseBedFile:
+                for fastaEntry in FastaFileIterator(trinucReadsFile):
 
-                    # Split each line on tab characters.
-                    choppedUpLine = line.strip().split("\t")
+                    # Reconstruct the bed singlenuc ID.
+                    singlenucID = fastaEntry.chromosome + ":" + str(int(fastaEntry.startPos)+1) + "-" + \
+                                str(int(fastaEntry.endPos)-1) + "(" + fastaEntry.strand + ")"
 
-                    # Make sure that the corresponding line in the fasta file actually has the right nucleotide coordinates.
-                    if not trinucReadsFile.readline().strip().find(choppedUpLine[3]) > 0:
-                        raise ValueError(choppedUpLine[3] + " not found in expected position in corresponding fasta file")
+                    # Find the singlenuc entry corresponding to this entry.
+                    while True:
+
+                        # Read in the next line
+                        nextLine = singleBaseBedFile.readline()
+
+                        # If we reached the end of the file without finding a match, we have a problem...
+                        if len(nextLine) == 0:
+                            raise ValueError("Reached end of single base bed file without finding a match for:",singlenucID)
+
+                        # Split the next line on tab characters and check for a match with the current ID in the fasta file.
+                        choppedUpLine = nextLine.strip().split("\t")
+                        if choppedUpLine[3] == singlenucID: break
 
                     # Replace the mutation's identifier with the trinuc context.
-                    choppedUpLine[3] = trinucReadsFile.readline().strip()
+                    choppedUpLine[3] = fastaEntry.sequence
 
                     # Write the result to the new trinuc context file.
                     trinucContextFile.write("\t".join(choppedUpLine)+"\n")
