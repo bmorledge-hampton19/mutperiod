@@ -121,10 +121,11 @@ def reconcileChromosomes(mutation: MutationData, nucleosome: NucleosomeData):
 
 
 # Determines whether or not the given mutation is past the range of the given nucleosome.
-def isMutationPastNucleosome(mutation: MutationData, nucleosome: NucleosomeData):
+def isMutationPastNucleosome(mutation: MutationData, nucleosome: NucleosomeData, linkerOffset):
+
     if mutation.isEmpty:
         return True
-    elif mutation.position-nucleosome.dyadPosNegative74 > 147:
+    elif mutation.position-nucleosome.dyadPosNegative74 > 147 + linkerOffset:
         return True
     elif not mutation.chromosome == nucleosome.chromosome:
         return True
@@ -158,16 +159,17 @@ def parseStrongPosNucleosomeData(strongPosNucleosomeFilePath):
 
 # Uses the given nucleosome position file and mutation file to count the number of mutations 
 # at each dyad position (-73 to 73) for each strand.  Generates a new file to store these results.
+# Optionally, some amount of surrounding linker DNA may be included in the analysis as "linker offset"
 # NOTE:  It is VITAL that both files are sorted, first by chromosome number and then by starting coordinate.
 #        (Sorted first by chromosome (string) and then by nucleotide position (numeric))
 #        This code is pretty slick, but it will crash and burn and give you a heap of garbage as output if the inputs aren't sorted.
-def generateCountsFile(mutationFilePath, strongPosNucleosomeFilePath, nucleosomeMutationCountsFilePath):
+def generateCountsFile(mutationFilePath, strongPosNucleosomeFilePath, nucleosomeMutationCountsFilePath, linkerOffset):
     print("Counting mutations at each nucleosome position...")
 
     # Dictionaries holding the number of mutations found at each dyad position from -73 to 73 for each strand.
     minusStrandMutationCounts = dict() 
     plusStrandMutationCounts = dict()
-    for i in range(-73,74):
+    for i in range(-73-linkerOffset,74+linkerOffset):
         minusStrandMutationCounts[i] = 0
         plusStrandMutationCounts[i] = 0
 
@@ -177,9 +179,9 @@ def generateCountsFile(mutationFilePath, strongPosNucleosomeFilePath, nucleosome
     mutationsInPreviousNucleosome = list()
 
     # A function which checks to see if a given mutation falls within the given nucleosome and if it does, adds it to the given list.
-    def addMutationIfInNucleosome(mutationPosition, mutationStrand, dyadPosNegative74):
+    def addMutationIfInNucleosome(mutationPosition, mutationStrand, dyadPosNegative74, linkerOffset):
 
-        if mutationPosition - dyadPosNegative74 > 0:
+        if mutationPosition - dyadPosNegative74 > 0 - linkerOffset:
             if mutationStrand == '+': plusStrandMutationCounts[mutationPosition-dyadPosNegative74 - 74] += 1
             elif mutationStrand == '-': minusStrandMutationCounts[mutationPosition-dyadPosNegative74 - 74] += 1
             else:  raise ValueError("Error:  No strandedness found for mutation")
@@ -206,13 +208,13 @@ def generateCountsFile(mutationFilePath, strongPosNucleosomeFilePath, nucleosome
                 mutationsInPreviousNucleosome = mutationsInCurrentNucleosome.copy()
                 mutationsInCurrentNucleosome.clear()
                 for mutation in mutationsInPreviousNucleosome:
-                    addMutationIfInNucleosome(mutation[0],mutation[1],currentNucleosome.dyadPosNegative74)
+                    addMutationIfInNucleosome(mutation[0],mutation[1],currentNucleosome.dyadPosNegative74,linkerOffset)
 
                 # Read mutations until the mutation is past the range of the current nucleosome.
-                while not isMutationPastNucleosome(currentMutation,currentNucleosome):
+                while not isMutationPastNucleosome(currentMutation,currentNucleosome,linkerOffset):
 
                     # Check and see if we need to add the mutation to our lists.
-                    addMutationIfInNucleosome(currentMutation.position,currentMutation.strand,currentNucleosome.dyadPosNegative74)
+                    addMutationIfInNucleosome(currentMutation.position,currentMutation.strand,currentNucleosome.dyadPosNegative74,linkerOffset)
 
                     #Get data on the next mutation.
                     currentMutation.readNextMutation()
@@ -234,17 +236,21 @@ def generateCountsFile(mutationFilePath, strongPosNucleosomeFilePath, nucleosome
                                             "Minus_Strand_Counts","Both_Strands_Counts")) + '\n')
         
         # Write the data.
-        for i in range(-73,74):
+        for i in range(-73-linkerOffset,74+linkerOffset):
             nucleosomeMutationCountsFile.write('\t'.join((str(i), str(plusStrandMutationCounts[i]), str(minusStrandMutationCounts[i]), 
                                                 str(plusStrandMutationCounts[i] + minusStrandMutationCounts[i]))) + '\n')
 
 
-def countNucleosomePositionMutations(mutationFilePaths, strongPosNucleosomeFilePath):
+def countNucleosomePositionMutations(mutationFilePaths, strongPosNucleosomeFilePath, includeLinker):
 
     # Make sure we have a path the expanded nucleosome position file.
     strongPosNucleosomeFilePath = parseStrongPosNucleosomeData(strongPosNucleosomeFilePath)
 
     nucleosomeMutationCountsFilePaths = list() # A list of paths to the output files generated by the function
+
+    # Set the linker offset.
+    if includeLinker: linkerOffset = 15
+    else: linkerOffset = 0
 
     # Loop through each given mutation file path, creating a corresponding nucleosome mutation count file for each.
     for mutationFilePath in mutationFilePaths:
@@ -256,10 +262,14 @@ def countNucleosomePositionMutations(mutationFilePaths, strongPosNucleosomeFileP
         mutationGroupName = os.path.split(mutationFilePath)[1].rsplit("_trinuc",1)[0].rsplit("_singlenuc",1)[0]
         # Double check that the mutation group name was generated correctly.
         if '.' in mutationGroupName: raise ValueError("Error, expected mutation file with \"trinuc\" or \"singlenuc\" in the name.")
-        nucleosomeMutationCountsFilePath = os.path.join(workingDirectory,mutationGroupName+"_nucleosome_mutation_counts.tsv")
+
+        if not includeLinker:
+            nucleosomeMutationCountsFilePath = os.path.join(workingDirectory,mutationGroupName+"_nucleosome_mutation_counts.tsv")
+        else:
+            nucleosomeMutationCountsFilePath = os.path.join(workingDirectory,mutationGroupName+"_nucleosome_mutation_counts+linker.tsv")
 
         # Ready, set, go!
-        generateCountsFile(mutationFilePath, strongPosNucleosomeFilePath, nucleosomeMutationCountsFilePath)
+        generateCountsFile(mutationFilePath, strongPosNucleosomeFilePath, nucleosomeMutationCountsFilePath, linkerOffset)
 
         nucleosomeMutationCountsFilePaths.append(nucleosomeMutationCountsFilePath)
 
@@ -272,8 +282,9 @@ if __name__ == "__main__":
     dialog = TkinterDialog(workingDirectory=os.path.join(os.path.dirname(__file__),"..","data"))
     dialog.createMultipleFileSelector("Mutation Files:",0,"trinuc_context.bed",("Bed Files",".bed"))
     dialog.createFileSelector("Strongly Positioned Nucleosome File:",1,("Bed Files",".bed"))
-    dialog.createReturnButton(2,0,2)
-    dialog.createQuitButton(2,2,2)
+    dialog.createCheckbox("Include 15 bp linker DNA on either side.",2, 0, 2)
+    dialog.createReturnButton(3,0,2)
+    dialog.createQuitButton(3,2,2)
 
     # Run the UI
     dialog.mainloop()
@@ -286,5 +297,6 @@ if __name__ == "__main__":
     mutationFilePaths = list(selections.getFilePathGroups())[0] # A list of mutation file paths
     strongPosNucleosomeFilePath: str = list(selections.getIndividualFilePaths())[0] # The path to the file containing strongly 
                                                                                     # positioned nucleosomes.
+    includeLinker = list(selections.getToggleStates())[0]
 
-    countNucleosomePositionMutations(mutationFilePaths, strongPosNucleosomeFilePath)
+    countNucleosomePositionMutations(mutationFilePaths, strongPosNucleosomeFilePath, includeLinker)
