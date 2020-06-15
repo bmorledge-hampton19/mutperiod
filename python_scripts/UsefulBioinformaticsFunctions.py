@@ -64,6 +64,10 @@ class FastaFileIterator:
     class FastaEntry:
         def __init__(self, sequenceLocation: List[str], sequence: str):
             self.sequenceLocation = sequenceLocation
+            self.chromosome = sequenceLocation[0]
+            self.startPos = sequenceLocation[1]
+            self.endPos = sequenceLocation[2]
+            self.strand = sequenceLocation[3]
             self.sequence = sequence
 
     # Initialize the FastaFileIterator with an open fasta file object.
