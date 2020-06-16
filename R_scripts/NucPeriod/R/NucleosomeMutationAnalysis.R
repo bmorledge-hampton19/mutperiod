@@ -1,6 +1,7 @@
 #' @export
 generateNucPeriodData = function(mutationCountsFilePaths, outputFilePath,
                                  MSIFilePaths = '', MSSFilePaths = '',
+                                 dyadPosCutoff = 60,
                                  nucleosomeMutationCutoff = 5000,
                                  enforceInputNamingConventions = FALSE,
                                  outputGraphs = FALSE) {
@@ -76,10 +77,13 @@ generateNucPeriodData = function(mutationCountsFilePaths, outputFilePath,
     print("Running periodicity analysis...")
 
     # Calculate the periodicity of the data using a Lomb-Scargle periodiagram.
-    lombResult = lomb::lsp(normalizedData[,.(Dyad_Position,Normalized_Both_Strands)],
+    lombResult = lomb::lsp(normalizedData[Dyad_Position >= -dyadPosCutoff & Dyad_Position <= dyadPosCutoff,
+                                          .(Dyad_Position,Normalized_Both_Strands)],
                      type = "period", from = 2, to = 50, ofac = 100, plot = outputGraphs)
     if (outputGraphs) {
-      plot(normalizedData[,.(Dyad_Position,Normalized_Both_Strands)],type = 'b', main = validDataSetNames[i])
+      plot(normalizedData[Dyad_Position >= -dyadPosCutoff & Dyad_Position <= dyadPosCutoff,
+                          .(Dyad_Position,Normalized_Both_Strands)],
+           type = 'b', main = validDataSetNames[i])
     }
     # Store the relevant results!
     peakPeriodicities[i] = lombResult$peak.at[1]
@@ -97,16 +101,16 @@ generateNucPeriodData = function(mutationCountsFilePaths, outputFilePath,
 
     # Run asymmetry analysis on the aligned strand counts.
     generalAsymmetryResult =
-      t.test(normalizedData$Normalized_Aligned_Strands[6:73],
-             rev(normalizedData$Normalized_Aligned_Strands[75:142]), paired = T)
+      t.test(normalizedData$Normalized_Aligned_Strands[(74-dyadPosCutoff):73],
+             rev(normalizedData$Normalized_Aligned_Strands[75:(74+dyadPosCutoff)]), paired = T)
     generalAsymmetryTValue[i] = generalAsymmetryResult$statistic
     generalAsymmetryPValue[i] = generalAsymmetryResult$p.value
 
     # Run asymmetry analysis on the peaks and valleys of the aligned strands.
     # If there is not enough data to derive peaks and valleys (e.g. for individual donors)
     # the result will be NA.
-    peakAsymmetryResult =
-      runExtremeAnalysisSuite(normalizedData$Normalized_Aligned_Strands, dyadPosCutoff = 68)
+    peakAsymmetryResult = runExtremeAnalysisSuite(normalizedData$Normalized_Aligned_Strands,
+                                                  dyadPosCutoff = dyadPosCutoff)
     if (any(!is.na(peakAsymmetryResult))) {
       peakAsymmetryTValue[i] = peakAsymmetryResult$statistic
       peakAsymmetryPValue[i] = peakAsymmetryResult$p.value
@@ -115,8 +119,8 @@ generateNucPeriodData = function(mutationCountsFilePaths, outputFilePath,
       peakAsymmetryPValue[i] = NA
     }
 
-    valleyAsymmetryResult =
-      runExtremeAnalysisSuite(normalizedData$Normalized_Aligned_Strands, maxes = FALSE, dyadPosCutoff = 68)
+    valleyAsymmetryResult = runExtremeAnalysisSuite(normalizedData$Normalized_Aligned_Strands,
+                                                    maxes = FALSE, dyadPosCutoff = dyadPosCutoff)
     if (any(!is.na(valleyAsymmetryResult))) {
       valleyAsymmetryTValue[i] = valleyAsymmetryResult$statistic
       valleyAsymmetryPValue[i] = valleyAsymmetryResult$p.value
