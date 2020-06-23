@@ -119,14 +119,15 @@ class FastaFileIterator:
 
 
 
-def bedToFasta(bedFilePath, genomeFilePath, fastaOutputFilePath, incorporateBedName = False):
+def bedToFasta(bedFilePath, genomeFilePath, fastaOutputFilePath, 
+               incorporateBedName = False, includeStrand = True):
     "Uses bedtools to convert a bed file to fasta format."
 
     print("Calling shell subprocess to use bedtools to generate a fasta file from the given bed file...")
 
-    if incorporateBedName:
-        subprocess.run(" ".join(["bedtools","getfasta","-s","-name","-fi",genomeFilePath,
-            "-bed",bedFilePath,">",fastaOutputFilePath]), shell = True, check = True)
-    else:
-        subprocess.run(" ".join(["bedtools","getfasta","-s","-fi",genomeFilePath,
-            "-bed",bedFilePath,">",fastaOutputFilePath]), shell = True, check = True)
+    optionalParameters = list()
+    if includeStrand: optionalParameters.append("-s")
+    if incorporateBedName: optionalParameters.append("-name")
+
+    subprocess.run(" ".join(("bedtools","getfasta") + tuple(optionalParameters) + ("-fi",genomeFilePath,
+        "-bed",bedFilePath,">",fastaOutputFilePath)), shell = True, check = True)
