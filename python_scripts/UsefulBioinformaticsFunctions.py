@@ -36,12 +36,12 @@ def parseFastaDescription(fastaSequenceName: str):
     if fastaSequenceName.startswith('>'): fastaSequenceName = fastaSequenceName[1:]
 
     # Get the chromosome. 
-    # (The split result is taken from the rear in case there is a leading bed formatted name, which is separated by '::')
+    # (The split result is taken from the rear in case there is a leading bedtools formatted name, which is separated by '::')
     splitSequence = fastaSequenceName.split(':')
     chromosome = splitSequence[-2]
     theRest = splitSequence[-1]
 
-    # Get the strand. ('theRest' should look something like: 123-456(+) or 123-456)
+    # Get the strand. 'theRest' should look something like: 123-456(+) or 123-456() or 123-456
     if not '(' in theRest or theRest[-2] == '(': strand = None
     else: 
         strand = theRest[-2]
@@ -68,18 +68,25 @@ class FastaFileIterator:
 
     # The object to hold information on each entry.
     class FastaEntry:
-        def __init__(self, sequenceLocation: List[str], sequence: str):
-            self.sequenceLocation = sequenceLocation
+        def __init__(self, sequenceLocation: List[str], sequence: str, sequenceName: str):
+            self.sequenceLocation = sequenceLocation # The list containing all the relevant information to locate 
+                                                     # The fasta sequence in a given genome.
+            self.sequenceName = sequenceName # The full fasta sequence header, without the angle bracket.
+
+            # The information relevant to finding the sequence in the genome.
             self.chromosome = sequenceLocation[0]
             self.startPos = sequenceLocation[1]
             self.endPos = sequenceLocation[2]
             self.strand = sequenceLocation[3]
-            self.sequence = sequence
+
+            self.sequence = sequence # The DNA sequence itself
 
     # Initialize the FastaFileIterator with an open fasta file object.
-    def __init__(self, fastaFile: IO):
+    def __init__(self, fastaFile: IO, containsLocationInformation = True):
         self.fastaFile = fastaFile # The file that will be parsed and read through.
-        self.nextSequenceLocation = None # The location derived from the description of the upcoming entry.
+        self.containsLocationInformation = containsLocationInformation # Whether or not the fasta file contains full
+                                                                       # sequence location information
+        self.nextSequenceName = None # The name of the upcoming entry.
         self.eof = False # A flag for when the end of the file has been reached.
 
 
@@ -91,10 +98,16 @@ class FastaFileIterator:
         # Make sure we haven't reached the end of the file.
         if self.eof: raise StopIteration
 
-        # Get the sequence location for the current entry.
-        if self.nextSequenceLocation is None:
-            sequenceLocation = parseFastaDescription(self.fastaFile.readline().strip())
-        else: sequenceLocation = self.nextSequenceLocation
+        # Get the name for the upcoming sequence.
+        if self.nextSequenceName is None:
+            sequenceName = self.fastaFile.readline().strip()[1:]
+        else: 
+            sequenceName = self.nextSequenceName
+
+        # Get the sequence location for the current entry (if available).
+        if self.containsLocationInformation: 
+            sequenceLocation = parseFastaDescription(sequenceName)
+        else: sequenceLocation = (None,None,None,None)
 
         # Read through lines until we get to the next entry, adding to the sequence as we go.
         line = self.fastaFile.readline().strip()
@@ -112,10 +125,10 @@ class FastaFileIterator:
 
         # Prep for the next entry if we aren't at eof.
         if not self.eof:
-            self.nextSequenceLocation = parseFastaDescription(line)
+            self.nextSequenceName = line[1:]
 
         # Return the current fasta entry.
-        return self.FastaEntry(sequenceLocation, sequence)
+        return self.FastaEntry(sequenceLocation, sequence, sequenceName)
 
 
 
