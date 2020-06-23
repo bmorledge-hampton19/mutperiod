@@ -1,7 +1,7 @@
 # This script takes the repair map data from tXR-Seq and converts it to a trinucleotide context
 # file of estimated lesion locations.
 from TkinterDialog import Selections, TkinterDialog
-from UsefulBioinformaticsFunctions import bedToFasta, FastaFileIterator
+from UsefulBioinformaticsFunctions import bedToFasta, FastaFileIterator, baseChromosomes
 from UsefulFileSystemFunctions import getIsolatedParentDir
 from typing import List
 import os, subprocess
@@ -52,6 +52,9 @@ def trimBedGraphTXRSeqData(tXRSeqBedGraphReadsFilePathPair: List[str], trimmedRe
 
                     choppedUpLine = line.strip().split("\t")
 
+                    # Make sure the lesion is in a valid chromosome.  Otherwise, skip it.
+                    if not choppedUpLine[0] in baseChromosomes: continue
+
                     # Make sure we have a valid read length
                     readLength = int(choppedUpLine[2]) - int(choppedUpLine[1])
                     if not (readLength < minReadLength or readLength > maxReadLength):
@@ -82,6 +85,9 @@ def trimBedTXRSeqData(tXRSeqBedReadsFilePath: str, trimmedReadsFilePath, minRead
             for line in tXRSeqReadsFile:
 
                 choppedUpLine = line.strip().split("\t")
+
+                # Make sure the lesion is in a valid chromosome.  Otherwise, skip it.
+                if not choppedUpLine[0] in baseChromosomes: continue
 
                 # Make sure we have a valid read length
                 readLength = int(choppedUpLine[2]) - int(choppedUpLine[1])

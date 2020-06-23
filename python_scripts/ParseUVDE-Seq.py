@@ -3,6 +3,7 @@
 # This is done by taking the 2 bp lesion and splitting it into 2 single base lesions.
 from TkinterDialog import Selections, TkinterDialog
 from UsefulFileSystemFunctions import getIsolatedParentDir
+from UsefulBioinformaticsFunctions import baseChromosomes
 import os, subprocess
 
 
@@ -28,9 +29,13 @@ def parseUVDESeq(UVDESeqFilePaths):
             with open(singlenucOutputFilePath, 'w') as singlenucOutputFile:
 
                 for line in UVDESeqFile:
+                    
+                    choppedUpLine = line.strip().split("\t")
+
+                    # Make sure the lesion is in a valid chromosome.  Otherwise, skip it.
+                    if not choppedUpLine[0] in baseChromosomes: continue
 
                     # Extract the relevant data from the line.
-                    choppedUpLine = line.strip().split("\t")
                     chromosome = choppedUpLine[0]
                     startPos = int(choppedUpLine[1])
                     endPos = int(choppedUpLine[2]) - 1
