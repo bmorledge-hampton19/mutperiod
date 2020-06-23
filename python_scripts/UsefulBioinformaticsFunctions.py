@@ -5,6 +5,12 @@ from typing import IO, List
 reverser = {'A':'T','T':'A','G':'C','C':'G','N':'N',
             'a':'t','t':'a','g':'c','c':'g','n':'n'}
 
+# A List of acceptable chromosomes for general analysis
+baseChromosomes = list()
+for i in range(23):
+    baseChromosomes.append("chr"+str(i))
+baseChromosomes += ("chrX","chrY")
+
 def reverseCompliment(DNA):
 
     #Reverse the string using a nifty map!
