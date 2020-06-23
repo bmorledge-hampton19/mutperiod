@@ -1,5 +1,5 @@
 # This script will, when given a bed formatted file with single base mutation entries and a corresponding fasta genome file,
-# create a bed file with the trinucleotide context around the mutation.
+# create a bed file with an expanded tri/pentanucleotide context around the mutation.
 # The input files will be selected using a tkinter interface for ease of use.
 
 from TkinterDialog import TkinterDialog, Selections
@@ -7,14 +7,14 @@ from UsefulBioinformaticsFunctions import bedToFasta, FastaFileIterator
 import os
 
 # Expands the range of each mutation position in the original mutation file to encompass one extra base on either side.
-def expandBedToTrinucRegion(singleBaseBedFilePath,trinucExpansionFilePath):
+def expandBedPositions(inputBaseBedFilePath,bedExpansionFilePath,contextNum):
     "Expands the range of each mutation position in the original mutation file to encompass one extra base on either side."
 
-    with open(trinucExpansionFilePath,'w') as trinucExpansionFile:
-        with open(singleBaseBedFilePath, 'r') as singleBaseBedFile:
+    with open(bedExpansionFilePath,'w') as bedExpansionFile:
+        with open(inputBaseBedFilePath, 'r') as inputBaseBedFile:
 
             print("Writing expanded mutation indicies to intermediate bed file...")
-            for line in singleBaseBedFile:
+            for line in inputBaseBedFile:
 
                 # Get a list of all the arguments for a single mutation in the bed file.
                 choppedUpLine = line.strip().split('\t')
@@ -24,97 +24,108 @@ def expandBedToTrinucRegion(singleBaseBedFilePath,trinucExpansionFilePath):
                     raise ValueError(line + " does not give a single nucleotide location to expand.")
 
                 # Expand the position of the mutation to be one extra base on either side.
-                choppedUpLine[1] = str(int(choppedUpLine[1]) - 1)
-                choppedUpLine[2] = str(int(choppedUpLine[2]) + 1)
+                choppedUpLine[1] = str(int(choppedUpLine[1]) - int(contextNum/2))
+                choppedUpLine[2] = str(int(choppedUpLine[2]) + int(contextNum/2))
 
-                # Write the results to the trinucExpansion file as long as it is not at the start of the chromosome.
-                # NOTE: May need to incorporate checking at the end too in the future?
-                if int(choppedUpLine[1]) != -1: trinucExpansionFile.write("\t".join(choppedUpLine)+"\n")
+                # Write the results to the intermediate expansion file as long as it is not at the start of the chromosome.
+                if int(choppedUpLine[1]) > -1: bedExpansionFile.write("\t".join(choppedUpLine)+"\n")
+                else: print("Mutation at chromosome", choppedUpLine[0], "with expanded start pos", choppedUpLine[1],
+                            "extends into invalid positions.  Skipping.")
 
 
-# Uses the trinuc reads fasta file to create a new bed file with the trinuc mutational context.
-def generateTrinucContext(singleBaseBedFilePath,trinucReadsFilePath,trinucContextFilePath):
-    "Uses the trinuc reads fasta file to create a new bed file with the trinuc mutational context."
+# Uses the expanded reads fasta file to create a new bed file with the expanded mutational context.
+def generateExpandedContext(inputBaseBedFilePath,fastaReadsFilePath,expandedContextFilePath,contextNum):
+    "Uses the expanded reads fasta file to create a new bed file with the expanded mutational context."
 
-    print("Using fasta file to write trinuc context to new bed file...")
-    # Open the singlenuc context bed file and the trinuc fasta reads that will be combined to create the trinuc context.
-    with open(singleBaseBedFilePath, 'r') as singleBaseBedFile:
-        with open(trinucReadsFilePath, 'r') as trinucReadsFile:
-            with open(trinucContextFilePath, 'w') as trinucContextFile:
+    print("Using fasta file to write expanded context to new bed file...")
+    # Open the singlenuc context bed file and the expanded fasta reads that will be combined to create the expanded context.
+    with open(inputBaseBedFilePath, 'r') as inputBaseBedFile:
+        with open(fastaReadsFilePath, 'r') as fastaReadsFile:
+            with open(expandedContextFilePath, 'w') as expandedContextFile:
 
                 # Work through the singlenuc context bed file one mutation at a time.
-                for fastaEntry in FastaFileIterator(trinucReadsFile):
-
-                    # Reconstruct the bed singlenuc ID.
-                    singlenucID = fastaEntry.chromosome + ":" + str(int(fastaEntry.startPos)+1) + "-" + \
-                                str(int(fastaEntry.endPos)-1) + "(" + fastaEntry.strand + ")"
+                for fastaEntry in FastaFileIterator(fastaReadsFile):
 
                     # Find the singlenuc entry corresponding to this entry.
                     while True:
 
                         # Read in the next line
-                        nextLine = singleBaseBedFile.readline()
+                        nextLine = inputBaseBedFile.readline()
 
                         # If we reached the end of the file without finding a match, we have a problem...
                         if len(nextLine) == 0:
-                            raise ValueError("Reached end of single base bed file without finding a match for:",singlenucID)
+                            raise ValueError("Reached end of single base bed file without finding a match for:",fastaEntry.sequenceLocation)
 
-                        # Split the next line on tab characters and check for a match with the current ID in the fasta file.
+                        # Split the next line on tab characters and check for a match with the current read in the fasta file.
                         choppedUpLine = nextLine.strip().split("\t")
-                        if choppedUpLine[3] == singlenucID: break
+                        if (str(int(fastaEntry.startPos)+int(contextNum/2)) == choppedUpLine[1] and fastaEntry.chromosome == choppedUpLine[0] and 
+                            fastaEntry.strand == choppedUpLine[5]): break
 
-                    # Replace the mutation's identifier with the trinuc context.
+                    # Replace the mutation's singlenuc context with the expanded context.
                     choppedUpLine[3] = fastaEntry.sequence
 
-                    # Write the result to the new trinuc context file.
-                    trinucContextFile.write("\t".join(choppedUpLine)+"\n")
+                    # Write the result to the new expanded context file.
+                    expandedContextFile.write("\t".join(choppedUpLine)+"\n")
 
 
-def convertToTrinucContext(singleBaseBedFilePaths, humanGenomeFastaFilePath):
+def convertToTrinucContext(inputBaseBedFilePaths, humanGenomeFastaFilePath, expansionContextNum):
     
-    trinucContextFilePaths = list() # A list of paths to the output files generated by the function
+    expandedContextFilePaths = list() # A list of paths to the output files generated by the function
 
-    for singleBaseBedFilePath in singleBaseBedFilePaths:
+    # Set the name of the type of context being used.
+    if expansionContextNum == 3: contextText = "trinuc"
+    elif expansionContextNum == 5: contextText = "pentanuc"
 
-        print("\nWorking in:",os.path.split(singleBaseBedFilePath)[1])
-        if not "_singlenuc_context" in os.path.split(singleBaseBedFilePath)[1]:
+    for inputBaseBedFilePath in inputBaseBedFilePaths:
+
+        print("\nWorking in:",os.path.split(inputBaseBedFilePath)[1])
+        if not "_singlenuc_context" in os.path.split(inputBaseBedFilePath)[1]:
             raise ValueError("Error:  Expected file with \"_singlenuc_context\" in the name.")
 
         # Get some information on the file system and generate file paths for convenience.
-        workingDirectory = os.path.dirname(singleBaseBedFilePath) # The working directory for the current data group
-        dataGroupName = os.path.split(singleBaseBedFilePath)[1].split("_singlenuc_context")[0] # The name of mutation data group
-        trinucExpansionFilePath = os.path.join(workingDirectory,"intermediate_files",dataGroupName+"_trinuc_expansion.bed")
-            # The path to an intermediate file fed to bedtools to generate the trinucleotide sequence.
-        trinucReadsFilePath = os.path.join(workingDirectory,"intermediate_files",dataGroupName+"_trinuc_reads.fa")
-            # The path to an intermediate fasta file that contains the trinuc reads generated from the locations in the trinucExpansion file.
-        trinucContextFilePath = os.path.join(workingDirectory,dataGroupName+"_trinuc_context.bed") # The final output file.
+        workingDirectory = os.path.dirname(inputBaseBedFilePath) # The working directory for the current data group
+        dataGroupName = os.path.split(inputBaseBedFilePath)[1].split("_singlenuc_context")[0] # The name of mutation data group
+        bedExpansionFilePath = os.path.join(workingDirectory,"intermediate_files",dataGroupName+"_intermediate_expansion.bed")
+            # The path to an intermediate file fed to bedtools to generate the expanded sequence.
+        fastaReadsFilePath = os.path.join(workingDirectory,"intermediate_files",dataGroupName+"_"+contextText+"_reads.fa")
+            # The path to an intermediate fasta file that contains the expanded reads generated from the locations in the bedExpansion file.
+        expandedContextFilePath = os.path.join(workingDirectory,dataGroupName+"_"+contextText+"_context_mutations.bed") # The final output file.
 
         # Create a directory for intermediate files if it does not already exist...
         if not os.path.exists(os.path.join(workingDirectory,"intermediate_files")):
             os.mkdir(os.path.join(workingDirectory,"intermediate_files"))
 
-        # Expand the nucleotide coordinates in the singlenuc context bed file to encompass a trinuc span.
-        expandBedToTrinucRegion(singleBaseBedFilePath,trinucExpansionFilePath)
+        # Expand the nucleotide coordinates in the singlenuc context bed file as requested.
+        expandBedPositions(inputBaseBedFilePath,bedExpansionFilePath,expansionContextNum)
 
-        # Convert the trinuc coordinates in the bed file to the referenced nucleotides in fasta format.
-        bedToFasta(trinucExpansionFilePath,humanGenomeFastaFilePath,trinucReadsFilePath)
+        # Convert the expanded coordinates in the bed file to the referenced nucleotides in fasta format.
+        bedToFasta(bedExpansionFilePath,humanGenomeFastaFilePath,fastaReadsFilePath)
 
-        # Using the newly generated fasta file, create a new bed file with the trinucleotide context.
-        generateTrinucContext(singleBaseBedFilePath,trinucReadsFilePath,trinucContextFilePath)
+        # Using the newly generated fasta file, create a new bed file with the expanded context.
+        generateExpandedContext(inputBaseBedFilePath,fastaReadsFilePath,expandedContextFilePath,expansionContextNum)
 
-        trinucContextFilePaths.append(trinucContextFilePath)
+        expandedContextFilePaths.append(expandedContextFilePath)
 
-    return trinucContextFilePaths
+        # Delete the input file, which has the same mutation information, but a smaller context.
+        print("Deleting old mutation context file...")
+        if inputBaseBedFilePath == expandedContextFilePath:
+            raise ValueError("Input and output files have same path.  Not deleting.")
+        os.remove(inputBaseBedFilePath)
+
+    return expandedContextFilePaths
 
 
 if __name__ == "__main__":
 
     # Create the Tkinter dialog.
     dialog = TkinterDialog(workingDirectory=os.path.join(os.path.dirname(__file__),"..","data"))
-    dialog.createMultipleFileSelector("Single-Base Bed File:",0,"singlenuc_context.bed",("Bed Files",".bed"))
-    dialog.createFileSelector("Human Genome Fasta File:",1,("Fasta Files",".fa"))
-    dialog.createReturnButton(2,0,2)
-    dialog.createQuitButton(2,2,2)
+    dialog.createLabel("Note: Either single-base or trinuc context bed files will suffice.  Both are not necessary.",0,0,4)
+    dialog.createMultipleFileSelector("Single-Base Bed File:",1,"singlenuc_context_mutations.bed",("Bed Files",".bed"))
+    dialog.createMultipleFileSelector("Trinuc Context Bed File:",2,"trinuc_context_mutations.bed",("Bed Files",".bed"))
+    dialog.createFileSelector("Human Genome Fasta File:",3,("Fasta Files",".fa"))
+    dialog.createDropdown("Expansion Context",4,0,("Trinuc", "Pentanuc"))
+    dialog.createReturnButton(5,0,2)
+    dialog.createQuitButton(5,2,2)
 
     # Run the UI
     dialog.mainloop()
@@ -124,7 +135,15 @@ if __name__ == "__main__":
 
     # Get the user's input from the dialog.
     selections: Selections = dialog.selections
-    singleBaseBedFilePaths = list(selections.getFilePathGroups())[0] # A list of paths to original bed mutation files
+    inputBaseBedFilePaths = list(selections.getFilePathGroups())[0] # A list of paths to original bed mutation files
+    trinucContextBedFilePaths = list(selections.getFilePathGroups())[1] # A list of paths to trinuc context bed mutation files
     humanGenomeFastaFilePath = list(selections.getIndividualFilePaths())[0] # The path to the human genome fasta file
+    expansionContext = list(selections.getDropdownSelections())[0] # What context the file should be expanded to.
 
-    convertToTrinucContext(singleBaseBedFilePaths, humanGenomeFastaFilePath)
+    if expansionContext == "Trinuc":
+        expansionContextNum = 3
+    elif expansionContext == "Pentanuc":
+        expansionContextNum = 5
+    else: raise ValueError("Matching strings is hard.")
+
+    convertToTrinucContext(inputBaseBedFilePaths + trinucContextBedFilePaths, humanGenomeFastaFilePath, expansionContextNum)
