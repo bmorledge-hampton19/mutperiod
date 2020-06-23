@@ -188,3 +188,6 @@ scripts/test.py
 
 # Ignore temporary input file
 R_scripts/RunNucPeriod/inputs.txt
+
+# Ignore test inputs
+python_scripts/test.txt
