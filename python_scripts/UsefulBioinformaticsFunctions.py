@@ -1,7 +1,7 @@
 import subprocess
 from typing import IO, List
 
-#Create a dictionary that converts from one base to its reverse compliment
+# A dictionary that converts from one base to its reverse compliment
 reverser = {'A':'T','T':'A','G':'C','C':'G','N':'N',
             'a':'t','t':'a','g':'c','c':'g','n':'n'}
 
