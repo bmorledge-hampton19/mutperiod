@@ -4,15 +4,19 @@
 from TkinterDialog import TkinterDialog, Selections
 import os, subprocess
 from typing import Dict
-from UsefulBioinformaticsFunctions import bedToFasta, reverseCompliment
+from UsefulBioinformaticsFunctions import bedToFasta, reverseCompliment, FastaFileIterator
 
 # This function takes a bed file of strongly positioned nucleosomes and expands their coordinates to encompass
-# 74 bases on either side of the dyad. (in order to get trinucleotide sequences for positions -73 to 73)
+# 75 bases on either side of the dyad. (in order to get up to pentanucleotide sequences for positions -73 to 73)
+# Also, if a linker offset is requested, the expansion will be even greater.
 # Returns the file path to the newly expanded file.
-def expandNucleosomeCoordinates(strongPosNucleosomeFilePath):
+def expandNucleosomeCoordinates(strongPosNucleosomeFilePath, linkerOffset):
 
     # Generate a file path for the expanded nucleosome coordinate file.
-    strongPosNucleosomeExpansionFilePath = strongPosNucleosomeFilePath.rsplit('.',1)[0] + "_expansion.bed"
+    if includeLinker:
+        strongPosNucleosomeExpansionFilePath = strongPosNucleosomeFilePath.rsplit('.',1)[0] + "_expansion+linker.bed"
+    else:
+        strongPosNucleosomeExpansionFilePath = strongPosNucleosomeFilePath.rsplit('.',1)[0] + "_expansion.bed"
 
     # Check to see if the expansion file already exists.
     if os.path.exists(strongPosNucleosomeExpansionFilePath):
@@ -28,17 +32,20 @@ def expandNucleosomeCoordinates(strongPosNucleosomeFilePath):
             # Write the expanded positions to the new file, one line at a time.
             for line in strongPosNucleosomeFile:
                 choppedUpLine = line.strip().split('\t')
-                choppedUpLine[1] = str(int(choppedUpLine[1]) - 74)
-                choppedUpLine[2] = str(int(choppedUpLine[2]) + 74)
+                choppedUpLine[1] = str(int(choppedUpLine[1]) - 75 - linkerOffset)
+                choppedUpLine[2] = str(int(choppedUpLine[2]) + 75 + linkerOffset)
 
-                strongPosNucleosomeExpansionFile.write('\t'.join(choppedUpLine) + '\n')
+                # Write the results to the expansion file as long as it is not before the start of the chromosome.
+                if int(choppedUpLine[1]) != -1: strongPosNucleosomeExpansionFile.write('\t'.join(choppedUpLine) + '\n')
+                else: print("Nucleosome at chromosome", choppedUpLine[0], "with expanded start pos", choppedUpLine[1],
+                            "extends into invalid positions.  Skipping.")
 
     # Return the file path to the newly expanded file.
     return strongPosNucleosomeExpansionFilePath
 
 
-# The user could have given a nucleosome positioning file in one of three reasonable formats... Parse away!
-def parseStrongPosNucleosomeData(strongPosNucleosomeFilePath,strongPosNucleosomeFastaFilePath,genomeFilePath):
+# The user could have given a nucleosome positioning file in one of several reasonable formats... Parse away!
+def parseStrongPosNucleosomeData(strongPosNucleosomeFilePath,strongPosNucleosomeFastaFilePath,genomeFilePath,linkerOffset):
 
     # The fasta format should already be formatted correctly, so no further formatting should be necessary.
     if strongPosNucleosomeFilePath.endswith(".fa"):
@@ -58,167 +65,183 @@ def parseStrongPosNucleosomeData(strongPosNucleosomeFilePath,strongPosNucleosome
 
             # If it is not actually expanded, expand it!
             if int(choppedUpLine[2]) - int(choppedUpLine[1]) == 1:
-                print("Found unexpanded nucleosome coordinates.")
-                strongPosNucleosomeExpandedFilePath = expandNucleosomeCoordinates(strongPosNucleosomeFilePath)
-            # If it is expanded, we're already ready to convert to fasta.
-            elif not int(choppedUpLine[2]) - int(choppedUpLine[1]) == 149:
+                print("Given unexpanded nucleosome coordinates.")
+                strongPosNucleosomeExpandedFilePath = expandNucleosomeCoordinates(strongPosNucleosomeFilePath,includeLinker)
+
+            # If it is expanded, but not with/without linker DNA as specified, expand as necessary.
+            elif int(choppedUpLine[2]) - int(choppedUpLine[1]) == 151:
+                print("Given expanded nucleosome coordinates without linker DNA.")
+                if linkerOffset:
+                    print("Need expanded nucleosome coordinates including linker DNA.  Calling expander...")
+                    strongPosNucleosomeFilePath = strongPosNucleosomeFilePath.rsplit("_expansion",1)[0] + ".bed"
+                    strongPosNucleosomeExpandedFilePath = expandNucleosomeCoordinates(strongPosNucleosomeFilePath, includeLinker)
+
+            elif int(choppedUpLine[2]) - int(choppedUpLine[1]) == 211:
+                print("Given expanded nucleosome cooridantes with linker DNA")
+                if not linkerOffset:
+                    print("Need expanded nucleosome coordinates not including linker DNA.  Calling expander...")
+                    strongPosNucleosomeFilePath = strongPosNucleosomeFilePath.rsplit("_expansion",1)[0] + ".bed"
+                    strongPosNucleosomeExpandedFilePath = expandNucleosomeCoordinates(strongPosNucleosomeFilePath, includeLinker)
+            
+            else:
                 raise ValueError("Error: Strongly positioned nucleosome data is not in the expected format.\n" +  
                     "Each coordinate should contain the central base pair in the dyad only, " + 
-                    "or in addition, exactly 74 bp on either side.")
+                    "or, exactly 75 bp on either side,\n" +
+                    "or exactly 105 bp on either side (30 bp of linker DNA).")
 
             # Convert the file to fasta format!
             print("Converting strongly positioned nucleosome coordinates to fasta file...")
-            bedToFasta(strongPosNucleosomeExpandedFilePath,genomeFilePath,strongPosNucleosomeFastaFilePath)
+            bedToFasta(strongPosNucleosomeExpandedFilePath,genomeFilePath,strongPosNucleosomeFastaFilePath, includeStrand=False)
 
 
-# This function returns a dictionary of mutation rates for all trinucleotide contexts in the associated genome.
-def getTrinucMutationRate(mutationBackgroundFilePath):
+# Determines the context used to generate the given mutation background
+def determineBackgroundContext(mutationBackgroundFilePath):
 
-    trinucMutationRate = dict()
+    with open(mutationBackgroundFilePath, 'r') as mutationBackgroundFile:
+
+        # Skip the header line
+        mutationBackgroundFile.readline()
+
+        # Return the length of the context
+        choppedUpLine = mutationBackgroundFile.readline().strip().split('\t')
+        return len(choppedUpLine[0])
+
+
+# Returns a dictionary of background mutation rates for the relevant contexts in the associated genome.
+def getGenomeBackgroundMutationRates(genomeMutationBackgroundFilePath):
+
+    genomeBackgroundMutationRates = dict()
 
     # Open the file and read the lines into the dictionary.
-    with open(mutationBackgroundFilePath, 'r') as mutationBackgroundFile:
-        mutationBackgroundFile.readline() # Skip the line with headers.
-        for line in mutationBackgroundFile:
+    with open(genomeMutationBackgroundFilePath, 'r') as genomeMutationBackgroundFile:
+        genomeMutationBackgroundFile.readline() # Skip the line with headers.
+        for line in genomeMutationBackgroundFile:
             choppedUpLine = line.strip().split('\t')
-            if len(choppedUpLine[0]) != 3:
-                raise ValueError("Error: found \"" + choppedUpLine[0] + "\" in " + mutationBackgroundFilePath + " but expected a trinucleotide sequence.")
-            trinucMutationRate[choppedUpLine[0]] = float(choppedUpLine[1])
+            genomeBackgroundMutationRates[choppedUpLine[0]] = float(choppedUpLine[1])
     
-    return trinucMutationRate
+    return genomeBackgroundMutationRates
 
 
-# This function generates a file of trinuc counts in the genome for each dyad position.
-def generateDyadPosTrinucCounts(strongPosNucleosomeFastaFilePath, dyadPosTrinucCountsFilePath):
+# This function generates a file of context counts in the genome for each dyad position.
+def generateDyadPosContextCounts(strongPosNucleosomeFastaFilePath, dyadPosContextCountsFilePath, 
+                                 contextNum, linkerOffset):
 
-    # Dictionary of trinuc counts for every dyad position from -73 to 73 on the plus strand.
-    plusStrandNucleosomeDyadPosTrinucCounts = dict() 
+    # Dictionary of context counts for every dyad position. (Contains a dictionary of either counts for each dyad position)
+    plusStrandNucleosomeDyadPosContextCounts = dict()
 
-    # Hash table of observed trinucleotide sequences.
-    observedTrinucs = dict()
+    observedContexts = dict() # Hash table of observed contexts for lookup.
 
-    # Initialize the dictionary
-    for dyadPos in range(-73,74): 
-        plusStrandNucleosomeDyadPosTrinucCounts[dyadPos] = dict()
+    # Initialize the dictionary for context counts on the plus strand.
+    for dyadPos in range(-73-linkerOffset,74+linkerOffset): 
+        plusStrandNucleosomeDyadPosContextCounts[dyadPos] = dict()
 
-    # Initialize the counter for dyad position
-    dyadPos = 74
-
-    # Read through the file, counging trinucs for every dyad position to the running total in the dictionary
+    # Read through the file, adding contexts for every dyad position to the running total in the dictionary
     with open(strongPosNucleosomeFastaFilePath, 'r') as strongPosNucleosomeFastaFile:
 
-        for line in strongPosNucleosomeFastaFile:
+        trackedPositionNum = 73*2 + 1 + linkerOffset*2 # How many dyad positions we care about.
 
-            # Go away, whitespace! >:(
-            line = line.strip()
+        for fastaEntry in FastaFileIterator(strongPosNucleosomeFastaFile):
 
-            # Check and see if we're starting a new nucleosome with this line.
-            if line.startswith(">"):
+            # Reset dyad position counter
+            dyadPos = -73 - linkerOffset
+            
+            # Determine how much extra information is present in this line at either end for generating contexts.
+            extraContextNum = len(fastaEntry.sequence) - trackedPositionNum
 
-                # Make sure we didn't end the last nucleosome prematurely.
-                if not dyadPos == 74:
-                    raise ValueError("Error in nucleosome positioning file.  " +  
-                                    "Last nucleosome did not give trinucleotides up to position 73.  "+
-                                    "Last dyad position was " + str(dyadPos-1))
+            # Make sure we have an even number before dividing by 2 (for both ends)
+            if extraContextNum%2 != 0:
+                raise ValueError(str(extraContextNum) + " should be even.")
+            else: extraContextNum = int(extraContextNum/2)
 
-                # Reset line leftovers and dyad position
-                lineLeftovers = ''
-                dyadPos = -73
 
-            else:
+            # Used to pull out the context of desired length.
+            extensionLength = int(contextNum/2)
 
-                # Add any leftovers to the current line.
-                currentSequence = lineLeftovers + line
+            # Count all available contexts.
+            for i in range(0,trackedPositionNum):
 
-                # Count all available trinuc sequences.
-                for i in range(0,len(currentSequence)-2):
+                context = fastaEntry.sequence[i+extraContextNum - extensionLength:i + extraContextNum + extensionLength+1]
+                if len(context) != contextNum: raise ValueError("Sequence length does not match expected context length.")
+                if context not in observedContexts: observedContexts[context] = None              
+                plusStrandNucleosomeDyadPosContextCounts[dyadPos][context] = plusStrandNucleosomeDyadPosContextCounts[dyadPos].setdefault(context, 0) + 1
 
-                    trinuc = currentSequence[i:i+3]
-                    if trinuc not in observedTrinucs: observedTrinucs[trinuc] = None
-                    
-                    # Add the trinuc to the running total in the counts dictionary.
-                    plusStrandNucleosomeDyadPosTrinucCounts[dyadPos][trinuc] = plusStrandNucleosomeDyadPosTrinucCounts[dyadPos].setdefault(trinuc, 0) + 1
+                # Increment the dyadPos counter
+                dyadPos += 1
 
-                    # Increment the dyadPos counter
-                    dyadPos += 1
-
-                # Don't forget about the leftovers for this line!
-                lineLeftovers = line[-2:]
-
-    # Write the trinuc counts for every dyad position on the plus strand in the output file
-    with open(dyadPosTrinucCountsFilePath, 'w') as dyadPosTrinucCountsFile:
+    # Write the context counts for every dyad position on the plus strand in the output file
+    with open(dyadPosContextCountsFilePath, 'w') as dyadPosContextCountsFile:
 
         # Write the header for the file
-        dyadPosTrinucCountsFile.write("Dyad_Pos\t" + '\t'.join(observedTrinucs.keys()) + '\n')
+        dyadPosContextCountsFile.write("Dyad_Pos\t" + '\t'.join(observedContexts.keys()) + '\n')
 
-        for dyadPos in plusStrandNucleosomeDyadPosTrinucCounts.keys():
+        # Write the context counts at each dyad position.
+        for dyadPos in plusStrandNucleosomeDyadPosContextCounts.keys():
             
-            dyadPosTrinucCountsFile.write(str(dyadPos))
+            dyadPosContextCountsFile.write(str(dyadPos))
 
-            for trinuc in observedTrinucs.keys():
-                if trinuc in plusStrandNucleosomeDyadPosTrinucCounts[dyadPos]:
-                    dyadPosTrinucCountsFile.write('\t' + str(plusStrandNucleosomeDyadPosTrinucCounts[dyadPos][trinuc]))
-                else: dyadPosTrinucCountsFile.write('\t0')
+            for context in observedContexts.keys():
+                if context in plusStrandNucleosomeDyadPosContextCounts[dyadPos]:
+                    dyadPosContextCountsFile.write('\t' + str(plusStrandNucleosomeDyadPosContextCounts[dyadPos][context]))
+                else: dyadPosContextCountsFile.write('\t0')
 
-            dyadPosTrinucCountsFile.write('\n')
-            
-    
-# This function retrieves the trinuc counts for each dyad position in a genome from a given file.
-# The data is returned as a dictionary of dictionaries, with the first key being dyad position and the second
-# being a trinucleotide sequence.
-def getDyadPosTrinucCounts(dyadPosTrinucCountsFilePath):
-    with open(dyadPosTrinucCountsFilePath, 'r') as dyadPosTrinucCountsFile:
+            dyadPosContextCountsFile.write('\n')
         
-        trinucSequences = list()
+    
+# This function retrieves the context counts for each dyad position in a genome from a given file.
+# The data is returned as a dictionary of dictionaries, with the first key being dyad position and the second
+# being a context.
+def getDyadPosContextCounts(dyadPosContextCountsFilePath):
+    with open(dyadPosContextCountsFilePath, 'r') as dyadPosContextCountsFile:
+        
+        contexts = list()
         headersHaveBeenRead = False
-        dyadPosTrinucCounts= dict()
+        dyadPosContextCounts= dict()
 
-        for line in dyadPosTrinucCountsFile:
+        for line in dyadPosContextCountsFile:
 
             if not headersHaveBeenRead:
                 headersHaveBeenRead = True
-                trinucSequences = line.strip().split('\t')[1:]
+                contexts = line.strip().split('\t')[1:]
     
             else: 
                 choppedUpLine = line.strip().split('\t')
                 dyadPos = int(choppedUpLine[0])
-                dyadPosTrinucCounts[dyadPos] = dict()
-                for i,trinuc in enumerate(trinucSequences):
-                    dyadPosTrinucCounts[dyadPos][trinuc] = int(choppedUpLine[i+1])
+                dyadPosContextCounts[dyadPos] = dict()
+                for i,context in enumerate(contexts):
+                    dyadPosContextCounts[dyadPos][context] = int(choppedUpLine[i+1])
 
-    return dyadPosTrinucCounts
+    return dyadPosContextCounts
 
 
 # This function generates a nucleosome mutation background file from a general mutation background file
 # and a file of strongly positioned nucleosome coordinates.
-def generateNucleosomeMutationBackgroundFile(dyadPosTrinucCountsFilePath, mutationBackgroundFilePath,
-                                             nucleosomeMutationBackgroundFilePath):
+def generateNucleosomeMutationBackgroundFile(dyadPosContextCountsFilePath, mutationBackgroundFilePath, 
+                                             nucleosomeMutationBackgroundFilePath, linkerOffset):
     print("Generating nucleosome mutation background file...")
 
-    # Dictionaries of expected mutations for every dyad position from -73 to 73, one for each strand.
+    # Dictionaries of expected mutations for every dyad position included in the analysis, one for each strand.
     plusStrandNucleosomeMutationBackground = dict() 
     minusStrandNucleosomeMutationBackground = dict()
 
     # Initialize the dictionary
-    for dyadPos in range(-73,74): 
+    for dyadPos in range(-73-linkerOffset,74+linkerOffset): 
         plusStrandNucleosomeMutationBackground[dyadPos] = 0
         minusStrandNucleosomeMutationBackground[dyadPos] = 0
 
-    # Get the trinuc mutation rate dictionary.
-    trinucMutationRate = getTrinucMutationRate(mutationBackgroundFilePath)
-    # Get the dyad position trinuc counts dictionary.
-    dyadPosTrinucCounts = getDyadPosTrinucCounts(dyadPosTrinucCountsFilePath)
+    # Get the corresponding mutation background and context counts dictionaries.
+    backgroundMutationRate = getGenomeBackgroundMutationRates(mutationBackgroundFilePath)
+    dyadPosContextCounts = getDyadPosContextCounts(dyadPosContextCountsFilePath)
 
-    # Calculate the expected mutation rates for each dyad position based on the trinuc counts at that position and that trinuc's mutation rate
-    for dyadPos in dyadPosTrinucCounts:
+    # Calculate the expected mutation rates for each dyad position based on the context counts at that position and that context's mutation rate
+    for dyadPos in dyadPosContextCounts:
 
-        for trinuc in dyadPosTrinucCounts[dyadPos]:
+        for context in dyadPosContextCounts[dyadPos]:
 
-            reverseTrinuc = reverseCompliment(trinuc)
+            reverseContext = reverseCompliment(context)
             
-            # Add the trinuc's mutation rate to the running total in the background dictionaries.
-            plusStrandNucleosomeMutationBackground[dyadPos] += trinucMutationRate[trinuc] * dyadPosTrinucCounts[dyadPos][trinuc]
-            minusStrandNucleosomeMutationBackground[dyadPos] += trinucMutationRate[reverseTrinuc] * dyadPosTrinucCounts[dyadPos][trinuc]
+            # Add the context's mutation rate to the running total in the background dictionaries.
+            plusStrandNucleosomeMutationBackground[dyadPos] += backgroundMutationRate[context] * dyadPosContextCounts[dyadPos][context]
+            minusStrandNucleosomeMutationBackground[dyadPos] += backgroundMutationRate[reverseContext] * dyadPosContextCounts[dyadPos][context]
 
     # Write the results of the dictionary to the nucleosome mutation background file.
     with open(nucleosomeMutationBackgroundFilePath, 'w') as nucleosomeMutationBackgroundFile:
@@ -230,7 +253,7 @@ def generateNucleosomeMutationBackgroundFile(dyadPosTrinucCountsFilePath, mutati
         nucleosomeMutationBackgroundFile.write(headers + '\n')
         
         # Write the data for each dyad position.
-        for dyadPos in range(-73,74):
+        for dyadPos in range(-73-linkerOffset,74+linkerOffset):
 
             dataRow = '\t'.join((str(dyadPos),str(plusStrandNucleosomeMutationBackground[dyadPos]),
             str(minusStrandNucleosomeMutationBackground[dyadPos]),
@@ -239,25 +262,27 @@ def generateNucleosomeMutationBackgroundFile(dyadPosTrinucCountsFilePath, mutati
             nucleosomeMutationBackgroundFile.write(dataRow + '\n')
 
 
-def generateNucleosomeMutationBackground(mutationBackgroundFilePaths, genomeFilePath, strongPosNucleosomeFilePath):
+def generateNucleosomeMutationBackground(mutationBackgroundFilePaths, genomeFilePath, 
+                                         strongPosNucleosomeFilePath, includeLinker):
     
-    # Generate a path to the fasta file of strongly positioned nucleosome coordinates. 
-    if strongPosNucleosomeFilePath.rsplit('.',1)[0].endswith("_expansion"):
-        strongPosNucleosomeFastaFilePath = strongPosNucleosomeFilePath.rsplit("_expansion",1)[0] + ".fa"
-    else:
-        strongPosNucleosomeFastaFilePath = strongPosNucleosomeFilePath.rsplit('.',1)[0] + ".fa"
+    # Set the linker offset.
+    if includeLinker: linkerOffset = 30
+    else: linkerOffset = 0
 
-    # Generate the path to the tsv file of dyad position trinuc counts
-    dyadPosTrinucCountsFilePath = strongPosNucleosomeFastaFilePath.rsplit(".",1)[0] + "_dyad_pos_trinuc_counts.tsv"
+    # Whitespace for readability
+    print()
+
+    # Generate a path to the fasta file of strongly positioned nucleosome coordinates (Potentially including linker DNA).
+    if (strongPosNucleosomeFilePath.rsplit('.',1)[0].endswith("_expansion") or 
+        strongPosNucleosomeFilePath.rsplit('.',1)[0].endswith("_expansion+linker")):
+        if includeLinker: strongPosNucleosomeFastaFilePath = strongPosNucleosomeFilePath.rsplit("_expansion",1)[0] + "+linker.fa"
+        else: strongPosNucleosomeFastaFilePath = strongPosNucleosomeFilePath.rsplit("_expansion",1)[0] + ".fa"
+    else:
+        if includeLinker: strongPosNucleosomeFastaFilePath = strongPosNucleosomeFilePath.rsplit('.',1)[0] + "+linker.fa"
+        else: strongPosNucleosomeFastaFilePath = strongPosNucleosomeFilePath.rsplit('.',1)[0] + ".fa"
 
     # Make sure we have a fasta file for strongly positioned nucleosome coordinates
-    parseStrongPosNucleosomeData(strongPosNucleosomeFilePath,strongPosNucleosomeFastaFilePath,genomeFilePath)
-
-    # Make sure we have a tsv file with trinuc counts at each dyad position.
-    if not os.path.exists(dyadPosTrinucCountsFilePath): 
-        print("Dyad position trinuc counts file not found at",dyadPosTrinucCountsFilePath)
-        print("Generating genome wide dyad position trinuc counts file...")
-        generateDyadPosTrinucCounts(strongPosNucleosomeFastaFilePath, dyadPosTrinucCountsFilePath)
+    parseStrongPosNucleosomeData(strongPosNucleosomeFilePath,strongPosNucleosomeFastaFilePath,genomeFilePath,linkerOffset)
 
     nucleosomeMutationBackgroundFilePaths = list() # A list of paths to the output files generated by the function
 
@@ -269,6 +294,31 @@ def generateNucleosomeMutationBackground(mutationBackgroundFilePaths, genomeFile
         if not "_mutation_background" in mutationBackgroundFileName: 
             raise ValueError("Error, expected file with \"_mutation_background\" in the name.")
 
+        # Determine the context of the mutation background file
+        backgroundContextNum = determineBackgroundContext(mutationBackgroundFilePath)
+
+        # Set the name of the type of context being used.
+        if backgroundContextNum == 1: contextText = "singlenuc"
+        elif backgroundContextNum == 3: contextText = "trinuc"
+        elif backgroundContextNum == 5: contextText = "pentanuc"
+
+        print("Given mutation background is in", contextText, "context.")
+
+        # Generate the path to the tsv file of dyad position context counts
+        if includeLinker:
+            dyadPosContextCountsFilePath = strongPosNucleosomeFastaFilePath.rsplit(".",1)[0] + "_dyad_pos+linker"
+        else:
+            dyadPosContextCountsFilePath = strongPosNucleosomeFastaFilePath.rsplit(".",1)[0] + "_dyad_pos"
+
+            dyadPosContextCountsFilePath += "_" + contextText + "_counts.tsv"
+
+        # Make sure we have a tsv file with the appropriate context counts at each dyad position.
+        if not os.path.exists(dyadPosContextCountsFilePath): 
+            print("Dyad position " + contextText + " counts file not found at",dyadPosContextCountsFilePath)
+            print("Generating genome wide dyad position " + contextText + " counts file...")
+            generateDyadPosContextCounts(strongPosNucleosomeFastaFilePath, dyadPosContextCountsFilePath,
+                                        backgroundContextNum, linkerOffset)
+
         # Get some information on the file system and generate file paths for convenience.
         workingDirectory = os.path.dirname(mutationBackgroundFilePath) # The working directory for the current data "group"
 
@@ -276,11 +326,15 @@ def generateNucleosomeMutationBackground(mutationBackgroundFilePaths, genomeFile
         mutationDataGroup = mutationBackgroundFileName.split("_mutation_background",1)[0]
 
         # A path to the final output file.
-        nucleosomeMutationBackgroundFilePath = os.path.join(workingDirectory,mutationDataGroup+"_nucleosome_mutation_background.tsv")
+        nucleosomeMutationBackgroundFilePath = os.path.join(workingDirectory,mutationDataGroup+"_"+contextText+"_nucleosome_mutation_background")
+        if includeLinker:
+            nucleosomeMutationBackgroundFilePath += "+linker.tsv"
+        else: 
+            nucleosomeMutationBackgroundFilePath += ".tsv"
 
         # Generate the nucleosome mutation background file!
-        generateNucleosomeMutationBackgroundFile(dyadPosTrinucCountsFilePath,mutationBackgroundFilePath,
-                                                 nucleosomeMutationBackgroundFilePath)
+        generateNucleosomeMutationBackgroundFile(dyadPosContextCountsFilePath,mutationBackgroundFilePath,
+                                                 nucleosomeMutationBackgroundFilePath, linkerOffset)
 
         nucleosomeMutationBackgroundFilePaths.append(nucleosomeMutationBackgroundFilePath)
 
@@ -293,8 +347,9 @@ if __name__ == "__main__":
     dialog.createMultipleFileSelector("Mutation Background Files:",0,"mutation_background.tsv",("Tab Seperated Values Files",".tsv"))
     dialog.createFileSelector("Genome Fasta File:",1,("Fasta Files",".fa"))
     dialog.createFileSelector("Strongly Positioned Nucleosome File:",2,("Bed or Fasta Files",".bed .fa"))
-    dialog.createReturnButton(3,0,2)
-    dialog.createQuitButton(3,2,2)
+    dialog.createCheckbox("Include linker DNA",3,0,2)
+    dialog.createReturnButton(4,0,2)
+    dialog.createQuitButton(4,2,2)
 
     # Run the UI
     dialog.mainloop()
@@ -306,7 +361,10 @@ if __name__ == "__main__":
     selections: Selections = dialog.selections
     filePaths = list(selections.getFilePaths())
     mutationBackgroundFilePaths = list(selections.getFilePathGroups())[0] # A list of mutation background file paths
+    includeLinker: bool = list(selections.getToggleStates())[0] # Whether or not to include linker DNA on either side of the nucleosomes.
     genomeFilePath = filePaths[0] # The path to the genome fasta file
     strongPosNucleosomeFilePath: str = filePaths[1] # The path to the file containing strongly positioned nucleosomes.
+  
 
-    generateNucleosomeMutationBackground(mutationBackgroundFilePaths, genomeFilePath, strongPosNucleosomeFilePath)
+    generateNucleosomeMutationBackground(mutationBackgroundFilePaths, genomeFilePath, 
+                                         strongPosNucleosomeFilePath, includeLinker)
