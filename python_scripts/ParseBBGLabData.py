@@ -54,15 +54,15 @@ def copyBedData(preBedDirectory, bedDirectory, fileName):
             bedMutation += preBedDataCols[0] + "\t" # Chromosome number
             bedMutation += str(int(preBedDataCols[1])-1) + "\t"  # base-0 start (hence the "-1")
             bedMutation += preBedDataCols[1] + "\t" # base-1 end
-            bedMutation += preBedDataCols[0] + ":" + str(int(preBedDataCols[1])-1) + "-" + preBedDataCols[1] # The full genome position, minus strand designation
+            
             # Based on the nature of the mutation, asign it to either the + or - strand and output the mutation accordingly.
             # Mutations are assumed to have arisen in pyrimidines.
             if isPurine(preBedDataCols[2]):
-                bedMutation += "(-)\t"
+                bedMutation += reverseCompliment(preBedDataCols[2]) + '\t'
                 bedMutation += reverseCompliment(preBedDataCols[2]) + ">" + reverseCompliment(preBedDataCols[3]) + "\t"
                 bedMutation += "-\n"
             else:
-                bedMutation += "(+)\t"
+                bedMutation += preBedDataCols[2] + '\t'
                 bedMutation += preBedDataCols[2] + ">" + preBedDataCols[3] + "\t"
                 bedMutation += "+\n"
 
