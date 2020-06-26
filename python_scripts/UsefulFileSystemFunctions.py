@@ -67,3 +67,42 @@ def getLinkerDNAAmount(filePath: str):
     return linkerNum
 
 
+# Generates a file path in standardized format based on given information about the file.
+# Many parts are optional, but the file must contain a directory, group name, and a file extension.
+# Additionally, the context parameter can be given as a string or an int representing a context.
+def generateFilePath(directory = None, dataGroup = None, context = None, 
+                     linkerOffset = 0, dataType = None, fileExtension = None):
+
+    # Check to make sure the minimum necessary components are present.
+    if directory is None or dataGroup is None or fileExtension is None:
+        raise ValueError("Not all necessary file components are present.  " +
+                         "The directory, group name, and file extension are all required.")
+
+    # Bring together the components of the file path from the given parameters.
+    filePathPieces = list()
+    
+    filePathPieces.append(os.path.join(directory,dataGroup))
+
+    if context is not None:
+
+        # A dictionary of numbers which matches them to their respective contexts.
+        contexts = {1:"singlenuc", 3:"trinuc", 5:"pentanuc"}
+
+        if isinstance(context, str): 
+            if context.lower() not in contexts.values():
+                raise ValueError(context + " is not a recognized context.")
+            filePathPieces.append(context.lower())
+        elif isinstance(context, int): 
+            if context not in contexts:
+                raise ValueError(str(context) + " is not a valid context value.")
+            filePathPieces.append(contexts[context])
+
+    if linkerOffset != 0: filePathPieces.append(str(linkerOffset) + "linker+")
+
+    if dataType is not None: filePathPieces.append(dataType)
+
+    # Stitch together the file path from its components.
+    filePath = '_'.join(filePathPieces) + fileExtension
+    return filePath
+
+
