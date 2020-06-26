@@ -2,23 +2,30 @@ library(NucPeriod)
 
 selectInputAndRun = function(){
   
-  # Select a file to use for MSIseq
-  inputDataPaths = choose.files(multi = TRUE, caption = "Select raw counts files",
-                               filters = c(c("Tab Separated Files (*.tsv)","Any files"),
-                                           c("*.tsv","*.*")), index = 1)
+  # Select the raw counts file
+  rawCountsFilePath = choose.files(multi = FALSE, caption = "Select raw counts files",
+                                   filters = c(c("Tab Separated Files (*.tsv)","Any files"),
+                                               c("*.tsv","*.*")), index = 1)
   
-  sapply(inputDataPaths, normalizeNucleosomeMutationCounts)
+  # Select the background file
+  backgroundCountsFilePath = choose.files(multi = FALSE, caption = "Select background counts files",
+                                          filters = c(c("Tab Separated Files (*.tsv)","Any files"),
+                                                      c("*.tsv","*.*")), index = 1)
+  
+  normalizedCounts = normalizeNucleosomeMutationCounts(rawCountsFilePath, 
+                                                       backgroundCountsFilePath,
+                                                       writeNormalizedData = FALSE)
   
 }
 
 
 # Get potential arguments from command line calls and use them to determine what action to take.
 args = commandArgs(trailingOnly = T)
-if (length(args) == 1) {
-  normalizeNucleosomeMutationCounts(args[1])
+if (length(args) == 3) {
+  normalizeNucleosomeMutationCounts(args[1],args[2],args[3])
 } else if (length(args) == 0) {
   selectInputAndRun()
 } else {
-  stop("Invalid number of arguments passed.  Expected 1 argument for raw mutation counts or no arguments
-       to select input manually")
+  stop(paste("Invalid number of arguments passed.  Expected 3 argument for raw mutation counts file,",
+             "background counts file, and normalized counts file, or no arguments to select input manually"))
 }
