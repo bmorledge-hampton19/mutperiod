@@ -236,7 +236,7 @@ def generateMutationBackground(mutationFilePaths, genomeFilePath, backgroundCont
         workingDirectory = os.path.dirname(mutationFilePath) # The working directory for the current data "group"
 
         # Extract the name of the mutation group used to designate data files.
-        mutationGroupName = os.path.split(mutationFilePath)[1].split("_trinuc_context")[0]
+        mutationGroupName = os.path.split(mutationFilePath)[1].split("_context_mutations")[0].rsplit('_',1)[0]
 
         # Generate the file path for the genome context frequency file.
         genomeContextFrequencyFilePath = genomeFilePath.rsplit(".")[0] + "_" + contextText + "_frequency.tsv"
@@ -274,7 +274,7 @@ if __name__ == "__main__":
 
     #Create the Tkinter UI
     dialog = TkinterDialog(workingDirectory=os.path.join(os.path.dirname(__file__),"..","data"))
-    dialog.createMultipleFileSelector("Bed Trinuc Mutation Files:",0,"_context_mutations.bed",("Bed Files",".bed"))
+    dialog.createMultipleFileSelector("Bed Mutation Files:",0,"_context_mutations.bed",("Bed Files",".bed"))
     dialog.createFileSelector("Genome fasta File:",1,("Fasta Files",".fa"))
     dialog.createDropdown("Background Context",2,0,("Trinuc","Singlenuc", "Pentanuc"))
     dialog.createReturnButton(3,0,2)
