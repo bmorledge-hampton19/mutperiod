@@ -106,3 +106,62 @@ def generateFilePath(directory = None, dataGroup = None, context = None,
     return filePath
 
 
+# Keeps track of data about a given data group by accessing the metadata file in the same directory
+class Metadata:
+
+
+    def __init__(self,filePath):
+
+        # Get the path to the metadata file.
+        metadataFilePath = os.path.join(os.path.dirname(filePath),".metadata")
+
+        # Read the metadata file and put its contents into and dictionary, key-value pairs in the file.
+        self.metadata = dict()
+        with open(metadataFilePath, 'r') as metadataFile:
+            for line in metadataFile:
+
+                choppedUpLine = line.strip().split('\t')
+
+                if len(choppedUpLine) != 2 or not choppedUpLine[0].endswith(':'):
+                    raise ValueError("Malformed metadata line: " + line.strip())
+
+                self.metadata[choppedUpLine[0][:-1]] = choppedUpLine[1]
+
+        # Add the metadata directory to the metadata! (So meta!)
+        self.metadata["metadataDirectory"] = os.path.dirname(filePath)
+
+
+    # Search the metadata for a value paired to a given key.
+    def getMetadataByKey(self, key):
+
+        if not key in self.metadata:
+            raise ValueError("Identifier " + key + " not found in metadata.")
+        
+        return self.metadata[key]
+    
+    ### Get a variety of common metadata features, quick and easy!
+
+    def getDataGroupName(self):
+        return self.getMetadataByKey("dataGroupName")
+
+    def getGenomeName(self):
+        return self.getMetadataByKey("associatedGenome")
+
+    def getNucPosName(self):
+        return self.getMetadataByKey("associatedNucleosomePositions")
+
+    def getParentData(self):
+        return self.getMetadataByKey("parentData")
+
+    def getMetadataDirectory(self):
+        return self.getMetadataByKey("metadataDirectory")
+
+    
+    ### Get file paths for useful metadata associated files.
+
+    def getGenomeFilePath(self):
+        return os.path.join(externalDataDirectory,self.getGenomeName(),self.getGenomeName()+".fa")
+
+    def getBaseNucPosFilePath(self):
+        return os.path.join(os.path.dirname(self.getGenomeFilePath()),self.getNucPosName(),
+                            self.getNucPosName()+".bed")
