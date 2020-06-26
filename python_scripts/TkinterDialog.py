@@ -1,7 +1,7 @@
 import tkinter as tk
 from tkinter import filedialog
 from typing import List
-from UsefulFileSystemFunctions import *
+from UsefulFileSystemFunctions import getFilesInDirectory
 import os
 
 #A modular dialog window used to select relevant files and options for a script.

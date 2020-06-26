@@ -5,6 +5,7 @@
 import os
 from TkinterDialog import TkinterDialog, Selections
 from UsefulBioinformaticsFunctions import baseChromosomes
+from UsefulFileSystemFunctions import Metadata
 from typing import IO
 
 
@@ -84,38 +85,7 @@ class NucleosomeData:
 
         # Assign variables
         self.chromosome = choppedUpLine[0]
-        self.dyadPosNegative74 = int(choppedUpLine[1])
-
-
-# This function takes a bed file of strongly positioned nucleosomes and expands their coordinates to encompass
-# 74 bases on either side of the dyad. (in order to get trinucleotide sequences for positions -73 to 73)
-# Returns the file path to the newly expanded file.
-def expandNucleosomeCoordinates(strongPosNucleosomeFilePath):
-
-    # Generate a file path for the expanded nucleosome coordinate file.
-    strongPosNucleosomeExpansionFilePath = strongPosNucleosomeFilePath.rsplit('.',1)[0] + "_expansion.bed"
-
-    # Check to see if the expansion file already exists.
-    if os.path.exists(strongPosNucleosomeExpansionFilePath):
-        print ("Expanded nucleosome coordinate file already exists.  Not re-expanding.")
-        return strongPosNucleosomeExpansionFilePath
-
-    print("Expanding nucleosome coordinates...")
-
-    # Open the files.
-    with open(strongPosNucleosomeFilePath,'r') as strongPosNucleosomeFile:
-        with open(strongPosNucleosomeExpansionFilePath, 'w') as strongPosNucleosomeExpansionFile:
-
-            # Write the expanded positions to the new file, one line at a time.
-            for line in strongPosNucleosomeFile:
-                choppedUpLine = line.strip().split('\t')
-                choppedUpLine[1] = str(int(choppedUpLine[1]) - 74)
-                choppedUpLine[2] = str(int(choppedUpLine[2]) + 74)
-
-                strongPosNucleosomeExpansionFile.write('\t'.join(choppedUpLine) + '\n')
-
-    # Return the file path to the newly expanded file.
-    return strongPosNucleosomeExpansionFilePath
+        self.dyadPosNegative74 = int(choppedUpLine[1])-74
 
 
 # Takes a mutation object and nucleosome object which have unequal chromosomes and read through data until they are equal.
@@ -142,37 +112,13 @@ def isMutationPastNucleosome(mutation: MutationData, nucleosome: NucleosomeData,
         return False
 
 
-# Checks to see whether or not the given nucleosome positioning data needs to be expanded, 
-# and calls the necessary function to expand it if needed.
-def parseStrongPosNucleosomeData(strongPosNucleosomeFilePath):
-
-    # Check if the given bed (hopefully) file needs to be expanded, and do it if it does.
-    with open(strongPosNucleosomeFilePath, 'r') as strongPosNucleosomeFile:
-        strongPosNucleosomeFile.readline()
-        choppedUpLine = strongPosNucleosomeFile.readline().strip().split('\t')
-
-        # If it is not actually expanded, expand it!
-        if int(choppedUpLine[2]) - int(choppedUpLine[1]) == 1:
-            print("Unexpanded nucleosome coordinates were given.")
-            strongPosNucleosomeFilePath = expandNucleosomeCoordinates(strongPosNucleosomeFilePath)
-        # If it isn't "not" expanded, is it expanded properly?
-        elif not int(choppedUpLine[2]) - int(choppedUpLine[1]) == 149:
-            raise ValueError("Error: Strongly positioned nucleosome data is not in the expected format.\n" +  
-                "Each coordinate should contain the central base pair in the dyad only, or in addition, exactly 74 bp on either side.")
-        else:
-            print("Given nucleosome coordinates are already expanded.")
-
-    print("Using nucleosome coordinate file", os.path.split(strongPosNucleosomeFilePath)[1])
-    return strongPosNucleosomeFilePath
-
-
 # Uses the given nucleosome position file and mutation file to count the number of mutations 
 # at each dyad position (-73 to 73) for each strand.  Generates a new file to store these results.
 # Optionally, some amount of surrounding linker DNA may be included in the analysis as "linker offset"
 # NOTE:  It is VITAL that both files are sorted, first by chromosome number and then by starting coordinate.
 #        (Sorted first by chromosome (string) and then by nucleotide position (numeric))
 #        This code is pretty slick, but it will crash and burn and give you a heap of garbage as output if the inputs aren't sorted.
-def generateCountsFile(mutationFilePath, strongPosNucleosomeFilePath, nucleosomeMutationCountsFilePath, linkerOffset):
+def generateCountsFile(mutationFilePath, nucPosFilePath, nucleosomeMutationCountsFilePath, linkerOffset):
     print("Counting mutations at each nucleosome position...")
 
     # Dictionaries holding the number of mutations found at each dyad position from -73 to 73 for each strand.
@@ -200,11 +146,11 @@ def generateCountsFile(mutationFilePath, strongPosNucleosomeFilePath, nucleosome
 
     # Open the mutation and nucleosome files to compare against one another.
     with open(mutationFilePath, 'r') as mutationFile:
-        with open(strongPosNucleosomeFilePath,'r') as strongPosNucleosomeFile:
+        with open(nucPosFilePath,'r') as nucPosFile:
 
             #Get data on the first mutation and nucleosome and reconcile their chromosomes if necessary to start things off.
             currentMutation = MutationData(mutationFile)            
-            currentNucleosome = NucleosomeData(strongPosNucleosomeFile) 
+            currentNucleosome = NucleosomeData(nucPosFile) 
             if currentNucleosome.chromosome == currentMutation.chromosome: print("Counting in",currentNucleosome.chromosome)
             else: reconcileChromosomes(currentMutation, currentNucleosome)
 
@@ -250,35 +196,32 @@ def generateCountsFile(mutationFilePath, strongPosNucleosomeFilePath, nucleosome
                                                 str(plusStrandMutationCounts[i] + minusStrandMutationCounts[i]))) + '\n')
 
 
-def countNucleosomePositionMutations(mutationFilePaths, strongPosNucleosomeFilePath, includeLinker):
-
-    # Make sure we have a path the expanded nucleosome position file.
-    strongPosNucleosomeFilePath = parseStrongPosNucleosomeData(strongPosNucleosomeFilePath)
+def countNucleosomePositionMutations(mutationFilePaths, linkerOffset):
 
     nucleosomeMutationCountsFilePaths = list() # A list of paths to the output files generated by the function
-
-    # Set the linker offset.
-    if includeLinker: linkerOffset = 30
-    else: linkerOffset = 0
 
     # Loop through each given mutation file path, creating a corresponding nucleosome mutation count file for each.
     for mutationFilePath in mutationFilePaths:
 
         print("\nWorking with",os.path.split(mutationFilePath)[1])
 
+        # Get metadata and use it to generate a path to the nucleosome positions file.
+        metadata = Metadata(mutationFilePath)
+        nucPosFilePath = metadata.getBaseNucPosFilePath()
+
         # Make the file path for the output file
         workingDirectory = os.path.split(mutationFilePath)[0]
-        mutationGroupName = os.path.split(mutationFilePath)[1].rsplit("_trinuc",1)[0].rsplit("_singlenuc",1)[0]
+        mutationGroupName = os.path.split(mutationFilePath)[1].rsplit("_context_mutations",1)[0].rsplit("_",1)[0]
         # Double check that the mutation group name was generated correctly.
-        if '.' in mutationGroupName: raise ValueError("Error, expected mutation file with \"trinuc\" or \"singlenuc\" in the name.")
+        if '.' in mutationGroupName: raise ValueError("Error, expected mutation file with \"_context_mutations\" in the name.")
 
-        if not includeLinker:
-            nucleosomeMutationCountsFilePath = os.path.join(workingDirectory,mutationGroupName+"_nucleosome_mutation_counts.tsv")
-        else:
-            nucleosomeMutationCountsFilePath = os.path.join(workingDirectory,mutationGroupName+"_nucleosome_mutation_counts+linker.tsv")
+        # Generate the output file path
+        nucleosomeMutationCountsFilePath = os.path.join(workingDirectory,mutationGroupName)
+        if linkerOffset > 0: nucleosomeMutationCountsFilePath += '_' + str(linkerOffset) +"linker+"
+        nucleosomeMutationCountsFilePath += "_raw_nucleosome_mutation_counts.tsv"
 
         # Ready, set, go!
-        generateCountsFile(mutationFilePath, strongPosNucleosomeFilePath, nucleosomeMutationCountsFilePath, linkerOffset)
+        generateCountsFile(mutationFilePath, nucPosFilePath, nucleosomeMutationCountsFilePath, linkerOffset)
 
         nucleosomeMutationCountsFilePaths.append(nucleosomeMutationCountsFilePath)
 
@@ -289,11 +232,10 @@ if __name__ == "__main__":
 
     #Create the Tkinter UI
     dialog = TkinterDialog(workingDirectory=os.path.join(os.path.dirname(__file__),"..","data"))
-    dialog.createMultipleFileSelector("Mutation Files:",0,"trinuc_context.bed",("Bed Files",".bed"))
-    dialog.createFileSelector("Strongly Positioned Nucleosome File:",1,("Bed Files",".bed"))
-    dialog.createCheckbox("Include 15 bp linker DNA on either side.",2, 0, 2)
-    dialog.createReturnButton(3,0,2)
-    dialog.createQuitButton(3,2,2)
+    dialog.createMultipleFileSelector("Mutation Files:",0,"_context_mutations.bed",("Bed Files",".bed"))
+    dialog.createCheckbox("Include 30 bp linker DNA on either side.",1, 0, 2)
+    dialog.createReturnButton(2,0,2)
+    dialog.createQuitButton(2,2,2)
 
     # Run the UI
     dialog.mainloop()
@@ -304,8 +246,9 @@ if __name__ == "__main__":
     # Get the user's input from the dialog.
     selections: Selections = dialog.selections
     mutationFilePaths = list(selections.getFilePathGroups())[0] # A list of mutation file paths
-    strongPosNucleosomeFilePath: str = list(selections.getIndividualFilePaths())[0] # The path to the file containing strongly 
-                                                                                    # positioned nucleosomes.
     includeLinker = list(selections.getToggleStates())[0]
 
-    countNucleosomePositionMutations(mutationFilePaths, strongPosNucleosomeFilePath, includeLinker)
+    if includeLinker: linkerOffset = 30
+    else: linkerOffset = 0
+
+    countNucleosomePositionMutations(mutationFilePaths, linkerOffset)
