@@ -1,6 +1,9 @@
 # This script contains various functions that I think will often be useful when managing filesystems for projects.
 import os
 
+# The directory containing genome and nucleosome data.
+externalDataDirectory = os.path.join(os.path.dirname(__file__),"..","data","__external_data")
+
 # Recursively searches the given directory for files with the specified ending. Returns a list of the resulting file paths.
 def getFilesInDirectory(directory,validEnding, *additionalValidEndings):
     """Recursively searches the given directory(ies) for files of the specified type."""
