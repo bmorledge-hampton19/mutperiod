@@ -8,9 +8,10 @@ generateNucPeriodData = function(mutationCountsFilePaths, outputFilePath,
 
   # Get the raw mutation counts for each given mutation counts file.
   # If naming conventions aren't enforced, it is assumed that the given mutation counts file will suffice.
+  # Otherwise, if conventions are enforced and a normalized file is given,
+  # the path to the file with raw counts is generated.
   if (enforceInputNamingConventions) {
-    rawCountsFilePaths = sapply(strsplit(mutationCountsFilePaths,"_nucleosome_mutation_counts"),
-                                function(x) paste0(x[1],"_nucleosome_mutation_counts.tsv"))
+    rawCountsFilePaths = sapply(mutationCountsFilePaths, getRawCountsFilePath)
   } else rawCountsFilePaths = mutationCountsFilePaths
 
   dataSetNames = getDataSetNames(rawCountsFilePaths, enforceInputNamingConventions)
@@ -56,78 +57,66 @@ generateNucPeriodData = function(mutationCountsFilePaths, outputFilePath,
 
     print(paste("Working with", validDataSetNames[i]))
 
-    # Read in the data, and normalize it if necessary.
-
-    if (enforceInputNamingConventions) {
-      if (endsWith(validFilePaths[i],"counts.tsv")) {
-        normalizedData = normalizeNucleosomeMutationCounts(validFilePaths[i])
-      } else if (endsWith(validFilePaths[i],"normalized.tsv")) {
-        normalizedData = data.table::fread(file = validFilePaths[i])
-      } else {
-        stop(paste("The file,", validFilePaths[i],
-                   "does not follow naming conventions for raw or normalized nucleosome mutation counts."))
-      }
-    } else {
-      normalizedData = data.table::fread(file = validFilePaths[i])
-    }
+    # Read in the data.
+    nucleosomeMutationData = data.table::fread(file = validFilePaths[i])
 
 
     ##### Periodicity Analysis #####
 
-    print("Running periodicity analysis...")
-
-    # Calculate the periodicity of the data using a Lomb-Scargle periodiagram.
-    lombResult = lomb::lsp(normalizedData[Dyad_Position >= -dyadPosCutoff & Dyad_Position <= dyadPosCutoff,
-                                          .(Dyad_Position,Normalized_Both_Strands)],
-                     type = "period", from = 2, to = 50, ofac = 100, plot = outputGraphs)
-    if (outputGraphs) {
-      plot(normalizedData[Dyad_Position >= -dyadPosCutoff & Dyad_Position <= dyadPosCutoff,
-                          .(Dyad_Position,Normalized_Both_Strands)],
-           type = 'b', main = validDataSetNames[i])
-    }
-    # Store the relevant results!
-    peakPeriodicities[i] = lombResult$peak.at[1]
-    periodicityPValues[i] = lombResult$p.value
-
-    # Calculate the SNR
-    noiseBooleanVector = (lombResult$scanned < lombResult$peak.at[1] - 0.5
-                          | lombResult$scanned > lombResult$peak.at[1] + 0.5)
-    periodicitySNRs[i] = lombResult$peak / median(lombResult$power[noiseBooleanVector])
-
-
-    ##### Asymmetry Analysis #####
-
-    print("Running asymmetry analysis")
-
-    # Run asymmetry analysis on the aligned strand counts.
-    generalAsymmetryResult =
-      t.test(normalizedData$Normalized_Aligned_Strands[(74-dyadPosCutoff):73],
-             rev(normalizedData$Normalized_Aligned_Strands[75:(74+dyadPosCutoff)]), paired = T)
-    generalAsymmetryTValue[i] = generalAsymmetryResult$statistic
-    generalAsymmetryPValue[i] = generalAsymmetryResult$p.value
-
-    # Run asymmetry analysis on the peaks and valleys of the aligned strands.
-    # If there is not enough data to derive peaks and valleys (e.g. for individual donors)
-    # the result will be NA.
-    peakAsymmetryResult = runExtremeAnalysisSuite(normalizedData$Normalized_Aligned_Strands,
-                                                  dyadPosCutoff = dyadPosCutoff)
-    if (any(!is.na(peakAsymmetryResult))) {
-      peakAsymmetryTValue[i] = peakAsymmetryResult$statistic
-      peakAsymmetryPValue[i] = peakAsymmetryResult$p.value
-    } else {
-      peakAsymmetryTValue[i] = NA
-      peakAsymmetryPValue[i] = NA
-    }
-
-    valleyAsymmetryResult = runExtremeAnalysisSuite(normalizedData$Normalized_Aligned_Strands,
-                                                    maxes = FALSE, dyadPosCutoff = dyadPosCutoff)
-    if (any(!is.na(valleyAsymmetryResult))) {
-      valleyAsymmetryTValue[i] = valleyAsymmetryResult$statistic
-      valleyAsymmetryPValue[i] = valleyAsymmetryResult$p.value
-    } else {
-      valleyAsymmetryTValue[i] = NA
-      valleyAsymmetryPValue[i] = NA
-    }
+    # print("Running periodicity analysis...")
+    #
+    # # Calculate the periodicity of the data using a Lomb-Scargle periodiagram.
+    # lombResult = lomb::lsp(nucleosomeMutationData[Dyad_Position >= -dyadPosCutoff & Dyad_Position <= dyadPosCutoff,
+    #                                               .(Dyad_Position,Normalized_Both_Strands)],
+    #                  type = "period", from = 2, to = 50, ofac = 100, plot = outputGraphs)
+    # if (outputGraphs) {
+    #   plot(nucleosomeMutationData[Dyad_Position >= -dyadPosCutoff & Dyad_Position <= dyadPosCutoff,
+    #                               .(Dyad_Position,Normalized_Both_Strands)],
+    #        type = 'b', main = validDataSetNames[i])
+    # }
+    # # Store the relevant results!
+    # peakPeriodicities[i] = lombResult$peak.at[1]
+    # periodicityPValues[i] = lombResult$p.value
+    #
+    # # Calculate the SNR
+    # noiseBooleanVector = (lombResult$scanned < lombResult$peak.at[1] - 0.5
+    #                       | lombResult$scanned > lombResult$peak.at[1] + 0.5)
+    # periodicitySNRs[i] = lombResult$peak / median(lombResult$power[noiseBooleanVector])
+    #
+    #
+    # ##### Asymmetry Analysis ##### ## Obselete.  Will maybe revisit?
+    #
+    # print("Running asymmetry analysis")
+    #
+    # # Run asymmetry analysis on the aligned strand counts.
+    # generalAsymmetryResult =
+    #   t.test(nucleosomeMutationData$Normalized_Aligned_Strands[(74-dyadPosCutoff):73],
+    #          rev(nucleosomeMutationData$Normalized_Aligned_Strands[75:(74+dyadPosCutoff)]), paired = T)
+    # generalAsymmetryTValue[i] = generalAsymmetryResult$statistic
+    # generalAsymmetryPValue[i] = generalAsymmetryResult$p.value
+    #
+    # # Run asymmetry analysis on the peaks and valleys of the aligned strands.
+    # # If there is not enough data to derive peaks and valleys (e.g. for individual donors)
+    # # the result will be NA.
+    # peakAsymmetryResult = runExtremeAnalysisSuite(nucleosomeMutationData$Normalized_Aligned_Strands,
+    #                                               dyadPosCutoff = dyadPosCutoff)
+    # if (any(!is.na(peakAsymmetryResult))) {
+    #   peakAsymmetryTValue[i] = peakAsymmetryResult$statistic
+    #   peakAsymmetryPValue[i] = peakAsymmetryResult$p.value
+    # } else {
+    #   peakAsymmetryTValue[i] = NA
+    #   peakAsymmetryPValue[i] = NA
+    # }
+    #
+    # valleyAsymmetryResult = runExtremeAnalysisSuite(nucleosomeMutationData$Normalized_Aligned_Strands,
+    #                                                 maxes = FALSE, dyadPosCutoff = dyadPosCutoff)
+    # if (any(!is.na(valleyAsymmetryResult))) {
+    #   valleyAsymmetryTValue[i] = valleyAsymmetryResult$statistic
+    #   valleyAsymmetryPValue[i] = valleyAsymmetryResult$p.value
+    # } else {
+    #   valleyAsymmetryTValue[i] = NA
+    #   valleyAsymmetryPValue[i] = NA
+    # }
 
     # # Negative controls for asymmetry analysis on peaks and valleys
     # runExtremeAnalysisSuite(normalizedData$Normalized_Both_Strands, dyadPosCutof = 68)
@@ -139,13 +128,14 @@ generateNucPeriodData = function(mutationCountsFilePaths, outputFilePath,
   periodicityResults = data.table::data.table(Data_Set=validDataSetNames,Peak_Periodicity=peakPeriodicities,
                                               PValue=periodicityPValues,SNR=periodicitySNRs)
 
-  asymmetryResults = data.table::data.table(Data_Set=validDataSetNames,
-                                            General_Asymmetry_TValue = generalAsymmetryTValue,
-                                            General_Asymmetry_PValue = generalAsymmetryPValue,
-                                            Peak_Asymmetry_TValue = peakAsymmetryTValue,
-                                            Peak_Asymmetry_PValue = peakAsymmetryPValue,
-                                            Valley_Asymmetry_TValue = valleyAsymmetryTValue,
-                                            Valley_Asymmetry_PValue = valleyAsymmetryPValue)
+  ### Obselete
+  # asymmetryResults = data.table::data.table(Data_Set=validDataSetNames,
+  #                                           General_Asymmetry_TValue = generalAsymmetryTValue,
+  #                                           General_Asymmetry_PValue = generalAsymmetryPValue,
+  #                                           Peak_Asymmetry_TValue = peakAsymmetryTValue,
+  #                                           Peak_Asymmetry_PValue = peakAsymmetryPValue,
+  #                                           Valley_Asymmetry_TValue = valleyAsymmetryTValue,
+  #                                           Valley_Asymmetry_PValue = valleyAsymmetryPValue)
 
   # Run the SNR wilcoxin's test if necessary.
   if (compareMS) {
@@ -169,22 +159,36 @@ generateNucPeriodData = function(mutationCountsFilePaths, outputFilePath,
   # Create the data object to return
   if (compareMS) {
     nucPeriodData = list(countsData = mutationCountsTable,
-                         periodicityResults = periodicityResults, asymmetryResults = asymmetryResults,
+                         periodicityResults = periodicityResults,
                          MSIInputs = MSIDataSetNames, MSSInputs = MSSDataSetNames, wilcoxinResult = wilcoxinResult)
   } else {
     nucPeriodData = list(countsData = mutationCountsTable,
-                         periodicityResults = periodicityResults, asymmetryResults = asymmetryResults)
+                         periodicityResults = periodicityResults)
   }
   save(nucPeriodData, file = outputFilePath)
 
 }
 
-getDataSetNames = function(mutationCountsFilePaths, enforceInputNamingConventions) {
+getRawCountsFilePath = function(rawOrNormalizedCountsFilePath) {
+
+  fileName = basename(rawOrNormalizedCountsFilePath)
+
+  if (grepl("raw_nucleosome",fileName)) {
+    return(rawOrNormalizedCountsFilePath)
+  } else {
+    dataSetName = strsplit(fileName,"singlenuc|trinuc|pentanuc")[[1]][1]
+    return(file.path(dirname(rawOrNormalizedCountsFilePath),
+                     paste0(dataSetName,"raw_nucleosome_mutation_counts.tsv")))
+  }
+
+}
+
+getDataSetNames = function(rawMutationCountsFilePaths, enforceInputNamingConventions) {
 
   if (enforceInputNamingConventions) {
-    return(sapply(strsplit(basename(mutationCountsFilePaths),"_nucleosome"), function(x) x[1]))
+    return(sapply(strsplit(basename(rawMutationCountsFilePaths),"raw_nucleosome"), function(x) x[1]))
   } else {
-    return(sapply(strsplit(basename(mutationCountsFilePaths),'.', fixed = TRUE), function(x) x[1]))
+    return(sapply(strsplit(basename(rawMutationCountsFilePaths),'.', fixed = TRUE), function(x) x[1]))
   }
 
 }
