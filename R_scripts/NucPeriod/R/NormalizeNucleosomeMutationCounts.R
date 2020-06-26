@@ -1,20 +1,18 @@
 # Given a path to a file of raw mutation counts with a corresponding file of background counts,
 # Read in the data and produce normalized counts, writing them to a new file if specified (by default true).
 #' @export
-normalizeNucleosomeMutationCounts = function(rawCountsFilePath, writeNormalizedData = TRUE) {
-
-  # Check for the background file corresponding to each raw counts file
-  if (!endsWith(rawCountsFilePath,"nucleosome_mutation_counts.tsv")) {
-    stop(paste0("Given file does not follow the naming convention for a raw counts file.  ", rawCountsFilePath))
-  }
-  backgroundCountsFilePath = paste0(unlist(strsplit(rawCountsFilePath,"counts.tsv"))[1],"background.tsv")
-  if (!file.exists(backgroundCountsFilePath)) {
-    stop(paste0("Background file not found at the expected location: ",backgroundCountsFilePath))
-  }
+normalizeNucleosomeMutationCounts = function(rawCountsFilePath, backgroundCountsFilePath,
+                                             normalizedDataFilePath = NA, writeNormalizedData = TRUE) {
 
   # Read in the data
   rawCounts = data.table::fread(file = rawCountsFilePath)
   backgroundCounts = data.table::fread(file = backgroundCountsFilePath)
+
+  # Make sure that the raw and background counts both use the same number of dyad positions.
+
+  if (dim(rawCounts)[1] != dim(backgroundCounts)[1]) {
+    stop("Unequal dyad positions in raw vs. background counts data.")
+  }
 
   # Create a table of normalized values from the given data
   normalizedData = data.table::data.table()
@@ -33,8 +31,6 @@ normalizeNucleosomeMutationCounts = function(rawCountsFilePath, writeNormalizedD
 
   # Write the normalized data to a new file. (If desired)
   if (writeNormalizedData) {
-    normalizedDataFilePath = paste0(unlist(strsplit(rawCountsFilePath,".tsv"))[1],
-                                    "_normalized.tsv")
     data.table::fwrite(normalizedData, sep = '\t', file = normalizedDataFilePath)
   }
 
