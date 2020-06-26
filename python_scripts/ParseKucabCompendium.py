@@ -19,7 +19,7 @@ def parseKucabCompendium(kucabSubstitutionsFilePaths,includeAllPAHs):
         dataGroupName = getIsolatedParentDir(kucabSubstitutionsFilePath)
         if includeAllPAHs: dataGroupName += "_all_PAHs"
         else: dataGroupName += "_smoker_lung"
-        outputTrinucBedFilePath = os.path.join(localRootDirectory,dataGroupName+"_trinuc_context.bed")
+        outputTrinucBedFilePath = os.path.join(localRootDirectory,dataGroupName+"_trinuc_context_mutations.bed")
 
         # These are the designations for PAH mutation signatures, the ones related to tobacco smoke that we want to study.
         PAHDesignations = ("MSM0.54","MSM0.26","MSM0.92","MSM0.2","MSM0.42","MSM0.74","MSM0.103"

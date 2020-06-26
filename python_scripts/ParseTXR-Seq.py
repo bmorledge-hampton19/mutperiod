@@ -169,7 +169,7 @@ def parseTXRSeq(tXRSeqBigWigReadsFilePathPairs, tXRSeqBedReadsFilePaths, humanGe
         # Generate the trimmed reads output, the fasta output, and trinuc lesions output file paths.
         trimmedReadsFilePath = os.path.join(intermediateFilesDirectory,dataGroupName+"_trimmed_reads.bed")
         fastaReadsFilePath = os.path.join(intermediateFilesDirectory,dataGroupName+"_fasta_reads.fa")
-        trinucLesionsFilePath = os.path.join(localRootDirectory,dataGroupName+"_trinuc_context.bed")
+        trinucLesionsFilePath = os.path.join(localRootDirectory,dataGroupName+"_trinuc_context_mutations.bed")
 
         # Convert from bigWig to bedGraph format.
         print("Converting to bedGraph...")
