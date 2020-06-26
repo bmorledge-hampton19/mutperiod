@@ -32,3 +32,38 @@ def getFilesInDirectory(directory,validEnding, *additionalValidEndings):
 # Returns just the name of the first directory above a given path. (e.g. test/file/path.txt would return "file")
 def getIsolatedParentDir(filePath: str):
     return filePath.rsplit(os.path.sep,2)[-2]
+
+
+# Returns the context associated with a given file path as lowercase text (or an int if specified), or none if there is none.
+def getContext(filePath: str, asInt = False):
+
+    # A dictionary of contexts which matches them to their respective numbers.
+    contexts = {"singlenuc":1, "trinuc":3, "pentanuc":5}
+
+    # Search for each of the contexts in the filename, and return the first (hopefully only) one that is present.
+    fileName = os.path.basename(filePath)
+    for context in contexts:
+
+        if context in fileName:
+
+            if asInt: return contexts[context]
+            else: return context
+    
+    return None
+
+
+# Returns the amount of linker DNA associated with the given file path.
+def getLinkerDNAAmount(filePath: str):
+
+    # Get the basename of the file path
+    fileName = os.path.basename(filePath)
+
+    # If the "linker+" identifier is present, split on it and the preceding underscore to get the amount of linker DNA
+    if "linker+" in fileName:
+        linkerNum = int(fileName.split("linker+")[0].rsplit('_',1)[-1])
+    else:
+        linkerNum = 0
+
+    return linkerNum
+
+
