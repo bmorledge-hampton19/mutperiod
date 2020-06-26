@@ -52,9 +52,7 @@ class ICGCMutation:
             mutation = self.mutatedFrom + '>' + self.mutatedTo
             strand = '+'
 
-        ID = ''.join((self.chromosome,':',mutationPos0Base,'-',self.startPos,'(',strand,')'))
-
-        return( '\t'.join((self.chromosome,mutationPos0Base,self.startPos,ID,mutation,strand)) )
+        return( '\t'.join((self.chromosome,mutationPos0Base,self.startPos,mutation[0],mutation,strand)) )
 
     # Return a string that contains the mutation data in tab delimited MSIseq form.
     def formatForMSIseq(self):
@@ -154,7 +152,7 @@ class ICGCParserFileManager:
     # (Optionally, also prepare the system to output individual donor files)
     def prepForBedFileOutput(self, createIndividualDonorFiles):
 
-        self.bedFilePath = os.path.join(self.localRootDirectory,self.mutationGroupName+"_singlenuc_context.bed")
+        self.bedFilePath = os.path.join(self.localRootDirectory,self.mutationGroupName+"_singlenuc_context_mutations.bed")
 
         if createIndividualDonorFiles:
 
@@ -180,8 +178,8 @@ class ICGCParserFileManager:
         self.MSIMutationGroupName = "MSI_" + self.mutationGroupName
         self.MSSMutationGroupName = "MSS_" + self.mutationGroupName
 
-        self.MSIBedFilePath = os.path.join(MSIDirectory,self.MSIMutationGroupName+"_singlenuc_context.bed")
-        self.MSSBedFilePath = os.path.join(MSSDirectory,self.MSSMutationGroupName+"_singlenuc_context.bed")
+        self.MSIBedFilePath = os.path.join(MSIDirectory,self.MSIMutationGroupName+"_singlenuc_context_mutations.bed")
+        self.MSSBedFilePath = os.path.join(MSSDirectory,self.MSSMutationGroupName+"_singlenuc_context_mutations.bed")
 
         if createIndividualDonorFiles:
 
@@ -204,13 +202,13 @@ class ICGCParserFileManager:
 
         if MSI is None: 
             donorDirectory = os.path.join(self.individualDonorsDirectory,donorID)
-            donorFile = donorID + "_" + self.mutationGroupName + "_singlenuc_context.bed"
+            donorFile = donorID + "_" + self.mutationGroupName + "_singlenuc_context_mutations.bed"
         elif MSI: 
             donorDirectory = os.path.join(self.individualMSIDonorsDirectory,donorID)
-            donorFile = donorID + "_" + self.MSIMutationGroupName + "_singlenuc_context.bed"
+            donorFile = donorID + "_" + self.MSIMutationGroupName + "_singlenuc_context_mutations.bed"
         else: 
             donorDirectory = os.path.join(self.individualMSSDonorsDirectory,donorID)
-            donorFile = donorID + "_" + self.MSSMutationGroupName + "_singlenuc_context.bed"
+            donorFile = donorID + "_" + self.MSSMutationGroupName + "_singlenuc_context_mutations.bed"
 
         if not os.path.exists(donorDirectory): os.mkdir(donorDirectory)
         return os.path.join(donorDirectory,donorFile)

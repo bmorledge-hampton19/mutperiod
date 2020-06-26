@@ -21,7 +21,7 @@ def parseUVDESeq(UVDESeqFilePaths):
         dataGroupName = getIsolatedParentDir(UVDESeqFilePath)
 
         # Generate the trimmed reads output, the fasta output, and trinuc lesions output file paths.
-        singlenucOutputFilePath = os.path.join(localRootDirectory,dataGroupName+"_singlenuc_context.bed")
+        singlenucOutputFilePath = os.path.join(localRootDirectory,dataGroupName+"_singlenuc_context_mutations.bed")
 
         # Iterate through the 2 bp lesions, adding 2 single base lesions to the singlenuc output file for each.
         print("Converting 2-bp lesions to 2 single base lesions...")
@@ -44,8 +44,7 @@ def parseUVDESeq(UVDESeqFilePaths):
                     for i in range(2):
 
                         # Write the two single base lesions from the one 2 bp lesion.
-                        ID = ''.join((chromosome,':',str(startPos+i),'-',str(endPos+i),'(',plusOrMinus,')'))
-                        singlenucOutputFile.write('\t'.join((chromosome,str(startPos+i),str(endPos+i),ID,"NA",plusOrMinus)) + '\n')
+                        singlenucOutputFile.write('\t'.join((chromosome,str(startPos+i),str(endPos+i),"None","None",plusOrMinus)) + '\n')
 
         # Sort the output.
         print("Sorting output data...")
