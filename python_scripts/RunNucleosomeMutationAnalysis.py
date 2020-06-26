@@ -44,12 +44,12 @@ if __name__ == "__main__":
     #Create the Tkinter UI
     dialog = TkinterDialog(workingDirectory=os.path.join(os.path.dirname(__file__),"..","data"))
     dialog.createMultipleFileSelector("Normalized Nucleosome Mutation Counts files:",0,
-                                      "mutation_counts_normalized.tsv",("Tab Seperated Values Files",".tsv"))
+                                      "normalized_nucleosome_mutation_counts.tsv",("Tab Seperated Values Files",".tsv"))
     dialog.createFileSelector("Output File", 1, ("R Data File", ".rda"), newFile = True)
     dialog.createMultipleFileSelector("MSI files (optional):",2,
-                                      "mutation_counts_normalized.tsv",("Tab Seperated Values Files",".tsv"))
+                                      "normalized_nucleosome_mutation_counts.tsv",("Tab Seperated Values Files",".tsv"))
     dialog.createMultipleFileSelector("MSS files (optional):",3,
-                                      "mutation_counts_normalized.tsv",("Tab Seperated Values Files",".tsv"))                                  
+                                      "normalized_nucleosome_mutation_counts.tsv",("Tab Seperated Values Files",".tsv"))                                  
     dialog.createReturnButton(4,0,2)
     dialog.createQuitButton(4,2,2)
 
