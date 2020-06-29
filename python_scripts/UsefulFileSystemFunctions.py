@@ -146,6 +146,9 @@ class Metadata:
         # Add the metadata directory to the metadata! (So meta!)
         self.metadata["metadataDirectory"] = os.path.dirname(filePath)
 
+        # Generate quick and easy to use class members to access common metadata!
+        self.wrapMetadataInMembers()
+
 
     # Search the metadata for a value paired to a given key.
     def getMetadataByKey(self, key):
@@ -155,29 +158,25 @@ class Metadata:
         
         return self.metadata[key]
     
-    ### Get a variety of common metadata features, quick and easy!
 
-    def getDataGroupName(self):
-        return self.getMetadataByKey("dataGroupName")
+    def wrapMetadataInMembers(self):
 
-    def getGenomeName(self):
-        return self.getMetadataByKey("associatedGenome")
+        ### Get a variety of common metadata features, quick and easy!
 
-    def getNucPosName(self):
-        return self.getMetadataByKey("associatedNucleosomePositions")
+        self.dataGroupName = self.getMetadataByKey("dataGroupName")
 
-    def getParentData(self):
-        return self.getMetadataByKey("parentData")
+        self.genomeName = self.getMetadataByKey("associatedGenome")
 
-    def getMetadataDirectory(self):
-        return self.getMetadataByKey("metadataDirectory")
+        self.nucPosName = self.getMetadataByKey("associatedNucleosomePositions")
 
-    
-    ### Get file paths for useful metadata associated files.
+        self.parentData = self.getMetadataByKey("parentData")
 
-    def getGenomeFilePath(self):
-        return os.path.join(externalDataDirectory,self.getGenomeName(),self.getGenomeName()+".fa")
+        self.directory = self.getMetadataByKey("metadataDirectory")
 
-    def getBaseNucPosFilePath(self):
-        return os.path.join(os.path.dirname(self.getGenomeFilePath()),self.getNucPosName(),
-                            self.getNucPosName()+".bed")
+        
+        ### Get file paths for useful metadata associated files.
+
+        self.genomeFilePath = os.path.join(externalDataDirectory,self.genomeName,self.genomeName+".fa")
+
+        self.baseNucPosFilePath = os.path.join(externalDataDirectory, self.genomeName,
+                                               self.nucPosName, self.nucPosName+".bed")
