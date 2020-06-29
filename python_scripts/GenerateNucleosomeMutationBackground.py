@@ -5,7 +5,7 @@ from TkinterDialog import TkinterDialog, Selections
 import os, subprocess
 from typing import Dict
 from UsefulBioinformaticsFunctions import bedToFasta, reverseCompliment, FastaFileIterator
-from UsefulFileSystemFunctions import getContext, getLinkerDNAAmount, Metadata, generateFilePath
+from UsefulFileSystemFunctions import getContext, getLinkerOffset, Metadata, generateFilePath, dataTypes
 
 
 # This function takes a bed file of strongly positioned nucleosomes and expands their coordinates to encompass
@@ -222,15 +222,14 @@ def generateNucleosomeMutationBackground(mutationBackgroundFilePaths, linkerOffs
 
         # Get metadata
         metadata = Metadata(mutationBackgroundFilePath)
-        genomeFilePath = metadata.getGenomeFilePath()
 
         # Make sure we have a fasta file for strongly positioned nucleosome coordinates
-        nucPosFastaFilePath = generateStrongPosNucleosomeFasta(metadata.getBaseNucPosFilePath(), genomeFilePath,linkerOffset)
+        nucPosFastaFilePath = generateStrongPosNucleosomeFasta(metadata.baseNucPosFilePath, metadata.genomeFilePath, linkerOffset)
 
         mutationBackgroundFileName = os.path.split(mutationBackgroundFilePath)[1]
         print("\nWorking with file:",mutationBackgroundFileName)
-        if not "_mutation_background" in mutationBackgroundFileName: 
-            raise ValueError("Error, expected file with \"_mutation_background\" in the name.")
+        if not dataTypes.mutBackground in mutationBackgroundFileName: 
+            raise ValueError("Error, expected file with \"" + dataTypes.mutBackground + "\" in the name.")
 
         # Determine the context of the mutation background file
         contextNum = getContext(mutationBackgroundFilePath, asInt=True)
@@ -239,8 +238,8 @@ def generateNucleosomeMutationBackground(mutationBackgroundFilePaths, linkerOffs
         print("Given mutation background is in", contextText, "context.")
 
         # Generate the path to the tsv file of dyad position context counts
-        dyadPosContextCountsFilePath = generateFilePath(directory = os.path.dirname(metadata.getBaseNucPosFilePath()),
-                                                        dataGroup = metadata.getNucPosName(),
+        dyadPosContextCountsFilePath = generateFilePath(directory = os.path.dirname(metadata.baseNucPosFilePath),
+                                                        dataGroup = metadata.nucPosName,
                                                         context = contextText, linkerOffset = linkerOffset,
                                                         dataType = "dyad_pos_counts", fileExtension = ".tsv")
 
@@ -251,16 +250,10 @@ def generateNucleosomeMutationBackground(mutationBackgroundFilePaths, linkerOffs
             generateDyadPosContextCounts(nucPosFastaFilePath, dyadPosContextCountsFilePath,
                                          contextNum, linkerOffset)
 
-        # Get some information on the file system and generate file paths for convenience.
-        workingDirectory = os.path.dirname(mutationBackgroundFilePath) # The working directory for the current data "group"
-
-        # The name of the mutation data set the background pertains to.
-        mutationDataGroup = mutationBackgroundFileName.split("_mutation_background",1)[0].rsplit('_',1)[0]
-
         # A path to the final output file.
-        nucleosomeMutationBackgroundFilePath = os.path.join(workingDirectory,mutationDataGroup+"_"+contextText+"_")
-        if linkerOffset > 0: nucleosomeMutationBackgroundFilePath += str(linkerOffset) +"linker+_"
-        nucleosomeMutationBackgroundFilePath += "nucleosome_mutation_background.tsv"
+        nucleosomeMutationBackgroundFilePath = generateFilePath(directory = metadata.directory, dataGroup = metadata.dataGroupName,
+                                                                context = contextText, linkerOffset = linkerOffset,
+                                                                dataType = dataTypes.nucMutBackground, fileExtension = ".tsv")
 
         # Generate the nucleosome mutation background file!
         generateNucleosomeMutationBackgroundFile(dyadPosContextCountsFilePath,mutationBackgroundFilePath,
@@ -274,10 +267,10 @@ def generateNucleosomeMutationBackground(mutationBackgroundFilePaths, linkerOffs
 if __name__ == "__main__":
     #Create the Tkinter UI
     dialog = TkinterDialog(workingDirectory=os.path.join(os.path.dirname(__file__),"..","data"))
-    dialog.createMultipleFileSelector("Mutation Background Files:",0,"mutation_background.tsv",("Tab Seperated Values Files",".tsv"))
-    dialog.createCheckbox("Include linker DNA",3,0,2)
-    dialog.createReturnButton(4,0,2)
-    dialog.createQuitButton(4,2,2)
+    dialog.createMultipleFileSelector("Mutation Background Files:",0,dataTypes.mutBackground + ".tsv",("Tab Seperated Values Files",".tsv"))
+    dialog.createCheckbox("Include linker DNA",1,0,2)
+    dialog.createReturnButton(2,0,2)
+    dialog.createQuitButton(2,2,2)
 
     # Run the UI
     dialog.mainloop()

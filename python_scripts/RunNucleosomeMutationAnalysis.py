@@ -1,6 +1,7 @@
 # This script takes normalized nucleosome mutation counts files and passes them to an R script
 # which outputs relevant data about them such as periodicity snr, assymetry, and differences between MSI and MSS data.
 import os, subprocess
+from UsefulFileSystemFunctions import dataTypes
 from TkinterDialog import TkinterDialog, Selections
 from typing import List
 
@@ -44,12 +45,12 @@ if __name__ == "__main__":
     #Create the Tkinter UI
     dialog = TkinterDialog(workingDirectory=os.path.join(os.path.dirname(__file__),"..","data"))
     dialog.createMultipleFileSelector("Normalized Nucleosome Mutation Counts files:",0,
-                                      "normalized_nucleosome_mutation_counts.tsv",("Tab Seperated Values Files",".tsv"))
+                                      dataTypes.normNucCounts + ".tsv",("Tab Seperated Values Files",".tsv"))
     dialog.createFileSelector("Output File", 1, ("R Data File", ".rda"), newFile = True)
     dialog.createMultipleFileSelector("MSI files (optional):",2,
-                                      "normalized_nucleosome_mutation_counts.tsv",("Tab Seperated Values Files",".tsv"))
+                                      dataTypes.normNucCounts + ".tsv",("Tab Seperated Values Files",".tsv"))
     dialog.createMultipleFileSelector("MSS files (optional):",3,
-                                      "normalized_nucleosome_mutation_counts.tsv",("Tab Seperated Values Files",".tsv"))                                  
+                                      dataTypes.normNucCounts + ".tsv",("Tab Seperated Values Files",".tsv"))                                  
     dialog.createReturnButton(4,0,2)
     dialog.createQuitButton(4,2,2)
 

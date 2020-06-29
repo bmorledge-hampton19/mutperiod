@@ -5,7 +5,7 @@
 import os
 from TkinterDialog import TkinterDialog, Selections
 from UsefulBioinformaticsFunctions import baseChromosomes
-from UsefulFileSystemFunctions import Metadata
+from UsefulFileSystemFunctions import Metadata, generateFilePath
 from typing import IO
 
 
@@ -205,23 +205,22 @@ def countNucleosomePositionMutations(mutationFilePaths, linkerOffset):
 
         print("\nWorking with",os.path.split(mutationFilePath)[1])
 
+        # Make sure we have the expected file type.
+        if not "context_mutations" in os.path.basename(mutationFilePath): 
+            raise ValueError("Mutation file should have \"context_mutations\" in the name.")
+
         # Get metadata and use it to generate a path to the nucleosome positions file.
         metadata = Metadata(mutationFilePath)
-        nucPosFilePath = metadata.getBaseNucPosFilePath()
-
-        # Make the file path for the output file
-        workingDirectory = os.path.split(mutationFilePath)[0]
-        mutationGroupName = os.path.split(mutationFilePath)[1].rsplit("_context_mutations",1)[0].rsplit("_",1)[0]
-        # Double check that the mutation group name was generated correctly.
-        if '.' in mutationGroupName: raise ValueError("Error, expected mutation file with \"_context_mutations\" in the name.")
 
         # Generate the output file path
-        nucleosomeMutationCountsFilePath = os.path.join(workingDirectory,mutationGroupName)
-        if linkerOffset > 0: nucleosomeMutationCountsFilePath += '_' + str(linkerOffset) +"linker+"
-        nucleosomeMutationCountsFilePath += "_raw_nucleosome_mutation_counts.tsv"
+        nucleosomeMutationCountsFilePath = generateFilePath(directory = metadata.directory,
+                                                            dataGroup = metadata.dataGroupName,
+                                                            linkerOffset = linkerOffset, fileExtension = ".tsv",
+                                                            dataType = "raw_nucleosome_mutation_counts")
 
         # Ready, set, go!
-        generateCountsFile(mutationFilePath, nucPosFilePath, nucleosomeMutationCountsFilePath, linkerOffset)
+        generateCountsFile(mutationFilePath, metadata.baseNucPosFilePath, 
+                           nucleosomeMutationCountsFilePath, linkerOffset)
 
         nucleosomeMutationCountsFilePaths.append(nucleosomeMutationCountsFilePath)
 

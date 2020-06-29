@@ -2,7 +2,8 @@
 import os, subprocess
 from TkinterDialog import TkinterDialog, Selections
 from typing import List
-from UsefulFileSystemFunctions import getLinkerDNAAmount, getContext
+from UsefulFileSystemFunctions import (getLinkerOffset, getContext, 
+                                       Metadata, generateFilePath, dataTypes)
 
 # Pairs each background file path with its respective raw counts file path.
 # Returns these pairings as a dictionary.
@@ -44,24 +45,26 @@ def getBackgroundRawPairs(rawCountsFilePaths, backgroundCountsFilePaths):
 
 
 
-def normalizeCounts(rawCountsFilePaths: List[str], backgroundCountsFilePaths: List[str]):
+def normalizeCounts(backgroundCountsFilePaths: List[str]):
 
     normalizedCountsFilePaths = list()
 
     backgroundRawPairs = getBackgroundRawPairs(rawCountsFilePaths, backgroundCountsFilePaths)
 
+    # Iterate through each background + raw counts pair
     for backgroundCountsFilePath in backgroundRawPairs:
 
         rawCountsFilePath = backgroundRawPairs[backgroundCountsFilePath]
 
         print("\nWorking with",os.path.basename(rawCountsFilePath),"and",os.path.basename(backgroundCountsFilePath))
 
+        metadata = Metadata(backgroundCountsFilePath)
+
         # Generate the path to the normalized file.
-        extraLinker = getLinkerDNAAmount(backgroundCountsFilePath)
-        normalizedCountsFilePath = rawCountsFilePath.rsplit("raw_nucleosome_mutation_counts",1)[0]
-        normalizedCountsFilePath += getContext(backgroundCountsFilePath) + '_'
-        if extraLinker > 0: normalizedCountsFilePath += str(extraLinker) + "linker+_"
-        normalizedCountsFilePath += "normalized_nucleosome_mutation_counts.tsv"
+        normalizedCountsFilePath = generateFilePath(directory = metadata.directory, dataGroup = metadata.dataGroupName,
+                                                    context = getContext(backgroundCountsFilePath),
+                                                    linkerOffset = getLinkerOffset(backgroundCountsFilePath),
+                                                    dataType = dataTypes.normNucCounts, fileExtension = ".tsv")
 
         # Pass the path to the file paths to the R script to generate the normalized counts file.
         print("Calling R script to generate normalized counts...")
@@ -79,12 +82,10 @@ if __name__ == "__main__":
 
     #Create the Tkinter UI
     dialog = TkinterDialog(workingDirectory=os.path.join(os.path.dirname(__file__),"..","data"))
-    dialog.createMultipleFileSelector("Raw Nucleosome Mutation Counts Files:",0,
-                                      "raw_nucleosome_mutation_counts.tsv",("Tab Seperated Values Files",".tsv"))
-    dialog.createMultipleFileSelector("Background NucleosomeMutation Counts Files:",1,
-                                      "nucleosome_mutation_background.tsv",("Tab Seperated Values Files",".tsv"))
-    dialog.createReturnButton(2,0,2)
-    dialog.createQuitButton(2,2,2)
+    dialog.createMultipleFileSelector("Background Nucleosome Mutation Counts Files:",0,
+                                      dataTypes.nucMutBackground + ".tsv",("Tab Seperated Values Files",".tsv"))
+    dialog.createReturnButton(1,0,2)
+    dialog.createQuitButton(1,2,2)
 
     # Run the UI
     dialog.mainloop()
@@ -94,7 +95,6 @@ if __name__ == "__main__":
 
     # Get the user's input from the dialog.
     selections: Selections = dialog.selections
-    rawCountsFilePaths = list(selections.getFilePathGroups())[0] # A list of raw mutation counts file paths
-    backgroundCountsFilePaths = list(selections.getFilePathGroups())[1] # A list of background mutation counts file paths
+    backgroundCountsFilePaths = list(selections.getFilePathGroups())[0] # A list of background mutation counts file paths
 
-    normalizeCounts(rawCountsFilePaths, backgroundCountsFilePaths)
+    normalizeCounts(backgroundCountsFilePaths)
