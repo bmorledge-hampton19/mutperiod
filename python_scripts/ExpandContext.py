@@ -19,9 +19,8 @@ def expandBedPositions(inputBedFilePath,bedExpansionFilePath,contextNum):
                 # Get a list of all the arguments for a single mutation in the bed file.
                 choppedUpLine = line.strip().split('\t')
 
-                # Make sure the line is in a single-nucleotide context.
-                if not int(choppedUpLine[1]) - int(choppedUpLine[2]) == -1:
-                    raise ValueError(line + " does not give a single nucleotide location to expand.")
+                # Find the middle base of the sequence specified by the bed file.
+                middleBaseNum = int((int(choppedUpLine[1]) + int(choppedUpLine[2]) - 1) / 2)
 
                 # Expand the position of the mutation to create the desired context.
                 choppedUpLine[1] = str(middleBaseNum - int(contextNum/2))
