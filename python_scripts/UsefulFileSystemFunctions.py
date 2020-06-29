@@ -4,6 +4,22 @@ import os
 # The directory containing genome and nucleosome data.
 externalDataDirectory = os.path.join(os.path.dirname(__file__),"..","data","__external_data")
 
+
+# Stores information about data type identifiers
+class DataTypes:
+
+    def __init__(self):
+
+        self.mutations = "context_mutations"
+        self.mutBackground = "mutation_background"
+        self.nucMutBackground = "nucleosome_mutation_background"
+        self.rawNucCounts = "raw_nucleosome_mutation_counts"
+        self.normNucCounts = "normalized_nucleosome_mutation_counts"
+
+# The data type identifiers
+dataTypes = DataTypes()
+
+
 # Recursively searches the given directory for files with the specified ending. Returns a list of the resulting file paths.
 def getFilesInDirectory(directory,validEnding, *additionalValidEndings):
     """Recursively searches the given directory(ies) for files of the specified type."""
