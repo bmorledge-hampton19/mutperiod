@@ -24,21 +24,19 @@ dataTypes = DataTypes()
 def getFilesInDirectory(directory,validEnding, *additionalValidEndings):
     """Recursively searches the given directory(ies) for files of the specified type."""
 
-    filePaths = list() # The files to return.
+    filePaths = list()
 
     # Iterate through the given directory
     for item in os.listdir(directory):
         path = os.path.join(directory,item)
 
+        # Recursively search any directories
         if os.path.isdir(path):
-
             filePaths += getFilesInDirectory(path,validEnding, *additionalValidEndings)
 
-        # Send gzipped files to the copyBedData function to be converted
+        # Check files for the valid ending(s)
         else:
-
             if path.endswith(validEnding): filePaths.append(path)
-
             else:
                 for additionalValidEnding in additionalValidEndings:
                     if path.endswith(additionalValidEnding): 
@@ -72,18 +70,18 @@ def getContext(filePath: str, asInt = False):
 
 
 # Returns the amount of linker DNA associated with the given file path.
-def getLinkerDNAAmount(filePath: str):
+def getLinkerOffset(filePath: str):
 
     # Get the basename of the file path
     fileName = os.path.basename(filePath)
 
     # If the "linker+" identifier is present, split on it and the preceding underscore to get the amount of linker DNA
     if "linker+" in fileName:
-        linkerNum = int(fileName.split("linker+")[0].rsplit('_',1)[-1])
+        linkerOffset = int(fileName.split("linker+")[0].rsplit('_',1)[-1])
     else:
-        linkerNum = 0
+        linkerOffset = 0
 
-    return linkerNum
+    return linkerOffset
 
 
 # Generates a file path in standardized format based on given information about the file.
@@ -127,7 +125,6 @@ def generateFilePath(directory = None, dataGroup = None, context = None,
 
 # Keeps track of data about a given data group by accessing the metadata file in the same directory
 class Metadata:
-
 
     def __init__(self,filePath):
 
