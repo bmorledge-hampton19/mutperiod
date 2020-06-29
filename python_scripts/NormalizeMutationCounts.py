@@ -7,39 +7,27 @@ from UsefulFileSystemFunctions import (getLinkerOffset, getContext,
 
 # Pairs each background file path with its respective raw counts file path.
 # Returns these pairings as a dictionary.
-def getBackgroundRawPairs(rawCountsFilePaths, backgroundCountsFilePaths):
-
-    # Create a dictionary matching each mutation group to its file path.
-    rawCountsMutationGroups = dict()
-    for rawCountsFilePath in rawCountsFilePaths:
-
-        if not "raw_nucleosome_mutation_counts" in os.path.basename(rawCountsFilePath): 
-            raise ValueError("Raw counts file should have \"raw_nucleosome_mutation_counts\" in the name.")
-
-        dataGroupName = os.path.basename(rawCountsFilePath).split("_raw_nucleosome_mutation_counts")[0]
-
-        if dataGroupName in rawCountsMutationGroups:
-            raise ValueError("The mutation group name " + dataGroupName + " appears in multiple raw " +
-                             "counts files but is supposed to be unique.")
-        
-        rawCountsMutationGroups[dataGroupName] = rawCountsFilePath
+def getBackgroundRawPairs(backgroundCountsFilePaths):
 
     # Match each background file path to its respective raw counts file path.
     backgroundRawPairs = dict()
     for backgroundCountsFilePath in backgroundCountsFilePaths:
 
-        if not "nucleosome_mutation_background" in os.path.basename(backgroundCountsFilePath): 
-            raise ValueError("Background counts file should have \"nucleosome_mutation_background\" in the name.")
+        if not dataTypes.nucMutBackground in os.path.basename(backgroundCountsFilePath): 
+            raise ValueError("Background counts file should have \"" + dataTypes.nucMutBackground + "\" in the name.")
 
-        # Split the file name at the context identifier to determine the mutation group name.
-        backgroundContext = getContext(backgroundCountsFilePath)
-        dataGroupName = os.path.basename(backgroundCountsFilePath).split('_'+backgroundContext)[0]
+        # Generate the expected raw counts file path
+        metadata = Metadata(backgroundCountsFilePath)
+        rawCountsFilePath = generateFilePath(directory = metadata.directory, dataGroup = metadata.dataGroupName,
+                                             linkerOffset = getLinkerOffset(backgroundCountsFilePath),
+                                             dataType = dataTypes.rawNucCounts, fileExtension = ".tsv")
 
-        if not dataGroupName in rawCountsMutationGroups:
-            raise ValueError("A background counts file was given for mutation group " + dataGroupName +
-                             ", but no corresponding raw counts file was given.")
+        # Make sure it exists
+        if not os.path.exists(rawCountsFilePath):
+            raise ValueError("No raw counts file found to pair with " + backgroundCountsFilePath +
+                             "\nExpected file with path: " + rawCountsFilePath)
 
-        backgroundRawPairs[backgroundCountsFilePath] = rawCountsMutationGroups[dataGroupName]
+        backgroundRawPairs[backgroundCountsFilePath] = rawCountsFilePath
 
     return backgroundRawPairs
 
@@ -49,7 +37,7 @@ def normalizeCounts(backgroundCountsFilePaths: List[str]):
 
     normalizedCountsFilePaths = list()
 
-    backgroundRawPairs = getBackgroundRawPairs(rawCountsFilePaths, backgroundCountsFilePaths)
+    backgroundRawPairs = getBackgroundRawPairs(backgroundCountsFilePaths)
 
     # Iterate through each background + raw counts pair
     for backgroundCountsFilePath in backgroundRawPairs:
