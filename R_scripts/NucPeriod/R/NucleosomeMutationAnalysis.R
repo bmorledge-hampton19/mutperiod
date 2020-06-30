@@ -14,25 +14,26 @@ generateNucPeriodData = function(mutationCountsFilePaths, outputFilePath,
     rawCountsFilePaths = sapply(mutationCountsFilePaths, getRawCountsFilePath)
   } else rawCountsFilePaths = mutationCountsFilePaths
 
-  dataSetNames = getDataSetNames(rawCountsFilePaths, enforceInputNamingConventions)
-  rawNucleosomeMutationCounts = sapply(rawCountsFilePaths, getRawNucleosomeMutationCounts)
+  dataSetNames = getDataSetNames(mutationCountsFilePaths, enforceInputNamingConventions)
+  rawNucleosomeMutationCounts = sapply(rawCountsFilePaths, getRawNucleosomeMutationCounts,
+                                       dyadPosCutoff)
 
-  mutationCountsTable = data.table::data.table(File_Path = mutationCountsFilePaths,
-                                               Data_Set = dataSetNames,
-                                               Raw_Nucleosome_Mutation_Counts = rawNucleosomeMutationCounts)
+  rawCountsTable = data.table::data.table(File_Path = mutationCountsFilePaths, Data_Set = dataSetNames,
+                                          Raw_Nucleosome_Mutation_Counts = rawNucleosomeMutationCounts)
   # Sort the newly created table by data set names.
   data.table::setorder(rawCountsTable,Data_Set)
 
   # If a cutoff greater than 0 was given for nucleosome mutation counts, enforce it.
   if (nucleosomeMutationCutoff > 0) {
 
-    filteredCountsTable = mutationCountsTable[Raw_Nucleosome_Mutation_Counts >= nucleosomeMutationCutoff]
+    filteredCountsTable = rawCountsTable[mapply(filterCounts, Raw_Nucleosome_Mutation_Counts,
+                                                nucleosomeMutationCutoff, Data_Set)]
     validFilePaths = filteredCountsTable$File_Path
     validDataSetNames = filteredCountsTable$Data_Set
 
   } else {
-    validFilePaths = mutationCountsPaths
-    validDataSetNames = dataSetNames
+    validFilePaths = rawCountsTable$File_Path
+    validDataSetNames = rawCountsTable$Data_Set
   }
 
   # Prep for MSI vs MSS analysis if the respective file path lists were given.
@@ -49,14 +50,14 @@ generateNucPeriodData = function(mutationCountsFilePaths, outputFilePath,
   periodicityPValues = numeric(length(validFilePaths))
   periodicitySNRs = numeric(length(validFilePaths))
 
-  generalAsymmetryTValue = numeric(length(validFilePaths))
-  generalAsymmetryPValue = numeric(length(validFilePaths))
-
-  peakAsymmetryTValue = numeric(length(validFilePaths))
-  peakAsymmetryPValue = numeric(length(validFilePaths))
-
-  valleyAsymmetryTValue = numeric(length(validFilePaths))
-  valleyAsymmetryPValue = numeric(length(validFilePaths))
+  # generalAsymmetryTValue = numeric(length(validFilePaths))
+  # generalAsymmetryPValue = numeric(length(validFilePaths))
+  #
+  # peakAsymmetryTValue = numeric(length(validFilePaths))
+  # peakAsymmetryPValue = numeric(length(validFilePaths))
+  #
+  # valleyAsymmetryTValue = numeric(length(validFilePaths))
+  # valleyAsymmetryPValue = numeric(length(validFilePaths))
 
   for (i in 1:length(validFilePaths)) {
 
@@ -69,8 +70,7 @@ generateNucPeriodData = function(mutationCountsFilePaths, outputFilePath,
     print(paste("Working with", validDataSetNames[i]))
 
     # Read in the data.
-    nucleosomeMutationData = data.table::fread(file = validFilePaths[i])
-
+    nucleosomeCountsData = data.table::fread(file = validFilePaths[i])
     nucleosomeCountsTables[[i]] = nucleosomeCountsData
 
     ##### Periodicity Analysis #####
@@ -102,15 +102,15 @@ generateNucPeriodData = function(mutationCountsFilePaths, outputFilePath,
     #
     # # Run asymmetry analysis on the aligned strand counts.
     # generalAsymmetryResult =
-    #   t.test(nucleosomeMutationData$Normalized_Aligned_Strands[(74-dyadPosCutoff):73],
-    #          rev(nucleosomeMutationData$Normalized_Aligned_Strands[75:(74+dyadPosCutoff)]), paired = T)
+    #   t.test(nucleosomeCountsData$Normalized_Aligned_Strands[(74-dyadPosCutoff):73],
+    #          rev(nucleosomeCountsData$Normalized_Aligned_Strands[75:(74+dyadPosCutoff)]), paired = T)
     # generalAsymmetryTValue[i] = generalAsymmetryResult$statistic
     # generalAsymmetryPValue[i] = generalAsymmetryResult$p.value
     #
     # # Run asymmetry analysis on the peaks and valleys of the aligned strands.
     # # If there is not enough data to derive peaks and valleys (e.g. for individual donors)
     # # the result will be NA.
-    # peakAsymmetryResult = runExtremeAnalysisSuite(nucleosomeMutationData$Normalized_Aligned_Strands,
+    # peakAsymmetryResult = runExtremeAnalysisSuite(nucleosomeCountsData$Normalized_Aligned_Strands,
     #                                               dyadPosCutoff = dyadPosCutoff)
     # if (any(!is.na(peakAsymmetryResult))) {
     #   peakAsymmetryTValue[i] = peakAsymmetryResult$statistic
@@ -120,7 +120,7 @@ generateNucPeriodData = function(mutationCountsFilePaths, outputFilePath,
     #   peakAsymmetryPValue[i] = NA
     # }
     #
-    # valleyAsymmetryResult = runExtremeAnalysisSuite(nucleosomeMutationData$Normalized_Aligned_Strands,
+    # valleyAsymmetryResult = runExtremeAnalysisSuite(nucleosomeCountsData$Normalized_Aligned_Strands,
     #                                                 maxes = FALSE, dyadPosCutoff = dyadPosCutoff)
     # if (any(!is.na(valleyAsymmetryResult))) {
     #   valleyAsymmetryTValue[i] = valleyAsymmetryResult$statistic
@@ -170,12 +170,12 @@ generateNucPeriodData = function(mutationCountsFilePaths, outputFilePath,
 
   # Create the data object to return
   if (compareMS) {
-    nucPeriodData = list(countsData = mutationCountsTable,
-                         periodicityResults = periodicityResults,
+    nucPeriodData = list(dyadPosCutoff = dyadPosCutoff, nucleosomeCountsTables = nucleosomeCountsTables,
+                         rawCountsData = rawCountsTable, periodicityResults = periodicityResults,
                          MSIInputs = MSIDataSetNames, MSSInputs = MSSDataSetNames, wilcoxinResult = wilcoxinResult)
   } else {
-    nucPeriodData = list(countsData = mutationCountsTable,
-                         periodicityResults = periodicityResults)
+    nucPeriodData = list(dyadPosCutoff = dyadPosCutoff, nucleosomeCountsTables = nucleosomeCountsTables,
+                         rawCountsData = rawCountsTable, periodicityResults = periodicityResults)
   }
   save(nucPeriodData, file = outputFilePath)
 
@@ -201,12 +201,12 @@ getRawCountsFilePath = function(rawOrNormalizedCountsFilePath) {
 
 }
 
-getDataSetNames = function(rawMutationCountsFilePaths, enforceInputNamingConventions) {
+getDataSetNames = function(mutationCountsFilePaths, enforceInputNamingConventions) {
 
   if (enforceInputNamingConventions) {
-    return(sapply(strsplit(basename(rawMutationCountsFilePaths),"raw_nucleosome"), function(x) x[1]))
+    return(sapply(strsplit(basename(mutationCountsFilePaths),"_nucleosome_mutation_counts"), function(x) x[1]))
   } else {
-    return(sapply(strsplit(basename(rawMutationCountsFilePaths),'.', fixed = TRUE), function(x) x[1]))
+    return(sapply(strsplit(basename(mutationCountsFilePaths),'.', fixed = TRUE), function(x) x[1]))
   }
 
 }
