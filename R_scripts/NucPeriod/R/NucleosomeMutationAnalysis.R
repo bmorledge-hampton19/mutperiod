@@ -199,10 +199,13 @@ getDataSetNames = function(rawMutationCountsFilePaths, enforceInputNamingConvent
 
 }
 
-getRawNucleosomeMutationCounts = function(countsFilePath) {
+getRawNucleosomeMutationCounts = function(countsFilePath, dyadPosCutoff) {
 
   countsTable = data.table::fread(file = countsFilePath)
-  return(sum(countsTable$Both_Strands_Counts))
+  return(sum(countsTable[Dyad_Position >= -dyadPosCutoff & Dyad_Position <= dyadPosCutoff,
+                         Both_Strands_Counts]))
+
+}
 
 filterCounts = function(counts, cutoff, dataGroup) {
 
