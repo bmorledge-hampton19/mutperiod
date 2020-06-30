@@ -1,9 +1,12 @@
 # This function uses the MSIseq package to generate a list of MSI donors.
 #' @export
-findMSIDonors = function(inputDataPath, verbose = TRUE) {
+findMSIDonors = function(inputDataPath, mutationGroupName, verbose = TRUE) {
 
   # The number of base pairs (in megabases) in the hg19 genome (excluding mitochondria).
   captureLength = 3096
+
+  # A path to the output file.
+  outputFilePath = file.path(dirname(inputDataPath), paste0(mutationGroupName,"_MSI_donors.txt"))
 
   ## download the Hg19repeats annotation file and load it
   if (verbose) print("Downloading genome information...")
@@ -14,6 +17,10 @@ findMSIDonors = function(inputDataPath, verbose = TRUE) {
 
   # Get the input data
   inputData = data.table::fread(inputDataPath)
+  if (dim(inputData)[0] == 0) {
+    warning("MSI seq data file is empty.  Writing empty MSI donor file.")
+    write('', file = outputFilePath)
+  }
   data.table::setnames(inputData,colnames(inputData),c("Chrom","Start_Position","End_Position",
                                                        "Variant_Type","Tumor_Sample_Barcode"))
 
@@ -34,7 +41,5 @@ findMSIDonors = function(inputDataPath, verbose = TRUE) {
   # Export the MSI-H results to a text file.
   if (verbose) print("Writing Results...")
   MSIResults = result[MSI_status == "MSI-H",Tumor_Sample_Barcode]
-  write(as.character(MSIResults),sep = '\n', file = paste0(dirname(inputDataPath),'/',
-                                                           unlist(strsplit(basename(inputDataPath),'_'))[1],
-                                                           "_MSI_donors.txt"))
+  write(as.character(MSIResults),sep = '\n', file = outputFilePath)
 }
