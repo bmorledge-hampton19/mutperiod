@@ -20,6 +20,8 @@ generateNucPeriodData = function(mutationCountsFilePaths, outputFilePath,
   mutationCountsTable = data.table::data.table(File_Path = mutationCountsFilePaths,
                                                Data_Set = dataSetNames,
                                                Raw_Nucleosome_Mutation_Counts = rawNucleosomeMutationCounts)
+  # Sort the newly created table by data set names.
+  data.table::setorder(rawCountsTable,Data_Set)
 
   # If a cutoff greater than 0 was given for nucleosome mutation counts, enforce it.
   if (nucleosomeMutationCutoff > 0) {
