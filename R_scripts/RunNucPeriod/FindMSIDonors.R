@@ -15,9 +15,9 @@ selectInputAndRun = function(){
 args = commandArgs(trailingOnly = T)
 if (length(args) == 0) {
   selectInputAndRun()
-} else if (length(args) == 1) {
-  findMSIDonors(args[1])
+} else if (length(args) == 2) {
+  findMSIDonors(args[1], args[2])
 } else {
-  stop("Invalid number of arguments passed.  Expected 1 argument for MSIseq input data or no arguments
-       to select input manually")
+  stop("Invalid number of arguments passed.  Expected 2 arguments for MSIseq input data 
+       and mutation group name or no arguments to select input manually")
 }
