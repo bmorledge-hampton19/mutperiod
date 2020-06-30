@@ -42,6 +42,9 @@ generateNucPeriodData = function(mutationCountsFilePaths, outputFilePath,
     MSSDataSetNames = sapply(strsplit(basename(MSSFilePaths),"_nucleosome"), function(x) x[1])
   }
 
+  nucleosomeCountsTables = vector("list",length(validFilePaths))
+  names(nucleosomeCountsTables) = validDataSetNames
+
   peakPeriodicities = numeric(length(validFilePaths))
   periodicityPValues = numeric(length(validFilePaths))
   periodicitySNRs = numeric(length(validFilePaths))
@@ -68,6 +71,7 @@ generateNucPeriodData = function(mutationCountsFilePaths, outputFilePath,
     # Read in the data.
     nucleosomeMutationData = data.table::fread(file = validFilePaths[i])
 
+    nucleosomeCountsTables[[i]] = nucleosomeCountsData
 
     ##### Periodicity Analysis #####
 
