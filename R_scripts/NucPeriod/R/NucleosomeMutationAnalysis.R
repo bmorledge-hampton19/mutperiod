@@ -75,27 +75,27 @@ generateNucPeriodData = function(mutationCountsFilePaths, outputFilePath,
 
     ##### Periodicity Analysis #####
 
-    # print("Running periodicity analysis...")
-    #
-    # # Calculate the periodicity of the data using a Lomb-Scargle periodiagram.
-    # lombResult = lomb::lsp(nucleosomeMutationData[Dyad_Position >= -dyadPosCutoff & Dyad_Position <= dyadPosCutoff,
-    #                                               .(Dyad_Position,Normalized_Both_Strands)],
-    #                  type = "period", from = 2, to = 50, ofac = 100, plot = outputGraphs)
-    # if (outputGraphs) {
-    #   plot(nucleosomeMutationData[Dyad_Position >= -dyadPosCutoff & Dyad_Position <= dyadPosCutoff,
-    #                               .(Dyad_Position,Normalized_Both_Strands)],
-    #        type = 'b', main = validDataSetNames[i])
-    # }
-    # # Store the relevant results!
-    # peakPeriodicities[i] = lombResult$peak.at[1]
-    # periodicityPValues[i] = lombResult$p.value
-    #
-    # # Calculate the SNR
-    # noiseBooleanVector = (lombResult$scanned < lombResult$peak.at[1] - 0.5
-    #                       | lombResult$scanned > lombResult$peak.at[1] + 0.5)
-    # periodicitySNRs[i] = lombResult$peak / median(lombResult$power[noiseBooleanVector])
-    #
-    #
+    print("Running periodicity analysis...")
+
+    # Calculate the periodicity of the data using a Lomb-Scargle periodiagram.
+    lombResult = lomb::lsp(nucleosomeCountsData[Dyad_Position >= -dyadPosCutoff & Dyad_Position <= dyadPosCutoff,
+                                                  .(Dyad_Position,Normalized_Both_Strands)],
+                     type = "period", from = 2, to = 50, ofac = 100, plot = outputGraphs)
+    if (outputGraphs) {
+      plot(nucleosomeCountsData[Dyad_Position >= -dyadPosCutoff & Dyad_Position <= dyadPosCutoff,
+                                  .(Dyad_Position,Normalized_Both_Strands)],
+           type = 'b', main = validDataSetNames[i])
+    }
+    # Store the relevant results!
+    peakPeriodicities[i] = lombResult$peak.at[1]
+    periodicityPValues[i] = lombResult$p.value
+
+    # Calculate the SNR
+    noiseBooleanVector = (lombResult$scanned < lombResult$peak.at[1] - 0.5
+                          | lombResult$scanned > lombResult$peak.at[1] + 0.5)
+    periodicitySNRs[i] = lombResult$peak / median(lombResult$power[noiseBooleanVector])
+
+
     # ##### Asymmetry Analysis ##### ## Obselete.  Will maybe revisit?
     #
     # print("Running asymmetry analysis")
