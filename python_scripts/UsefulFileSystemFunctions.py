@@ -185,7 +185,7 @@ class Metadata:
 
         self.nucPosName = self.getMetadataByKey("associatedNucleosomePositions")
 
-        self.parentData = self.getMetadataByKey("parentData")
+        self.localParentDataPath = self.getMetadataByKey("localParentDataPath")
 
         self.directory = self.getMetadataByKey("metadataDirectory")
 
@@ -196,3 +196,5 @@ class Metadata:
 
         self.baseNucPosFilePath = os.path.join(externalDataDirectory, self.genomeName,
                                                self.nucPosName, self.nucPosName+".bed")
+
+        self.parentDataFilePath = os.path.join(self.directory, self.localParentDataPath)
