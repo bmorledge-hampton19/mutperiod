@@ -123,6 +123,22 @@ def generateFilePath(directory = None, dataGroup = None, context = None,
     return filePath
 
 
+# Generates a .metadata file from the given information.
+def generateMetadata(dataGroupName, associatedGenome, associatedNucleosomePositions, 
+                     localParentDataPath, metadataDirectory):
+
+    # Open up the metadata file.
+    with open(os.path.join(metadataDirectory,".metadata"), 'w') as metadataFile:
+
+        # Write the given data
+        metadataFile.write("dataGroupName:\t" + dataGroupName + '\n')
+
+        metadataFile.write("associatedGenome:\t" + associatedGenome + '\n')
+
+        metadataFile.write("associatedNucleosomePositions:\t" + associatedNucleosomePositions + '\n')
+
+        metadataFile.write("localParentDataPath:\t" + localParentDataPath + '\n')
+
 # Keeps track of data about a given data group by accessing the metadata file in the same directory
 class Metadata:
 
