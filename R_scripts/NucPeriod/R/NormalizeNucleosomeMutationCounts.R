@@ -17,12 +17,12 @@ normalizeNucleosomeMutationCounts = function(rawCountsFilePath, backgroundCounts
   # Create a table of normalized values from the given data
   normalizedData = data.table::data.table()
   normalizedData[,Dyad_Position := backgroundCounts$Dyad_Position]
-  normalizedData[,Normalized_Minus_Strand := rawCounts$Minus_Strand_Counts/
-                   backgroundCounts$Expected_Mutations_Minus_Strand]
-  normalizedData[,Normalized_Plus_Strand := rawCounts$Plus_Strand_Counts/
-                   backgroundCounts$Expected_Mutations_Plus_Strand]
-  normalizedData[,Normalized_Both_Strands := rawCounts$Both_Strands_Counts/
-                   backgroundCounts$Expected_Mutations_Both_Strands]
+  normalizedData[,Normalized_Minus_Strand := mapply(normalize,rawCounts$Minus_Strand_Counts,
+                                                    backgroundCounts$Expected_Mutations_Minus_Strand)]
+  normalizedData[,Normalized_Plus_Strand := mapply(normalize,rawCounts$Plus_Strand_Counts,
+                                                   backgroundCounts$Expected_Mutations_Plus_Strand)]
+  normalizedData[,Normalized_Both_Strands := mapply(normalize,rawCounts$Both_Strands_Counts,
+                                                    backgroundCounts$Expected_Mutations_Both_Strands)]
 
   # Add a column for aligned, normalized strands
   normalizedData[,Normalized_Aligned_Strands :=
@@ -36,4 +36,9 @@ normalizeNucleosomeMutationCounts = function(rawCountsFilePath, backgroundCounts
 
   return(normalizedData)
 
+}
+
+normalize = function(raw, expected) {
+  if (expected == 0) return(0)
+  else return(raw/expected)
 }
