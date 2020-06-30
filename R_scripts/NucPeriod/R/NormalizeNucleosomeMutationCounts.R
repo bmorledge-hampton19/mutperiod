@@ -38,6 +38,9 @@ normalizeNucleosomeMutationCounts = function(rawCountsFilePath, backgroundCounts
 
 }
 
+# Normalizes data by dividing raw by expected, except in the case where expected is 0.
+# In this case, raw will also be 0, or at least some mutations would be expected, so
+# the returned value can safely be set to 0 instead of dividing by 0.
 normalize = function(raw, expected) {
   if (expected == 0) return(0)
   else return(raw/expected)
