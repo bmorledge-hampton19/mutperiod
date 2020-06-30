@@ -2,7 +2,7 @@
 # mutations occured at each dyad position for each (and both) strands.
 # NOTE:  Both input files must be sorted for this script to run properly. 
 #        (Sorted first by chromosome (string) and then by nucleotide position (numeric))
-import os
+import os, warnings
 from TkinterDialog import TkinterDialog, Selections
 from UsefulBioinformaticsFunctions import baseChromosomes
 from UsefulFileSystemFunctions import Metadata, generateFilePath
@@ -18,10 +18,14 @@ class MutationData:
 
         # Read in the first line and check that it isn't empty.
         choppedUpLine = file.readline().strip().split()
-        if len(choppedUpLine) == 0: raise ValueError("Error:  Empty mutation file given.")
+        
 
         # Initialize class variables
         self.isEmpty = False # This variable keeps track of when EOF is reached.
+        if len(choppedUpLine) == 0: 
+            self.isEmpty = True # This means we were passed an empty mutation file   
+            warnings.warn("Empty mutation file given.  All counts will be set to 0.")
+            return
         self.chromosome = choppedUpLine[0] # The chromosome that houses the mutation.
         self.position = int(choppedUpLine[1]) # The position of the mutation in its chromosome.
         self.strand = choppedUpLine[5] # Either '+' or '-' depending on which strand houses the mutation.
@@ -63,10 +67,13 @@ class NucleosomeData:
 
         # Read in the first line and check that it isn't empty.
         choppedUpLine = file.readline().strip().split()
-        if len(choppedUpLine) == 0: raise ValueError("Error:  Empty nucleosome file given.")
-
+        
         # Initialize class variables
         self.isEmpty = False # This variable keeps track of when EOF is reached.
+        if len(choppedUpLine) == 0: 
+            self.isEmpty = True # This means we were passed an empty file
+            warnings.warn("Empty nucleosome file given.  All counts will be set to 0.")
+            return
         self.chromosome = choppedUpLine[0] # The chromosome that houses the nucleosome.
         self.dyadPosNegative74 = int(choppedUpLine[1]) # The position of the base pair at dyad position -74 for the current nucleosome.
             
@@ -92,7 +99,7 @@ class NucleosomeData:
 def reconcileChromosomes(mutation: MutationData, nucleosome: NucleosomeData):
     
     # Until the chromosomes are the same for both mutations and 
-    while not mutation.chromosome == nucleosome.chromosome and not (mutation.isEmpty or nucleosome.isEmpty):
+    while not (mutation.isEmpty or nucleosome.isEmpty) and not mutation.chromosome == nucleosome.chromosome:
         if mutation.chromosome < nucleosome.chromosome: mutation.readNextMutation()
         else: nucleosome.readNextNucleosome()
 
@@ -149,9 +156,12 @@ def generateCountsFile(mutationFilePath, nucPosFilePath, nucleosomeMutationCount
         with open(nucPosFilePath,'r') as nucPosFile:
 
             #Get data on the first mutation and nucleosome and reconcile their chromosomes if necessary to start things off.
+            # If either the mutation file or nucleosome file is empty, make sure to bypass the check.
             currentMutation = MutationData(mutationFile)            
             currentNucleosome = NucleosomeData(nucPosFile) 
-            if currentNucleosome.chromosome == currentMutation.chromosome: print("Counting in",currentNucleosome.chromosome)
+            if (not (currentMutation.isEmpty or currentNucleosome.isEmpty) and 
+                currentNucleosome.chromosome == currentMutation.chromosome): 
+                print("Counting in",currentNucleosome.chromosome)
             else: reconcileChromosomes(currentMutation, currentNucleosome)
 
             # The core loop goes through each nucleosome one at a time and checks mutation positions against it until 
