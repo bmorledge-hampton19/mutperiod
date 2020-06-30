@@ -189,8 +189,14 @@ getRawCountsFilePath = function(rawOrNormalizedCountsFilePath) {
     return(rawOrNormalizedCountsFilePath)
   } else {
     dataSetName = strsplit(fileName,"singlenuc|trinuc|pentanuc")[[1]][1]
+    if (grepl("linker+",fileName,fixed = TRUE)) {
+      linkerOffset = grep("linker+",strsplit(fileName,'_')[[1]],value = TRUE)
+      linkerOffset = paste0(linkerOffset,'_')
+    } else {
+      linkerOffset = ''
+    }
     return(file.path(dirname(rawOrNormalizedCountsFilePath),
-                     paste0(dataSetName,"raw_nucleosome_mutation_counts.tsv")))
+                     paste0(dataSetName,linkerOffset,"raw_nucleosome_mutation_counts.tsv")))
   }
 
 }
