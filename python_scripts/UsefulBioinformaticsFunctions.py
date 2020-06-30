@@ -101,6 +101,8 @@ class FastaFileIterator:
         # Get the name for the upcoming sequence.
         if self.nextSequenceName is None:
             sequenceName = self.fastaFile.readline().strip()[1:]
+            # If the file is empty (and thus, the first line is blank) stop iteration immediately.
+            if not sequenceName: raise StopIteration
         else: 
             sequenceName = self.nextSequenceName
 
