@@ -2,8 +2,8 @@
 # writes information on single base substitution mutations to a new bed file or files for further analysis.
 import os, gzip, subprocess
 from TkinterDialog import TkinterDialog, Selections
-from UsefulBioinformaticsFunctions import reverseCompliment, isPurine
 from UsefulFileSystemFunctions import dataTypes, generateFilePath, generateMetadata, getIsolatedParentDir
+from UsefulBioinformaticsFunctions import reverseCompliment, isPurine, baseChromosomes
 from typing import IO, List
 
 # This class represents the mutation data obtained from ICGC in a more precise form.
@@ -113,7 +113,8 @@ class ICGCIterator:
 
 
             if (choppedUpLine[12] == "GRCh37" and # Is the reference genome hg19?
-                choppedUpLine[33] == "WGS"): # Was whole genome sequencing used to generate the data?
+                choppedUpLine[33] == "WGS" and # Was whole genome sequencing used to generate the data?
+                ("chr" + choppedUpLine[8]) in baseChromosomes): # Is the chromosome acceptable?
 
                 # Is this a new donor?
                 if choppedUpLine[1] != self.currentDonor:

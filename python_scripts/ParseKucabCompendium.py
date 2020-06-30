@@ -1,7 +1,7 @@
 # This script takes data from the Kucab et al. mutation compendium paper and converts it to
 # a trinucleotide context bed file.
 from TkinterDialog import TkinterDialog, Selections
-from UsefulBioinformaticsFunctions import reverseCompliment, isPurine
+from UsefulBioinformaticsFunctions import reverseCompliment, isPurine, baseChromosomes
 from UsefulFileSystemFunctions import getIsolatedParentDir, generateFilePath, dataTypes, generateMetadata
 import os, subprocess
 
@@ -71,6 +71,11 @@ def parseKucabCompendium(kucabSubstitutionsFilePaths, genomeFilePath, nucPosFile
 
                     # Compile the necessary information for the bed file.
                     chromosome = "chr" + choppedUpLine[4]
+
+                    # Handle the weird chromsome formatting and then check for invalid chromosomes.
+                    if chromosome == "chr23": chromosome = "chrX"
+                    if chromosome == "chr24": chromosome = "chrY"
+                    if not chromosome in baseChromosomes: continue
                     startPos1Base = choppedUpLine[5]
                     startPos0Base = str(int(startPos1Base)-1)
 
