@@ -204,4 +204,12 @@ getRawNucleosomeMutationCounts = function(countsFilePath) {
   countsTable = data.table::fread(file = countsFilePath)
   return(sum(countsTable$Both_Strands_Counts))
 
+filterCounts = function(counts, cutoff, dataGroup) {
+
+  if (counts >= cutoff) return(TRUE)
+  else {
+    print(paste(dataGroup,"is not valid with only",counts,"total counts and will be filtered out."))
+    return(FALSE)
+  }
+
 }
