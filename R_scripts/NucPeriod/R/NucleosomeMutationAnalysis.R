@@ -55,6 +55,12 @@ generateNucPeriodData = function(mutationCountsFilePaths, outputFilePath,
 
   for (i in 1:length(validFilePaths)) {
 
+    # Make sure that if no files validated, no analysis attempts to run.
+    if (length(validFilePaths) == 0) {
+      warning("No valid files given.  Returning blank analysis.")
+      break()
+    }
+
     print(paste("Working with", validDataSetNames[i]))
 
     # Read in the data.
