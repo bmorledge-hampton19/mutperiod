@@ -197,7 +197,7 @@ def generateCountsFile(mutationFilePath, nucPosFilePath, nucleosomeMutationCount
     with open(nucleosomeMutationCountsFilePath,'w') as nucleosomeMutationCountsFile:
         
         # Write the headers to the file.
-        nucleosomeMutationCountsFile.write('\t'.join(("Dyad_Pos","Plus_Strand_Counts",
+        nucleosomeMutationCountsFile.write('\t'.join(("Dyad_Position","Plus_Strand_Counts",
                                             "Minus_Strand_Counts","Both_Strands_Counts")) + '\n')
         
         # Write the data.
