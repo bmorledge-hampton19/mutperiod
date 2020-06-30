@@ -2,10 +2,10 @@
 # a trinucleotide context bed file.
 from TkinterDialog import TkinterDialog, Selections
 from UsefulBioinformaticsFunctions import reverseCompliment, isPurine
-from UsefulFileSystemFunctions import getIsolatedParentDir
+from UsefulFileSystemFunctions import getIsolatedParentDir, generateFilePath, dataTypes, generateMetadata
 import os, subprocess
 
-def parseKucabCompendium(kucabSubstitutionsFilePaths,includeAllPAHs):
+def parseKucabCompendium(kucabSubstitutionsFilePaths, genomeFilePath, nucPosFilePath, includeAllPAHs):
 
     for kucabSubstitutionsFilePath in kucabSubstitutionsFilePaths:
 
@@ -17,9 +17,21 @@ def parseKucabCompendium(kucabSubstitutionsFilePaths,includeAllPAHs):
         # Prepare the output file path.
         localRootDirectory = os.path.dirname(kucabSubstitutionsFilePath)
         dataGroupName = getIsolatedParentDir(kucabSubstitutionsFilePath)
-        if includeAllPAHs: dataGroupName += "_all_PAHs"
-        else: dataGroupName += "_smoker_lung"
-        outputTrinucBedFilePath = os.path.join(localRootDirectory,dataGroupName+"_trinuc_context_mutations.bed")
+        if includeAllPAHs:
+            dataDirectory = os.path.join(localRootDirectory,"all_PAHs")
+            dataGroupName += "_all_PAHs"
+        else: 
+            dataGroupName += "_smoker_lung"
+            dataDirectory = os.path.join(localRootDirectory,"smoker_lung")
+        
+        # Make sure the data directory exists.
+        if not os.path.exists(dataDirectory): os.mkdir(dataDirectory)
+
+        # Generate the output file path and metadata
+        outputTrinucBedFilePath = generateFilePath(directory = dataDirectory, dataGroup = dataGroupName,
+                                                   context = "trinuc", dataType = dataTypes.mutations, fileExtension = ".bed")
+        generateMetadata(dataGroupName, getIsolatedParentDir(genomeFilePath), getIsolatedParentDir(nucPosFilePath),
+                         os.path.join("..",os.path.basename(kucabSubstitutionsFilePath)), dataDirectory)
 
         # These are the designations for PAH mutation signatures, the ones related to tobacco smoke that we want to study.
         PAHDesignations = ("MSM0.54","MSM0.26","MSM0.92","MSM0.2","MSM0.42","MSM0.74","MSM0.103"
@@ -90,9 +102,11 @@ if __name__ == "__main__":
     #Create the Tkinter UI
     dialog = TkinterDialog(workingDirectory=os.path.join(os.path.dirname(__file__),"..","data"))
     dialog.createMultipleFileSelector("Kucab Substitutions File Paths:",0,"final.txt",("text files",".txt")) #NOTE: Weird file ending?
-    dialog.createCheckbox("Include all PAH Designations",1,0)
-    dialog.createReturnButton(2,0)
-    dialog.createQuitButton(2,2)
+    dialog.createFileSelector("Genome Fasta File:",1,("Fasta Files",".fa"))
+    dialog.createFileSelector("Strongly Positioned Nucleosome File:",2,("Bed Files",".bed"))
+    dialog.createCheckbox("Include all PAH Designations",3,0)
+    dialog.createReturnButton(4,0)
+    dialog.createQuitButton(4,2)
 
     # Run the UI
     dialog.mainloop()
@@ -103,6 +117,8 @@ if __name__ == "__main__":
     # Get the user's input from the dialog.
     selections: Selections = dialog.selections
     kucabSubstitutionsFilePaths = list(selections.getFilePathGroups())[0]
+    genomeFilePath = list(selections.getIndividualFilePaths())[0]
+    nucPosFilePath = list(selections.getIndividualFilePaths())[1]
     includeAllPAHs = list(selections.getToggleStates())[0]
 
-    parseKucabCompendium(kucabSubstitutionsFilePaths, includeAllPAHs)
+    parseKucabCompendium(kucabSubstitutionsFilePaths, genomeFilePath, nucPosFilePath, includeAllPAHs)

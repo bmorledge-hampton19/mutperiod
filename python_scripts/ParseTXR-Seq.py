@@ -2,7 +2,7 @@
 # file of estimated lesion locations.
 from TkinterDialog import Selections, TkinterDialog
 from UsefulBioinformaticsFunctions import bedToFasta, FastaFileIterator, baseChromosomes
-from UsefulFileSystemFunctions import getIsolatedParentDir
+from UsefulFileSystemFunctions import getIsolatedParentDir, generateFilePath, dataTypes, generateMetadata
 from typing import List
 import os, subprocess
 
@@ -138,7 +138,7 @@ def writeTrinucLesions(fastaReadsFilePath, trinucLesionsFilePath):
                     trinucLesionsFile.write(trinucEntry)
 
 
-def parseTXRSeq(tXRSeqBigWigReadsFilePathPairs, tXRSeqBedReadsFilePaths, humanGenomeFastaFilePath):
+def parseTXRSeq(tXRSeqBigWigReadsFilePathPairs, tXRSeqBedReadsFilePaths, genomeFilePath, nucPosFilePath):
     
     # Parse reads given in bigwig file pair format.
     for tXRSeqBigWigReadsFilePathPair in tXRSeqBigWigReadsFilePathPairs:
@@ -169,7 +169,12 @@ def parseTXRSeq(tXRSeqBigWigReadsFilePathPairs, tXRSeqBedReadsFilePaths, humanGe
         # Generate the trimmed reads output, the fasta output, and trinuc lesions output file paths.
         trimmedReadsFilePath = os.path.join(intermediateFilesDirectory,dataGroupName+"_trimmed_reads.bed")
         fastaReadsFilePath = os.path.join(intermediateFilesDirectory,dataGroupName+"_fasta_reads.fa")
-        trinucLesionsFilePath = os.path.join(localRootDirectory,dataGroupName+"_trinuc_context_mutations.bed")
+        trinucLesionsFilePath = generateFilePath(directory = localRootDirectory, dataGroup = dataGroupName,
+                                                 context = "trinuc", dataType = dataTypes.mutations, fileExtension = ".bed")
+        
+        # Generate metadata
+        generateMetadata(dataGroupName, getIsolatedParentDir(genomeFilePath), getIsolatedParentDir(nucPosFilePath),
+                         os.path.basename(tXRSeqBigWigReadsFilePathPair[0]), localRootDirectory)
 
         # Convert from bigWig to bedGraph format.
         print("Converting to bedGraph...")
@@ -184,7 +189,7 @@ def parseTXRSeq(tXRSeqBigWigReadsFilePathPairs, tXRSeqBedReadsFilePaths, humanGe
 
         # Convert the trimmed file to fasta format to get the sequences associated with each read.
         print("Generating fasta file from trimmed bed file...")
-        bedToFasta(trimmedReadsFilePath, humanGenomeFastaFilePath, fastaReadsFilePath)
+        bedToFasta(trimmedReadsFilePath, genomeFilePath, fastaReadsFilePath)
 
         # Find the lesions and write them in their trinuc context to the final output file.
         print("Finding lesions and writing their trinuc context to final output file...")
@@ -217,7 +222,12 @@ def parseTXRSeq(tXRSeqBigWigReadsFilePathPairs, tXRSeqBedReadsFilePaths, humanGe
         # Generate the trimmed reads output, the fasta output, and trinuc lesions output file paths.
         trimmedReadsFilePath = os.path.join(intermediateFilesDirectory,dataGroupName+"_trimmed_reads.bed")
         fastaReadsFilePath = os.path.join(intermediateFilesDirectory,dataGroupName+"_fasta_reads.fa")
-        trinucLesionsFilePath = os.path.join(localRootDirectory,dataGroupName+"_trinuc_context.bed")
+        trinucLesionsFilePath = generateFilePath(directory = localRootDirectory, dataGroup = dataGroupName,
+                                                 context = "trinuc", dataType = dataTypes.mutations, fileExtension = ".bed")
+
+        # Generate metadata.
+        generateMetadata(dataGroupName, getIsolatedParentDir(genomeFilePath), getIsolatedParentDir(nucPosFilePath),
+                         os.path.basename(tXRSeqBedReadsFilePath), localRootDirectory)
 
         # Trim the bedGraph file pair.
         print("Trimming bed data...")
@@ -225,7 +235,7 @@ def parseTXRSeq(tXRSeqBigWigReadsFilePathPairs, tXRSeqBedReadsFilePaths, humanGe
 
         # Convert the trimmed file to fasta format to get the sequences associated with each read.
         print("Generating fasta file from trimmed bed file...")
-        bedToFasta(trimmedReadsFilePath, humanGenomeFastaFilePath, fastaReadsFilePath)
+        bedToFasta(trimmedReadsFilePath, genomeFilePath, fastaReadsFilePath)
 
         # Find the lesions and write them in their trinuc context to the final output file.
         print("Finding lesions and writing their trinuc context to final output file...")
@@ -244,9 +254,10 @@ if __name__ == "__main__":
                                       "+.bigWig",("BigWig Files",".bigWig"))
     dialog.createMultipleFileSelector("tXR-seq bed data (alternative to bigwig):",1,
                                       "aligned_reads.bed",("Bed Files",".bed"))
-    dialog.createFileSelector("Human Genome Fasta File:",2,("Fasta Files",".fa"))                    
-    dialog.createReturnButton(3,0,2)
-    dialog.createQuitButton(3,2,2)
+    dialog.createFileSelector("Human Genome Fasta File:",2,("Fasta Files",".fa"))
+    dialog.createFileSelector("Strongly Positioned Nucleosome File:",3,("Bed Files",".bed"))                    
+    dialog.createReturnButton(4,0,2)
+    dialog.createQuitButton(4,2,2)
 
     # Run the UI
     dialog.mainloop()
@@ -258,7 +269,8 @@ if __name__ == "__main__":
     selections: Selections = dialog.selections
     tXRSeqBigWigPlusReadsFilePaths: List[str] = list(selections.getFilePathGroups())[0]
     tXRSeqBedReadsFilePaths: List[str] = list(selections.getFilePathGroups())[1]
-    humanGenomeFastaFilePath = list(selections.getIndividualFilePaths())[0]
+    genomeFilePath = list(selections.getIndividualFilePaths())[0]
+    nucPosFilePath = list(selections.getIndividualFilePaths())[1]
 
     # Pair up the plus and minus strands for each data set.
     tXRSeqBigWigReadsFilePathPairs = list()
@@ -269,4 +281,4 @@ if __name__ == "__main__":
         else:
             tXRSeqBigWigReadsFilePathPairs.append((tXRSeqBigWigPlusReadsFilePath, correspondingMinusPath))
 
-    parseTXRSeq(tXRSeqBigWigReadsFilePathPairs, tXRSeqBedReadsFilePaths, humanGenomeFastaFilePath)
+    parseTXRSeq(tXRSeqBigWigReadsFilePathPairs, tXRSeqBedReadsFilePaths, genomeFilePath, nucPosFilePath)

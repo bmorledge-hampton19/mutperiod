@@ -2,12 +2,12 @@
 # and converts it to a format suitable for downstream analysis.
 # This is done by taking the 2 bp lesion and splitting it into 2 single base lesions.
 from TkinterDialog import Selections, TkinterDialog
-from UsefulFileSystemFunctions import getIsolatedParentDir
+from UsefulFileSystemFunctions import getIsolatedParentDir, generateFilePath, dataTypes, generateMetadata
 from UsefulBioinformaticsFunctions import baseChromosomes
 import os, subprocess
 
 
-def parseUVDESeq(UVDESeqFilePaths):
+def parseUVDESeq(UVDESeqFilePaths, genomeFilePath, nucPosFilePath):
 
     # Parse the given reads into singlenuc context.
     for UVDESeqFilePath in UVDESeqFilePaths:
@@ -20,8 +20,12 @@ def parseUVDESeq(UVDESeqFilePaths):
         localRootDirectory = os.path.dirname(UVDESeqFilePath)
         dataGroupName = getIsolatedParentDir(UVDESeqFilePath)
 
-        # Generate the trimmed reads output, the fasta output, and trinuc lesions output file paths.
-        singlenucOutputFilePath = os.path.join(localRootDirectory,dataGroupName+"_singlenuc_context_mutations.bed")
+        # Generate the output file path and metadata
+        singlenucOutputFilePath = generateFilePath(directory = localRootDirectory, dataGroup = dataGroupName,
+                                                   context = "singlenuc", dataType = dataTypes.mutations,
+                                                   fileExtension = ".bed")
+        generateMetadata(dataGroupName, getIsolatedParentDir(genomeFilePath), getIsolatedParentDir(nucPosFilePath),
+                         os.path.basename(UVDESeqFilePath), localRootDirectory)
 
         # Iterate through the 2 bp lesions, adding 2 single base lesions to the singlenuc output file for each.
         print("Converting 2-bp lesions to 2 single base lesions...")
@@ -56,9 +60,11 @@ if __name__ == "__main__":
 
     # Create the Tkinter UI
     dialog = TkinterDialog(workingDirectory=os.path.join(os.path.dirname(__file__),"..","data"))
-    dialog.createMultipleFileSelector("UVDE-seq data:",0,"dipy.bed",("BigWig Files",".bigWig"),additionalFileEndings=("TA.bed",))    
-    dialog.createReturnButton(1,0,2)
-    dialog.createQuitButton(1,2,2)
+    dialog.createMultipleFileSelector("UVDE-seq data:",0,"dipy.bed",("Bed Files",".bed"),additionalFileEndings=("TA.bed",))    
+    dialog.createFileSelector("Genome Fasta File:",1,("Fasta Files",".fa"))
+    dialog.createFileSelector("Strongly Positioned Nucleosome File:",2,("Bed Files",".bed"))
+    dialog.createReturnButton(3,0,2)
+    dialog.createQuitButton(3,2,2)
 
     # Run the UI
     dialog.mainloop()
@@ -69,5 +75,7 @@ if __name__ == "__main__":
     # Get the user's input from the dialog.
     selections: Selections = dialog.selections
     UVDESeqFilePaths = list(selections.getFilePathGroups())[0]
+    genomeFilePath = list(selections.getIndividualFilePaths())[0]
+    nucPosFilePath = list(selections.getIndividualFilePaths())[1]
 
-    parseUVDESeq(UVDESeqFilePaths)
+    parseUVDESeq(UVDESeqFilePaths, genomeFilePath, nucPosFilePath)
