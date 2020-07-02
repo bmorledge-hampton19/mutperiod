@@ -1,6 +1,6 @@
 import tkinter as tk
 from tkinter import filedialog
-from typing import List
+from typing import List, Dict
 from UsefulFileSystemFunctions import getFilesInDirectory
 import os
 
@@ -8,7 +8,8 @@ import os
 class TkinterDialog(tk.Frame):
     "A modular dialog window used to select relevant files for a script."
 
-    def __init__(self, master=None, workingDirectory = os.path.dirname(os.path.realpath(__file__)), title = "tkinter dialog"):
+    def __init__(self, master=None, workingDirectory = os.path.dirname(os.path.realpath(__file__)), 
+                 title = "tkinter dialog", ID = "TopLevel"):
         
         # Initialize the tkinter dialogue using the parent constructor, 
         # and set references to the working directory and master window
@@ -16,23 +17,27 @@ class TkinterDialog(tk.Frame):
         else: self.master = master
         super().__init__(self.master)
         self.workingDirectory = workingDirectory
+        self.ID = ID
 
         # Initialize the grid used to organize UI elements
         self.grid() 
         
-        # Set the title
-        self.master.title(title)
+        # If a title was provided, it is assumed to be a top-level frame and the title and graphic can be set up.
+        if title is not None:
+            # Set the title
+            self.master.title(title)
 
-        # Put in a nice visual!
-        img = tk.PhotoImage(file = os.path.dirname(os.path.realpath(__file__)) + "/test_tube.png")
-        self.master.iconphoto(False, img)
+            # Put in a nice visual!
+            img = tk.PhotoImage(file = os.path.dirname(os.path.realpath(__file__)) + "/test_tube.png")
+            self.master.iconphoto(False, img)
 
         self.entries = list() # A list of entry objects created by the script
         self.toggles = list() # A list of toggle objects created by the script
         self.dropdownVars = list() # A list of stringVars associated with dropdowns
         self.checkboxVars = list() # A list of intVars associated with checkboxes
         self.multipleFileSelectors = list() # A list of MultipleFileSelectors, which contain a list of filePaths.
-        self.selections = None # A selections object to be populated at the end of the dialog
+        self.dynamicSelectors: List[DynamicSelector] = list() # A list of DynamicSelector objects, which contian TkDialogs of their own.
+        self.selections: Selections = None # A selections object to be populated at the end of the dialog
         
     # Example Function
     def createWidgets(self):
@@ -152,24 +157,39 @@ class TkinterDialog(tk.Frame):
 
         self.entries.append(textBox)
 
+    # Creates a dynamic selector object at the given location and returns it so it can be further modified.
+    def createDynamicSelector(self, row, column, columnSpan = 1, workingDirectory = None):
+
+        if workingDirectory is None: workingDirectory = self.workingDirectory
+        dynamicSelector = DynamicSelector(self, workingDirectory)
+        dynamicSelector.grid(row = row, column = column, columnspan = columnSpan, sticky = tk.W)
+        self.dynamicSelectors.append(dynamicSelector)
+        return dynamicSelector
+
+
     # Opens a UI for selecting a file starting from the working directory.    
-    def browseForFile(self,textField: tk.Entry, title, newFile, *fileTypes):
+    def browseForFile(self,textField: tk.Entry, title, newFile, directory, *fileTypes):
         "Opens a UI for selecting a file starting from the working directory."
 
         fileTypes = fileTypes + (("Any File Type", ".*"),)
         
-        if not newFile:
-            filename = filedialog.askopenfilename(filetypes = fileTypes,
-                initialdir = self.workingDirectory, title = title)
+        if directory:
+
+            filename = filedialog.askdirectory(initialdir = self.workingDirectory, title = title)
+
         else:
-            filename = filedialog.asksaveasfilename(filetypes = fileTypes,
-                initialdir = self.workingDirectory, title = title)
+            if not newFile:
+                filename = filedialog.askopenfilename(filetypes = fileTypes,
+                    initialdir = self.workingDirectory, title = title)
+            else:
+                filename = filedialog.asksaveasfilename(filetypes = fileTypes,
+                    initialdir = self.workingDirectory, title = title)
 
         if (filename != ""):
             textField.delete(0, tk.END)
             textField.insert(0, filename)
     
-    # Populates the selections object with the user's input
+    # Populates the selections object with the user's input and then destroys the widget.
     def generateSelections(self):
         "Populates the selections object with the user's input"
 
@@ -178,6 +198,7 @@ class TkinterDialog(tk.Frame):
         toggleStates = list() # A list of the states of the toggles in the dialog
         dropdownSelections = list() # A list of the selections from dropdown menus
 
+        # Get all the different Selections-relevant variables from this dialog object
         for entry in self.entries:
             individualFilePaths.append(entry.get())
 
@@ -190,8 +211,16 @@ class TkinterDialog(tk.Frame):
         for stringVar in self.dropdownVars:
             dropdownSelections.append(stringVar.get())
 
-        self.selections = Selections(individualFilePaths,filePathGroups,toggleStates,dropdownSelections)
-        self.master.destroy()
+        # Generate the Selections object from the above variables.
+        self.selections = Selections(self.ID,individualFilePaths,filePathGroups,toggleStates,dropdownSelections)
+
+        # Add any Selections objects from any dialogs included in dynamic displays
+        for dynamicSelector in self.dynamicSelectors:
+            dynamicSelector.getCurrentDisplay().generateSelections()
+            self.selections.addSelections(dynamicSelector.getCurrentDisplay().selections)         
+
+        # Destroy the dialog if this is the top level.
+        if self.ID == "TopLevel": self.master.destroy()
 
 
 # A Widget for a Tkinter dialog that allows for the selection of multiple files.
@@ -331,30 +360,150 @@ class PathDisplay(tk.Frame):
         tk.Button(self, text = "Remove File", command = self.destroy).grid(row = 0,column = 1)
 
 
+# A Tk widget wich changes based on the state of a given "commander" widget.
+class DynamicSelector(tk.Frame):
+
+    def __init__(self, master, workingDirectory):
+        self.master = master
+        self.workingDirectory = workingDirectory
+        super().__init__(self.master)
+        self.grid()
+
+        self.controllerSetup = False # Flag to prevent multiple controllers
+        self.controllerVar = None # The variable that determines which dynamic display is shown
+        self.dynamicDisplays = dict() # The displays corresponding to states of the controller var
+        self.currentDisplayKey = None # The current active display.  Helps prevent unnecessary dispaly switching.
+        self.defaultDisplayKey = None # Determines which display starts as active.
+
+    def getCurrentDisplay(self) -> TkinterDialog: return self.dynamicDisplays[self.currentDisplayKey]
+
+    # Gives me confidence I am accessing Tkinter's strange variable system correctly.
+    def getControllerVar(self): return self.controllerVar.get()
+
+    # Initialize a dropdown as the controller for what dynamic content is displayed.
+    def initDropdownController(self, labelText, options):
+
+        # Make sure we haven't already initialized another controller
+        if self.controllerSetup:
+            raise ValueError("Multiple controllers attempted to be set up on one dynamic selector.")
+        else: self.controllerSetup = True
+
+        ### Make the dropdown
+
+        # Initialize the stringVar to be modified by the dropdown.
+        self.controllerVar = tk.StringVar()
+        self.controllerVar.set(options[0])
+
+        # Add the label
+        tk.Label(self, text = labelText).grid(row = 0, column = 0)
+
+        # Initialize the dropdown.
+        dropdown = tk.OptionMenu(self, self.controllerVar,*options, command = self.checkController)
+        dropdown.grid(row = 0, column = 1, pady = 5, padx = 5, sticky = tk.W)
+
+        # Set the default display variable.
+        defaultDisplayKey = options[0]
+
+
+    # Initialize a checkbox as the controller for what dynamic content is displayed.
+    def initCheckboxController(self, labelText):
+
+        # Make sure we haven't already initialized another controller
+        if self.controllerSetup:
+            raise ValueError("Multiple controllers attempted to be set up on one dynamic selector.")
+        else: self.controllerSetup = True
+
+        self.controllerVar = tk.IntVar()
+
+        checkbox = tk.Checkbutton(self, text = labelText, variable = self.controllerVar, command = self.checkController)
+        checkbox.grid(row = 0, column = 0, columnspan = 2, pady = 3, sticky = tk.W)
+
+
+    # Creates and returns a display corresponding to the given display key, which is a controller variable state.
+    def initDisplay(self, displayKey, selectionsID, workingDirectory = None):
+
+        # Make sure there is no display under this identifier already.
+        if displayKey in self.dynamicDisplays:
+            raise ValueError("Display key \"" + str(displayKey) + "\" already has an associated display.")
+
+
+        # Create the dialog object.
+        if workingDirectory is None: workingDirectory = self.workingDirectory
+        tkinterDialog = TkinterDialog(master = self, title = None, ID = selectionsID, 
+                                      workingDirectory = workingDirectory) 
+        tkinterDialog.grid(row = 1, column = 0, columnspan = 2)
+
+        # Add it to the dictionary of dynamic displays and return it.
+        self.dynamicDisplays[displayKey] = tkinterDialog
+        return tkinterDialog
+
+
+    def initDisplayState(self):
+        
+        # Hide all created displays.
+        for displayKey in self.dynamicDisplays:
+            self.dynamicDisplays[displayKey].grid_remove()
+
+        # Set the first display
+        self.checkController()
+
+
+    # Called whenever the controller variable is changed to determine what to display
+    def checkController(self):
+
+        # Make sure the dynamic display state has actually changed (or needs initializing.)
+        if self.currentDisplayKey is None or self.currentDisplayKey != self.getControllerVar():
+
+            # Hide the old display and enable the currently selected one.
+            if self.currentDisplayKey is not None: 
+                self.getCurrentDisplay().grid_remove()
+            self.currentDisplayKey = self.getControllerVar()
+            self.getCurrentDisplay().grid()
+
+
 # A data structure to hold the results from the TkinterDialog
 class Selections:
     "A data structure to hold the results from the TkinterDialog"
 
-    def __init__(self, individualFilePaths = None, filePathGroups = None, toggleStates = None, dropdownSelections = None):
+    def __init__(self, ID, individualFilePaths = None, filePathGroups = None, 
+                 toggleStates = None, dropdownSelections = None):
 
-        self.individualFilePaths = individualFilePaths
-        self.filePathGroups = filePathGroups
-        self.toggleStates = toggleStates
-        self.dropdownSelections = dropdownSelections
+        # This is a dictionary for storing a list of input values as lists themselves.  (See key below)
+        self.selectionSets: Dict[str, List[List]] = dict()
+        self.selectionSets[ID] = list()
+
+        # Populate the selectionSet associated with the given ID.  List indices are given below
+        # 0: individual file paths
+        # 1: file path groups
+        # 2: toggle states
+        # 3: dropdown selections
+        self.selectionSets[ID].append(individualFilePaths)
+        self.selectionSets[ID].append(filePathGroups)
+        self.selectionSets[ID].append(toggleStates)
+        self.selectionSets[ID].append(dropdownSelections)
 
 
     # DEPRECATED: diverts to getIndividualFilePaths
-    def getFilePaths(self) -> list:
-        return self.getIndividualFilePaths()
+    def getFilePaths(self, ID = "TopLevel") -> list:
+        return self.getIndividualFilePaths(ID)
 
-    def getIndividualFilePaths(self) -> list:
-        return self.individualFilePaths
+    def getIndividualFilePaths(self, ID = "TopLevel") -> list:
+        return self.selectionSets[ID][0]
 
-    def getFilePathGroups(self) -> list:
-        return self.filePathGroups
+    def getFilePathGroups(self, ID = "TopLevel") -> list:
+        return self.selectionSets[ID][1]
 
-    def getToggleStates(self) -> list:
-        return self.toggleStates
+    def getToggleStates(self, ID = "TopLevel") -> list:
+        return self.selectionSets[ID][2]
 
-    def getDropdownSelections(self) -> list:
-        return self.dropdownSelections
+    def getDropdownSelections(self, ID = "TopLevel") -> list:
+        return self.selectionSets[ID][3]
+
+    # Combines this Selections object with the given Selections object.
+    def addSelections(self, newSelections):
+        
+        newSelections: Selections
+        for ID in newSelections.selectionSets:
+            assert ID not in self.selectionSets, (
+                   "ID: " + ID + " is already present in the selection sets.")
+            self.selectionSets[ID] = newSelections.selectionSets[ID]
