@@ -56,7 +56,8 @@ class TkinterDialog(tk.Frame):
         if sticky: label.grid(sticky = tk.W)
 
 
-    def createFileSelector(self, title: str, row: int, *fileTypes, defaultFile = "No file Selected", verbose = False, newFile = False):
+    def createFileSelector(self, title: str, row: int, *fileTypes, defaultFile = "No file Selected", 
+                           verbose = False, newFile = False, directory = False):
         """
         Creates a file selector for choosing relevant files from the dialog.
         The file selector spans 4 columns:
@@ -76,7 +77,7 @@ class TkinterDialog(tk.Frame):
         textField.insert(0, defaultFile)
 
         #Create the "browse" button.
-        tk.Button(self, text = "Browse", command = lambda: self.browseForFile(textField,title,newFile,*fileTypes)).grid(row = row, column = 3)
+        tk.Button(self, text = "Browse", command = lambda: self.browseForFile(textField,title,newFile,directory,*fileTypes)).grid(row = row, column = 3)
 
         self.entries.append(textField)
 
