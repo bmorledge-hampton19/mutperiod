@@ -243,8 +243,7 @@ if __name__ == "__main__":
     dialog = TkinterDialog(workingDirectory=os.path.join(os.path.dirname(__file__),"..","data"))
     dialog.createMultipleFileSelector("Mutation Files:",0,"_context_mutations.bed",("Bed Files",".bed"))
     dialog.createCheckbox("Include 30 bp linker DNA on either side.",1, 0, 2)
-    dialog.createReturnButton(2,0,2)
-    dialog.createQuitButton(2,2,2)
+    dialog.createExitButtons(2,0)
 
     # Run the UI
     dialog.mainloop()

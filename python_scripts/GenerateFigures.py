@@ -39,7 +39,6 @@ if __name__ == "__main__":
                                       "nucleosome_mutation_counts.tsv",("tsv files",".tsv"))
     dialog.createMultipleFileSelector("R Nucleosome Mutation Analysis Files:",1,
                                       ".rda",("rda files",".rda"))
-    dialog.createCheckbox("Omit Outliers?", 3, 0)
 
     fileNumSelector = dialog.createDynamicSelector(2,0)
     fileNumSelector.initCheckboxController("Export to one file?")
@@ -49,8 +48,8 @@ if __name__ == "__main__":
     manyFilesDialog.createFileSelector("Export Directory", 0, directory = True)
     fileNumSelector.initDisplayState()
 
-    dialog.createReturnButton(4,0)
-    dialog.createQuitButton(4,1)
+    dialog.createCheckbox("Omit Outliers?", 3, 0)
+    dialog.createExitButtons(4,0)
 
     # Run the UI
     dialog.mainloop()

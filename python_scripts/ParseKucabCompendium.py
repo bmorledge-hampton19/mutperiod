@@ -110,8 +110,7 @@ if __name__ == "__main__":
     dialog.createFileSelector("Genome Fasta File:",1,("Fasta Files",".fa"))
     dialog.createFileSelector("Strongly Positioned Nucleosome File:",2,("Bed Files",".bed"))
     dialog.createCheckbox("Include all PAH Designations",3,0)
-    dialog.createReturnButton(4,0)
-    dialog.createQuitButton(4,2)
+    dialog.createExitButtons(4,0)
 
     # Run the UI
     dialog.mainloop()

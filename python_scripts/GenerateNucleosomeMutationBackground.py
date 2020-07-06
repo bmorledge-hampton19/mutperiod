@@ -268,9 +268,8 @@ if __name__ == "__main__":
     #Create the Tkinter UI
     dialog = TkinterDialog(workingDirectory=os.path.join(os.path.dirname(__file__),"..","data"))
     dialog.createMultipleFileSelector("Mutation Background Files:",0,dataTypes.mutBackground + ".tsv",("Tab Seperated Values Files",".tsv"))
-    dialog.createCheckbox("Include linker DNA",1,0,2)
-    dialog.createReturnButton(2,0,2)
-    dialog.createQuitButton(2,2,2)
+    dialog.createCheckbox("Include linker DNA",1,0)
+    dialog.createExitButtons(2,0)
 
     # Run the UI
     dialog.mainloop()

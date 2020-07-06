@@ -133,8 +133,7 @@ if __name__ == "__main__":
     dialog.createMultipleFileSelector("Single-Base Bed File:",1,"singlenuc_" + dataTypes.mutations + ".bed",("Bed Files",".bed"))
     dialog.createMultipleFileSelector("Trinuc Context Bed File:",2,"trinuc_" + dataTypes.mutations + ".bed",("Bed Files",".bed"))
     dialog.createDropdown("Expansion Context",3,0,("Trinuc", "Pentanuc"))
-    dialog.createReturnButton(4,0,2)
-    dialog.createQuitButton(4,2,2)
+    dialog.createExitButtons(4,0)
 
     # Run the UI
     dialog.mainloop()

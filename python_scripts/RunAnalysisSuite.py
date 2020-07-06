@@ -16,8 +16,7 @@ dialog = TkinterDialog(workingDirectory=os.path.join(os.path.dirname(__file__),"
 dialog.createMultipleFileSelector("Bed Mutation Files:",0,dataTypes.mutations + ".bed",("Bed Files",".bed"))
 dialog.createDropdown("Background Context",1,0,("Trinuc","Singlenuc", "Pentanuc"))
 dialog.createCheckbox("Include 30 bp linker DNA",1,2)
-dialog.createReturnButton(2,0,2)
-dialog.createQuitButton(2,2,2)
+dialog.createExitButtons(2,0)
 
 # Run the UI
 dialog.mainloop()

@@ -51,8 +51,7 @@ if __name__ == "__main__":
                                       dataTypes.normNucCounts + ".tsv",("Tab Seperated Values Files",".tsv"))
     dialog.createMultipleFileSelector("MSS files (optional):",3,
                                       dataTypes.normNucCounts + ".tsv",("Tab Seperated Values Files",".tsv"))                                  
-    dialog.createReturnButton(4,0,2)
-    dialog.createQuitButton(4,2,2)
+    dialog.createExitButtons(4,0)
 
     # Run the UI
     dialog.mainloop()

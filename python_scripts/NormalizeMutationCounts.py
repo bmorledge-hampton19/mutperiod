@@ -72,8 +72,7 @@ if __name__ == "__main__":
     dialog = TkinterDialog(workingDirectory=os.path.join(os.path.dirname(__file__),"..","data"))
     dialog.createMultipleFileSelector("Background Nucleosome Mutation Counts Files:",0,
                                       dataTypes.nucMutBackground + ".tsv",("Tab Seperated Values Files",".tsv"))
-    dialog.createReturnButton(1,0,2)
-    dialog.createQuitButton(1,2,2)
+    dialog.createExitButtons(1,0)
 
     # Run the UI
     dialog.mainloop()

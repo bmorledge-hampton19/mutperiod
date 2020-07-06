@@ -256,8 +256,7 @@ if __name__ == "__main__":
                                       "aligned_reads.bed",("Bed Files",".bed"))
     dialog.createFileSelector("Human Genome Fasta File:",2,("Fasta Files",".fa"))
     dialog.createFileSelector("Strongly Positioned Nucleosome File:",3,("Bed Files",".bed"))                    
-    dialog.createReturnButton(4,0,2)
-    dialog.createQuitButton(4,2,2)
+    dialog.createExitButtons(4,0)
 
     # Run the UI
     dialog.mainloop()

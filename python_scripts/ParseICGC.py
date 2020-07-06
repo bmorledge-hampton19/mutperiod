@@ -400,8 +400,7 @@ if __name__ == "__main__":
     dialog.createCheckbox("Separate Bed Mutations by Microsatellite Stability", 3, 1)
     dialog.createCheckbox("Also Create individual bed files for each donor.",4,0)
     dialog.createCheckbox("Convert to MutSig format", 4, 1)
-    dialog.createReturnButton(5,0)
-    dialog.createQuitButton(5,2)
+    dialog.createExitButtons(5,0)
 
     # Run the UI
     dialog.mainloop()
