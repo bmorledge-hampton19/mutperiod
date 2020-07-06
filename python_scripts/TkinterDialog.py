@@ -99,7 +99,7 @@ class TkinterDialog(tk.Frame):
         "Create a file selector which can dynamically add and remove multiple file paths to a given group."
 
         # Create an instance of the the MultipleFileSelector class, and place it in the dialog at the given row.
-        multipleFileSelector = MultipleFileSelector(self.toplevel, self, title, self.workingDirectory, 
+        multipleFileSelector = MultipleFileSelector(self, title, self.workingDirectory, 
                                                     fileEnding, additionalFileEndings, *fileTypes)
         multipleFileSelector.grid(row = row, columnspan = columnSpan, sticky = tk.W, pady = 10)
 
@@ -255,11 +255,11 @@ class TkinterDialog(tk.Frame):
 class MultipleFileSelector(tk.Frame):
     "A Widget for a Tkinter dialog that allows for the selection of multiple files."
 
-    def __init__(self, toplevel: tk.Tk, master, title, workingDirectory, fileEnding, additionalFileEndings, *fileTypes):
+    def __init__(self, master, title, workingDirectory, fileEnding, additionalFileEndings, *fileTypes):
 
         # Base class initialization
         super().__init__(master)
-        self.toplevel = toplevel
+        self.toplevel = master.toplevel
         self.grid()
 
         # Set member variables
@@ -365,7 +365,6 @@ class MultipleFileSelector(tk.Frame):
 
     def updatePathDisplayLengths(self, maxPathWidth):
         "Updates the minimum width of the label portion of all the path displays."
-        print("Updating path display lengths to",str(maxPathWidth + 5))
         for pathDisplay in self.getPaths(returnWholeObjects = True):
             pathDisplay.grid_columnconfigure(0, minsize = maxPathWidth + 5)
 
@@ -431,6 +430,7 @@ class DynamicSelector(tk.Frame):
     "A Tk widget wich changes based on the state of a given \"commander\" widget."
 
     def __init__(self, master, workingDirectory):
+        self.toplevel = master.toplevel
         self.master = master
         self.workingDirectory = workingDirectory
         super().__init__(self.master)
