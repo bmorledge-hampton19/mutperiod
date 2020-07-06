@@ -13,8 +13,12 @@ class TkinterDialog(tk.Frame):
         
         # Initialize the tkinter dialogue using the parent constructor, 
         # and set references to the working directory and master window
-        if master is None: self.master = tk.Tk()
-        else: self.master = master
+        if master is None: 
+            self.master = tk.Tk()
+            self.toplevel = self.master
+        else: 
+            self.master = master
+            self.toplevel = self.master.toplevel
         super().__init__(self.master)
         self.workingDirectory = workingDirectory
         self.ID = ID
@@ -61,38 +65,43 @@ class TkinterDialog(tk.Frame):
         if sticky: label.grid(sticky = tk.W)
 
 
-    def createFileSelector(self, title: str, row: int, *fileTypes, defaultFile = "No file Selected", 
-                           verbose = False, newFile = False, directory = False):
+    def createFileSelector(self, title: str, row: int, *fileTypes, defaultFile = "No file Selected", column = 0,
+                           columnSpan = 2, verbose = False, newFile = False, directory = False):
         """
         Creates a file selector for choosing relevant files from the dialog.
-        The file selector spans 4 columns:
+        The whole file selector is contained in a single tk.Frame object and has 3 components:
         The title for the selector occupies the first column.
-        The selector itself occupies the second and third columns as a tk.Entry object.
+        The selector itself as a tk.Entry object.
         The final column holds the "browse" button.
         """
 
         if verbose: print ("Creating file selector: " + title)
 
+        fileSelectorFrame = tk.Frame(master = self)
+        fileSelectorFrame.grid(row = row, column = column, columnspan = columnSpan, sticky = tk.W)
+
         #Create the title for the selector.
-        tk.Label(self,text = title).grid(row = row, sticky = tk.W)
+        tk.Label(fileSelectorFrame,text = title).grid(row = 0, column = 0)
 
         #Create the selector itself as a tk.entry object.
-        textField = tk.Entry(self, width = 40)
-        textField.grid(row = row, column = 1, columnspan = 2, pady = 10, padx = 5)
+        textField = tk.Entry(fileSelectorFrame, width = 40)
+        textField.grid(row = 0, column = 1, columnspan = 2, pady = 10, padx = 5)
         textField.insert(0, defaultFile)
+        textField.xview(len(defaultFile))
 
         #Create the "browse" button.
-        tk.Button(self, text = "Browse", command = lambda: self.browseForFile(textField,title,newFile,directory,*fileTypes)).grid(row = row, column = 3)
+        tk.Button(fileSelectorFrame, text = "Browse", command = lambda: self.browseForFile(textField,title,newFile,directory,*fileTypes)).grid(row = 0, column = 3)
 
         self.entries.append(textField)
 
     # Create a file selector which can dynamically add and remove multiple file paths to a given group.
-    def createMultipleFileSelector(self, title: str, row: int, fileEnding, *fileTypes, additionalFileEndings = list()):
+    def createMultipleFileSelector(self, title: str, row: int, fileEnding, *fileTypes, additionalFileEndings = list(), columnSpan = 2):
         "Create a file selector which can dynamically add and remove multiple file paths to a given group."
 
         # Create an instance of the the MultipleFileSelector class, and place it in the dialog at the given row.
-        multipleFileSelector = MultipleFileSelector(self, title, self.workingDirectory, fileEnding, additionalFileEndings, *fileTypes)
-        multipleFileSelector.grid(row = row, columnspan = 4, sticky = tk.W, pady = 10)
+        multipleFileSelector = MultipleFileSelector(self.toplevel, self, title, self.workingDirectory, 
+                                                    fileEnding, additionalFileEndings, *fileTypes)
+        multipleFileSelector.grid(row = row, columnspan = columnSpan, sticky = tk.W, pady = 10)
 
         # Keep track of the file selector so we can access the file paths it contains later.
         self.multipleFileSelectors.append(multipleFileSelector)
@@ -106,12 +115,16 @@ class TkinterDialog(tk.Frame):
         dropdownStringVar.set(options[0])
         self.dropdownVars.append(dropdownStringVar)
 
+        # Create a tk.Frame to encompass the checkbox.
+        checkboxFrame = tk.Frame(self)
+        checkboxFrame.grid(row = row, column = column, columnspan = columnSpan)
+
         # Add the label
-        tk.Label(self, text = labelText).grid(row = row, column = column)
+        tk.Label(checkboxFrame, text = labelText).grid(row = 0, column = 0)
 
         # Initialize the dropdown.
-        dropdown = tk.OptionMenu(self, dropdownStringVar,*options)
-        dropdown.grid(row = row, column = column+1, columnspan = columnSpan, pady = 5, padx = 5)
+        dropdown = tk.OptionMenu(checkboxFrame, dropdownStringVar,*options)
+        dropdown.grid(row = 0, column = 1, pady = 5, padx = 5)
 
     # Create a checkbox that holds a bool input from the user.
     def createCheckbox(self, text, row, column, columnSpan = 1):
@@ -125,22 +138,38 @@ class TkinterDialog(tk.Frame):
         tk.Checkbutton(self, text = text, variable = checkboxIntVar).grid(row = row, column = column, columnspan = columnSpan, pady = 3, sticky = tk.W)
 
 
-    # Create a button to execute a given function.
     def createButton(self, text, row, column, command, columnSpan = 1):
         "Create a button to execute a given function."
         tk.Button(self, text=text, command=command).grid(row = row, column = column, columnspan = columnSpan)
 
     # Create a button that exits the python script.
     def createQuitButton(self, row, column, columnSpan = 1):
-        "Create a button that exits the python script."
+        """
+        DEPRECATED.  Use create Exit Buttons instead.
+        Create a button that exits the python script.
+        """
         self.createButton("Quit",row,column,quit, columnSpan=columnSpan)
 
     # Create a button that returns the user input to the selections object
     def createReturnButton(self, row, column, columnSpan = 1):
-        "Create a button that returns the user input to the selections object"
+        """
+        DEPRECATED.  Use create Exit Buttons instead.
+        Create a button that returns the user input to the selections object
+        """
         self.createButton("Go",row,column,self.generateSelections, columnSpan=columnSpan)
 
     # Creates a editable text field.
+
+    def createExitButtons(self, row, column, columnSpan = 2):
+        "Creates the quit and return buttons in a single tk.Frame that centers them within that frame."
+        buttonFrame = tk.Frame(self)
+        buttonFrame.grid(row = row, column = column, columnspan = columnSpan, sticky = tk.W+tk.E)
+        buttonFrame.grid_columnconfigure((0,1), weight = 1)
+
+        tk.Button(buttonFrame, text = "Go", command = self.generateSelections).grid(row = 0, column = 0)
+        tk.Button(buttonFrame, text = "Quit", command = quit).grid(row = 0, column = 1)
+
+
     def createTextField(self, labelText, row, column, columnSpan = 2, defaultText = "Type here"):
         "Creates a editable text field."
 
@@ -166,7 +195,6 @@ class TkinterDialog(tk.Frame):
         self.dynamicSelectors.append(dynamicSelector)
         return dynamicSelector
 
-
     # Opens a UI for selecting a file starting from the working directory.    
     def browseForFile(self,textField: tk.Entry, title, newFile, directory, *fileTypes):
         "Opens a UI for selecting a file starting from the working directory."
@@ -188,6 +216,7 @@ class TkinterDialog(tk.Frame):
         if (filename != ""):
             textField.delete(0, tk.END)
             textField.insert(0, filename)
+            textField.xview(len(filename))
     
     # Populates the selections object with the user's input and then destroys the widget.
     def generateSelections(self):
@@ -227,10 +256,11 @@ class TkinterDialog(tk.Frame):
 class MultipleFileSelector(tk.Frame):
     "A Widget for a Tkinter dialog that allows for the selection of multiple files."
 
-    def __init__(self, master, title, workingDirectory, fileEnding, additionalFileEndings, *fileTypes):
+    def __init__(self, toplevel: tk.Tk, master, title, workingDirectory, fileEnding, additionalFileEndings, *fileTypes):
 
         # Base class initialization
         super().__init__(master)
+        self.toplevel = toplevel
         self.grid()
 
         # Set member variables
@@ -242,9 +272,11 @@ class MultipleFileSelector(tk.Frame):
                                      # (Used when sifting through directories for relevant files)
         self.additionalFileEndings = additionalFileEndings
         self.directories = list()
+        self.maxPathWidth = 0
 
         # Set the indentation for the list of file paths displays.
         self.grid_columnconfigure(0, minsize = 40)
+        self.grid_columnconfigure(4, weight = 1)
 
         self.setupMultipleFileSelector()
 
@@ -295,23 +327,57 @@ class MultipleFileSelector(tk.Frame):
         elif fileOrDirectory == 1:
             if len(path) > 0 and not path in self.getPaths(): self.addPathDisplay(path)
 
-
     # Adds a PathDisplay object to the UI for the given file path.
     def addPathDisplay(self, Path):
         "Adds a PathDisplay object to the UI for the given file path."
 
         # Create the new object.
-        PathDisplay(self, Path).grid(column = 1, columnspan = 3, sticky = tk.W)   
+        newPathDisplay = PathDisplay(self, Path)
+        newPathDisplay.grid(column = 1, columnspan = 4, sticky = tk.W)
+        if newPathDisplay.pathLabelWidth > self.maxPathWidth:
+            self.maxPathWidth = newPathDisplay.pathLabelWidth
+            self.updatePathDisplayLengths(self.maxPathWidth)
+        else: newPathDisplay.grid_columnconfigure(0, minsize = self.maxPathWidth + 5)
 
         # Force an update on the toplevel window.
         # RIP: The last hour and a half of my life spent finding these two lines of code
-        self.master.master.update()
-        self.master.master.geometry("")
-    
+        self.toplevel.update()
+        self.toplevel.geometry("")
+
+
+    def removePathDisplay(self, pathDisplay):
+        "Removes a given path display, and checks if the length of the remaining paths needs to be updated."
+
+        # If this was the largest (or one of the largest) path display objects, find the new largest path display
+        # and update all other display lengths accordingly.
+        if pathDisplay.pathLabelWidth == self.maxPathWidth:
+
+            pathDisplay.destroy() # Get rid of the old object now so we don't count it when looking for a new max.
+
+            newMax = 0
+            for remainingPathDisplay in self.getPaths(returnWholeObjects = True):
+                if remainingPathDisplay.pathLabelWidth > newMax: 
+                    newMax = remainingPathDisplay.pathLabelWidth
+
+            self.maxPathWidth = newMax
+            self.updatePathDisplayLengths(self.maxPathWidth)
+
+        # Otherwise, just remove the given path display
+        else: pathDisplay.destroy()
+            
+
+    def updatePathDisplayLengths(self, maxPathWidth):
+        "Updates the minimum width of the label portion of all the path displays."
+        print("Updating path display lengths to",str(maxPathWidth + 5))
+        for pathDisplay in self.getPaths(returnWholeObjects = True):
+            pathDisplay.grid_columnconfigure(0, minsize = maxPathWidth + 5)
 
     # Retrieves the file paths associated with each of the PathDisplay objects in the file selector
-    def getPaths(self):
-        "Retrieves the file paths associated with each of the PathDisplay objects in the file selector"
+    def getPaths(self, returnWholeObjects = False):
+        """
+        Retrieves the file paths associated with each of the PathDisplay objects in the file selector.
+        Alternatively, the whole objects can be returned instead.
+        """
         
         paths = list() # The file paths to be returned.
 
@@ -321,7 +387,8 @@ class MultipleFileSelector(tk.Frame):
         # Find the PathDisplay objects in the file selector's widgets, and get their file paths.  Then, return them.
         for child in children:
             if isinstance(child, PathDisplay):
-                paths.append(child.path)
+                if returnWholeObjects: paths.append(child)
+                else: paths.append(child.path)
         return paths
 
     # Returns all the file paths associated with the MultipleFileSelector.
@@ -342,7 +409,7 @@ class MultipleFileSelector(tk.Frame):
 class PathDisplay(tk.Frame):
     "A Tk widget that that displays the end of a file path with a button which deletes itself."
 
-    def __init__(self, master, path):
+    def __init__(self, master: MultipleFileSelector, path):
 
         # Base class initialization
         super().__init__(master)
@@ -352,12 +419,16 @@ class PathDisplay(tk.Frame):
         if len(path) < 60: displayName = path
         else: displayName = "..." + path[-60:]
 
-        # Standardize the size of the file path name column, so that the proceeding buttons line up nicely.
-        self.grid_columnconfigure(0,minsize = 500)
-
         # Create the label with the file path name and the button which destroys this object.
-        tk.Label(self,text = displayName).grid(sticky = tk.W)
-        tk.Button(self, text = "Remove File", command = self.destroy).grid(row = 0,column = 1)
+        pathLabel = tk.Label(self,text = displayName)
+        pathLabel.grid(sticky = tk.W)
+
+        removeButton = tk.Button(self, text = "Remove File", command = lambda: master.removePathDisplay(self))
+        removeButton.grid(row = 0,column = 1)
+
+        # Retrieve the path's width.
+        pathLabel.update()
+        self.pathLabelWidth = pathLabel.winfo_width()
 
 
 # A Tk widget wich changes based on the state of a given "commander" widget.
