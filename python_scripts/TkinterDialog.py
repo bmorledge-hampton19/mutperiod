@@ -4,12 +4,12 @@ from typing import List, Dict
 from UsefulFileSystemFunctions import getFilesInDirectory
 import os
 
-#A modular dialog window used to select relevant files and options for a script.
+
 class TkinterDialog(tk.Frame):
-    "A modular dialog window used to select relevant files for a script."
+    "A modular dialog window used to select relevant files and options for a script."
 
     def __init__(self, master=None, workingDirectory = os.path.dirname(os.path.realpath(__file__)), 
-                 title = "tkinter dialog", ID = "TopLevel"):
+                 title = "tkinter dialog", ID = "Toplevel"):
         
         # Initialize the tkinter dialogue using the parent constructor, 
         # and set references to the working directory and master window
@@ -43,7 +43,7 @@ class TkinterDialog(tk.Frame):
         self.dynamicSelectors: List[DynamicSelector] = list() # A list of DynamicSelector objects, which contian TkDialogs of their own.
         self.selections: Selections = None # A selections object to be populated at the end of the dialog
         
-    # Example Function
+
     def createWidgets(self):
         "Mainly used as an example.  Probably don't run this function; run the functions it calls."
         
@@ -57,7 +57,7 @@ class TkinterDialog(tk.Frame):
         self.createReturnButton(2, 0, 2)
         self.createQuitButton(2,2,2)
 
-    # Create a simple text label
+
     def createLabel(self, text, row, column, columnSpan = 1, sticky = True):
         "Create a simple text label"
         label = tk.Label(self, text = text)
@@ -94,7 +94,7 @@ class TkinterDialog(tk.Frame):
 
         self.entries.append(textField)
 
-    # Create a file selector which can dynamically add and remove multiple file paths to a given group.
+
     def createMultipleFileSelector(self, title: str, row: int, fileEnding, *fileTypes, additionalFileEndings = list(), columnSpan = 2):
         "Create a file selector which can dynamically add and remove multiple file paths to a given group."
 
@@ -106,7 +106,7 @@ class TkinterDialog(tk.Frame):
         # Keep track of the file selector so we can access the file paths it contains later.
         self.multipleFileSelectors.append(multipleFileSelector)
 
-    # Create a dropdown menu to select something from a list of options.
+
     def createDropdown(self, labelText, row, column, options, columnSpan = 1):
         "Create a dropdown menu to select something from a list of options."
         
@@ -126,7 +126,7 @@ class TkinterDialog(tk.Frame):
         dropdown = tk.OptionMenu(checkboxFrame, dropdownStringVar,*options)
         dropdown.grid(row = 0, column = 1, pady = 5, padx = 5)
 
-    # Create a checkbox that holds a bool input from the user.
+    
     def createCheckbox(self, text, row, column, columnSpan = 1):
         "Create a checkbox that holds a bool input from the user."
         
@@ -142,7 +142,7 @@ class TkinterDialog(tk.Frame):
         "Create a button to execute a given function."
         tk.Button(self, text=text, command=command).grid(row = row, column = column, columnspan = columnSpan)
 
-    # Create a button that exits the python script.
+
     def createQuitButton(self, row, column, columnSpan = 1):
         """
         DEPRECATED.  Use create Exit Buttons instead.
@@ -150,7 +150,7 @@ class TkinterDialog(tk.Frame):
         """
         self.createButton("Quit",row,column,quit, columnSpan=columnSpan)
 
-    # Create a button that returns the user input to the selections object
+
     def createReturnButton(self, row, column, columnSpan = 1):
         """
         DEPRECATED.  Use create Exit Buttons instead.
@@ -158,7 +158,6 @@ class TkinterDialog(tk.Frame):
         """
         self.createButton("Go",row,column,self.generateSelections, columnSpan=columnSpan)
 
-    # Creates a editable text field.
 
     def createExitButtons(self, row, column, columnSpan = 2):
         "Creates the quit and return buttons in a single tk.Frame that centers them within that frame."
@@ -171,7 +170,7 @@ class TkinterDialog(tk.Frame):
 
 
     def createTextField(self, labelText, row, column, columnSpan = 2, defaultText = "Type here"):
-        "Creates a editable text field."
+        "Creates an editable text field."
 
         # Create an instance of the the text field, and place it in the dialog at the given row.
         textField = tk.Frame(master = self)
@@ -186,8 +185,9 @@ class TkinterDialog(tk.Frame):
 
         self.entries.append(textBox)
 
-    # Creates a dynamic selector object at the given location and returns it so it can be further modified.
+
     def createDynamicSelector(self, row, column, columnSpan = 1, workingDirectory = None):
+        "Creates a dynamic selector object at the given location and returns it so it can be further modified."
 
         if workingDirectory is None: workingDirectory = self.workingDirectory
         dynamicSelector = DynamicSelector(self, workingDirectory)
@@ -195,7 +195,7 @@ class TkinterDialog(tk.Frame):
         self.dynamicSelectors.append(dynamicSelector)
         return dynamicSelector
 
-    # Opens a UI for selecting a file starting from the working directory.    
+
     def browseForFile(self,textField: tk.Entry, title, newFile, directory, *fileTypes):
         "Opens a UI for selecting a file starting from the working directory."
 
@@ -218,9 +218,9 @@ class TkinterDialog(tk.Frame):
             textField.insert(0, filename)
             textField.xview(len(filename))
     
-    # Populates the selections object with the user's input and then destroys the widget.
+
     def generateSelections(self):
-        "Populates the selections object with the user's input"
+        "Populates the selections object with the user's input and then destroys the widget."
 
         individualFilePaths = list() # A list of the filenames selected with the dialog
         filePathGroups = list() # A list of the groups of filepaths selected through MultipleFileSelectors.
@@ -249,10 +249,9 @@ class TkinterDialog(tk.Frame):
             self.selections.addSelections(dynamicSelector.getCurrentDisplay().selections)         
 
         # Destroy the dialog if this is the top level.
-        if self.ID == "TopLevel": self.master.destroy()
+        if self.ID == "Toplevel": self.master.destroy()
 
 
-# A Widget for a Tkinter dialog that allows for the selection of multiple files.
 class MultipleFileSelector(tk.Frame):
     "A Widget for a Tkinter dialog that allows for the selection of multiple files."
 
@@ -280,7 +279,7 @@ class MultipleFileSelector(tk.Frame):
 
         self.setupMultipleFileSelector()
 
-    # Sets up the title for the file selector and the button used to add files.
+
     def setupMultipleFileSelector(self):
         "Sets up the title for the file selector and the button used to add files."
 
@@ -294,15 +293,13 @@ class MultipleFileSelector(tk.Frame):
             row = 0, column = 3, sticky = "w")
 
 
-    # A modification of the TkinterDialog function, "browseForFile".
-    # This function allows for the selection of multiple files or a directory
-    # and adds the result to the list of file path displays.
-    # fileOrDirectory = 0 for file selection and 1 for directory selection.
     def browseForPaths(self,title,fileOrDirectory,*fileTypes):
-        '''
+        """
         A modification of the TkinterDialog function, "browseForFile".
-        This function allows for the selection of multiple files and adds new files to the list of file path displays.
-        '''
+        This function allows for the selection of multiple files or a directory
+        and adds the result to the list of file path displays.
+        fileOrDirectory = 0 for file selection and 1 for directory selection.
+        """
 
         fileTypes = fileTypes + (("Any File Type", ".*"),) # Acceptable file types.
 
@@ -327,7 +324,7 @@ class MultipleFileSelector(tk.Frame):
         elif fileOrDirectory == 1:
             if len(path) > 0 and not path in self.getPaths(): self.addPathDisplay(path)
 
-    # Adds a PathDisplay object to the UI for the given file path.
+
     def addPathDisplay(self, Path):
         "Adds a PathDisplay object to the UI for the given file path."
 
@@ -372,7 +369,7 @@ class MultipleFileSelector(tk.Frame):
         for pathDisplay in self.getPaths(returnWholeObjects = True):
             pathDisplay.grid_columnconfigure(0, minsize = maxPathWidth + 5)
 
-    # Retrieves the file paths associated with each of the PathDisplay objects in the file selector
+
     def getPaths(self, returnWholeObjects = False):
         """
         Retrieves the file paths associated with each of the PathDisplay objects in the file selector.
@@ -391,7 +388,7 @@ class MultipleFileSelector(tk.Frame):
                 else: paths.append(child.path)
         return paths
 
-    # Returns all the file paths associated with the MultipleFileSelector.
+
     def getFilePaths(self):
         """Returns all the file paths associated with the MultipleFileSelector."""
         filePaths = list()
@@ -405,7 +402,6 @@ class MultipleFileSelector(tk.Frame):
         return list(set(filePaths))
 
 
-# A Tk widget that that displays the end of a file path with a button which deletes itself.
 class PathDisplay(tk.Frame):
     "A Tk widget that that displays the end of a file path with a button which deletes itself."
 
@@ -431,8 +427,8 @@ class PathDisplay(tk.Frame):
         self.pathLabelWidth = pathLabel.winfo_width()
 
 
-# A Tk widget wich changes based on the state of a given "commander" widget.
 class DynamicSelector(tk.Frame):
+    "A Tk widget wich changes based on the state of a given \"commander\" widget."
 
     def __init__(self, master, workingDirectory):
         self.master = master
@@ -451,8 +447,9 @@ class DynamicSelector(tk.Frame):
     # Gives me confidence I am accessing Tkinter's strange variable system correctly.
     def getControllerVar(self): return self.controllerVar.get()
 
-    # Initialize a dropdown as the controller for what dynamic content is displayed.
+
     def initDropdownController(self, labelText, options):
+        "Initialize a dropdown as the controller for what dynamic content is displayed."
 
         # Make sure we haven't already initialized another controller
         if self.controllerSetup:
@@ -476,8 +473,8 @@ class DynamicSelector(tk.Frame):
         defaultDisplayKey = options[0]
 
 
-    # Initialize a checkbox as the controller for what dynamic content is displayed.
     def initCheckboxController(self, labelText):
+        "Initialize a checkbox as the controller for what dynamic content is displayed."
 
         # Make sure we haven't already initialized another controller
         if self.controllerSetup:
@@ -490,8 +487,8 @@ class DynamicSelector(tk.Frame):
         checkbox.grid(row = 0, column = 0, columnspan = 2, pady = 3, sticky = tk.W)
 
 
-    # Creates and returns a display corresponding to the given display key, which is a controller variable state.
     def initDisplay(self, displayKey, selectionsID, workingDirectory = None):
+        "Creates and returns a display corresponding to the given display key, which is a controller variable state."
 
         # Make sure there is no display under this identifier already.
         if displayKey in self.dynamicDisplays:
@@ -510,6 +507,7 @@ class DynamicSelector(tk.Frame):
 
 
     def initDisplayState(self):
+        "Initializes the dynamic displays by hiding all but the default active display."
         
         # Hide all created displays.
         for displayKey in self.dynamicDisplays:
@@ -519,8 +517,8 @@ class DynamicSelector(tk.Frame):
         self.checkController()
 
 
-    # Called whenever the controller variable is changed to determine what to display
     def checkController(self):
+        "Called whenever the controller variable is changed to determine what to display"
 
         # Make sure the dynamic display state has actually changed (or needs initializing.)
         if self.currentDisplayKey is None or self.currentDisplayKey != self.getControllerVar():
@@ -532,7 +530,6 @@ class DynamicSelector(tk.Frame):
             self.getCurrentDisplay().grid()
 
 
-# A data structure to hold the results from the TkinterDialog
 class Selections:
     "A data structure to hold the results from the TkinterDialog"
 
@@ -555,24 +552,25 @@ class Selections:
 
 
     # DEPRECATED: diverts to getIndividualFilePaths
-    def getFilePaths(self, ID = "TopLevel") -> list:
+    def getFilePaths(self, ID = "Toplevel") -> list:
         return self.getIndividualFilePaths(ID)
 
-    def getIndividualFilePaths(self, ID = "TopLevel") -> list:
+    def getIndividualFilePaths(self, ID = "Toplevel") -> list:
         return self.selectionSets[ID][0]
 
-    def getFilePathGroups(self, ID = "TopLevel") -> list:
+    def getFilePathGroups(self, ID = "Toplevel") -> list:
         return self.selectionSets[ID][1]
 
-    def getToggleStates(self, ID = "TopLevel") -> list:
+    def getToggleStates(self, ID = "Toplevel") -> list:
         return self.selectionSets[ID][2]
 
-    def getDropdownSelections(self, ID = "TopLevel") -> list:
+    def getDropdownSelections(self, ID = "Toplevel") -> list:
         return self.selectionSets[ID][3]
 
-    # Combines this Selections object with the given Selections object.
+
     def addSelections(self, newSelections):
-        
+        "Combines this Selections object with the given Selections object."
+
         newSelections: Selections
         for ID in newSelections.selectionSets:
             assert ID not in self.selectionSets, (
