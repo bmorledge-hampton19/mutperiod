@@ -2,7 +2,8 @@
 import os
 
 # The directory containing genome and nucleosome data.
-externalDataDirectory = os.path.join(os.path.dirname(__file__),"..","data","__external_data")
+dataDirectory = os.path.join(os.path.dirname(__file__),"..","..","data")
+externalDataDirectory = os.path.join(os.path.dirname(__file__),"..","..","data","__external_data")
 
 
 # Stores information about data type identifiers

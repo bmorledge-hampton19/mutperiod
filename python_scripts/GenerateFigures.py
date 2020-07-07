@@ -1,6 +1,7 @@
 # This script takes paths to files containing nucleosome counts and exports them to an R script which generates
 # some nice plots for the files and exports them to a given location.
-from TkinterDialog import TkinterDialog
+from Tkinter.TkinterDialog import TkinterDialog
+from helper_scripts.UsefulFileSystemFunctions import dataDirectory
 import os, subprocess
 
 
@@ -34,7 +35,7 @@ def generateFigures(tsvFilePaths, rdaFilePaths, exportPath, omitOutliers):
 if __name__ == "__main__":
 
     #Create the Tkinter UI
-    dialog = TkinterDialog(workingDirectory=os.path.join(os.path.dirname(__file__),"..","data"))
+    dialog = TkinterDialog(workingDirectory=dataDirectory)
     dialog.createMultipleFileSelector("Nucleosome Counts Files:",0,
                                       "nucleosome_mutation_counts.tsv",("tsv files",".tsv"))
     dialog.createMultipleFileSelector("R Nucleosome Mutation Analysis Files:",1,

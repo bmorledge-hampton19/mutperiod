@@ -1,5 +1,6 @@
 # This script filters out individual mutations from a bed file as requested through a Tkinter interface.
-from TkinterDialog import TkinterDialog, Selections
+from Tkinter.TkinterDialog import TkinterDialog, Selections
+from helper_scripts.UsefulFileSystemFunctions import dataDirectory
 import os
 
 # This function creates the mutation files with omissions, given the mutation to omit and 
@@ -59,7 +60,7 @@ print()
 mutations = ("C>A","C>G","C>T","T>A","T>C","T>G")
 
 #Create the Tkinter UI
-dialog = TkinterDialog(workingDirectory=os.path.join(os.path.dirname(__file__),"..","data"))
+dialog = TkinterDialog(workingDirectory=dataDirectory)
 dialog.createFileSelector("Bed Mutation File:",0,("Bed Files",".bed"))
 # DEPRECATED: dialog.createDropdown("Mutation to omit:",1,0,options=mutations)
 dialog.createLabel("Mutations:",1,0)

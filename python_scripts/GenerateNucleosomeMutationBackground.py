@@ -1,11 +1,11 @@
 # This script, when given a mutation background file, a genome file, and a file of strongly positioned nucleosome coordinates,
 # generates a background file with the expected mutations at each dyad position from -73 to 73 (inclusive).
 
-from TkinterDialog import TkinterDialog, Selections
+from Tkinter.TkinterDialog import TkinterDialog, Selections
 import os, subprocess
 from typing import Dict
-from UsefulBioinformaticsFunctions import bedToFasta, reverseCompliment, FastaFileIterator
-from UsefulFileSystemFunctions import getContext, getLinkerOffset, Metadata, generateFilePath, dataTypes
+from helper_scripts.UsefulBioinformaticsFunctions import bedToFasta, reverseCompliment, FastaFileIterator
+from helper_scripts.UsefulFileSystemFunctions import getContext, getLinkerOffset, Metadata, generateFilePath, dataTypes, dataDirectory
 
 
 # This function takes a bed file of strongly positioned nucleosomes and expands their coordinates to encompass
@@ -266,7 +266,7 @@ def generateNucleosomeMutationBackground(mutationBackgroundFilePaths, linkerOffs
 
 if __name__ == "__main__":
     #Create the Tkinter UI
-    dialog = TkinterDialog(workingDirectory=os.path.join(os.path.dirname(__file__),"..","data"))
+    dialog = TkinterDialog(workingDirectory=dataDirectory)
     dialog.createMultipleFileSelector("Mutation Background Files:",0,dataTypes.mutBackground + ".tsv",("Tab Seperated Values Files",".tsv"))
     dialog.createCheckbox("Include linker DNA",1,0)
     dialog.createExitButtons(2,0)

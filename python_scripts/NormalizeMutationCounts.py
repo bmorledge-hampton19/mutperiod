@@ -1,9 +1,9 @@
 # This script takes raw nucleosome mutation count files, and passes them an R script which normalizes the data.
 import os, subprocess
-from TkinterDialog import TkinterDialog, Selections
+from Tkinter.TkinterDialog import TkinterDialog, Selections
 from typing import List
-from UsefulFileSystemFunctions import (getLinkerOffset, getContext, 
-                                       Metadata, generateFilePath, dataTypes)
+from helper_scripts.UsefulFileSystemFunctions import (getLinkerOffset, getContext, dataDirectory, 
+                                                      Metadata, generateFilePath, dataTypes)
 
 # Pairs each background file path with its respective raw counts file path.
 # Returns these pairings as a dictionary.
@@ -69,7 +69,7 @@ def normalizeCounts(backgroundCountsFilePaths: List[str]):
 if __name__ == "__main__":
 
     #Create the Tkinter UI
-    dialog = TkinterDialog(workingDirectory=os.path.join(os.path.dirname(__file__),"..","data"))
+    dialog = TkinterDialog(workingDirectory=dataDirectory)
     dialog.createMultipleFileSelector("Background Nucleosome Mutation Counts Files:",0,
                                       dataTypes.nucMutBackground + ".tsv",("Tab Seperated Values Files",".tsv"))
     dialog.createExitButtons(1,0)

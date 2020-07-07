@@ -1,6 +1,6 @@
 import os
 import gzip
-from UsefulBioinformaticsFunctions import reverseCompliment, isPurine
+from helper_scripts.UsefulBioinformaticsFunctions import reverseCompliment, isPurine
 
 # This function takes the input from the bbglab's mutation data and converts it to bed format.
 # Inputs are (respectively) the directory containing the bbglab data and the directory the bed data will be created in.

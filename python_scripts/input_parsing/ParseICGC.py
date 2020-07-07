@@ -1,9 +1,10 @@
 # This script reads one or more "simple somatic mutation" data file(s) from ICGC and 
 # writes information on single base substitution mutations to a new bed file or files for further analysis.
 import os, gzip, subprocess
-from TkinterDialog import TkinterDialog, Selections
-from UsefulFileSystemFunctions import dataTypes, generateFilePath, generateMetadata, getIsolatedParentDir
-from UsefulBioinformaticsFunctions import reverseCompliment, isPurine, baseChromosomes
+from Tkinter.TkinterDialog import TkinterDialog, Selections
+from helper_scripts.UsefulFileSystemFunctions import (dataTypes, generateFilePath, dataDirectory,
+                                                      generateMetadata, getIsolatedParentDir)
+from helper_scripts.UsefulBioinformaticsFunctions import reverseCompliment, isPurine, baseChromosomes
 from typing import IO, List
 
 # This class represents the mutation data obtained from ICGC in a more precise form.
@@ -261,7 +262,7 @@ def generateMSIDonorList(ICGCFilePath, fileManager: ICGCParserFileManager):
 
     # Pass the path to the newly created MSIseq data file to the R script to generate the MSI Donor list
     print("Calling MSIseq to generate MSI donor list...")
-    subprocess.run(" ".join(("Rscript",os.path.join(os.path.dirname(__file__),"..","R_scripts","RunNucPeriod","FindMSIDonors.R"),
+    subprocess.run(" ".join(("Rscript",os.path.join(os.path.dirname(__file__),"..","..","R_scripts","RunNucPeriod","FindMSIDonors.R"),
                    fileManager.MSIseqDataFilePath, fileManager.mutationGroupName)), shell = True, check = True)
 
 
@@ -392,7 +393,7 @@ def parseICGC(ICGCFilePaths, genomeFilePath, nucPosFilePath, convertToBed, separ
 if __name__ == "__main__":
 
     #Create the Tkinter UI
-    dialog = TkinterDialog(workingDirectory=os.path.join(os.path.dirname(__file__),"..","data"))
+    dialog = TkinterDialog(workingDirectory=dataDirectory)
     dialog.createMultipleFileSelector("ICGC Mutation Files:",0,".tsv.gz",("gzip files",".gz"))
     dialog.createFileSelector("Genome Fasta File:",1,("Fasta Files",".fa"))
     dialog.createFileSelector("Strongly Positioned Nucleosome File:",2,("Bed Files",".bed"))

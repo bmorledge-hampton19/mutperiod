@@ -1,9 +1,10 @@
 # This script takes the data obtained from mapping lesions cleaved by UVDE
 # and converts it to a format suitable for downstream analysis.
 # This is done by taking the 2 bp lesion and splitting it into 2 single base lesions.
-from TkinterDialog import Selections, TkinterDialog
-from UsefulFileSystemFunctions import getIsolatedParentDir, generateFilePath, dataTypes, generateMetadata
-from UsefulBioinformaticsFunctions import baseChromosomes
+from Tkinter.TkinterDialog import Selections, TkinterDialog
+from helper_scripts.UsefulFileSystemFunctions import (getIsolatedParentDir, generateFilePath, dataDirectory,
+                                                      dataTypes, generateMetadata)
+from helper_scripts.UsefulBioinformaticsFunctions import baseChromosomes
 import os, subprocess
 
 
@@ -59,7 +60,7 @@ def parseUVDESeq(UVDESeqFilePaths, genomeFilePath, nucPosFilePath):
 if __name__ == "__main__":
 
     # Create the Tkinter UI
-    dialog = TkinterDialog(workingDirectory=os.path.join(os.path.dirname(__file__),"..","data"))
+    dialog = TkinterDialog(workingDirectory=dataDirectory)
     dialog.createMultipleFileSelector("UVDE-seq data:",0,"dipy.bed",("Bed Files",".bed"),additionalFileEndings=("TA.bed",))    
     dialog.createFileSelector("Genome Fasta File:",1,("Fasta Files",".fa"))
     dialog.createFileSelector("Strongly Positioned Nucleosome File:",2,("Bed Files",".bed"))

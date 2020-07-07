@@ -1,9 +1,9 @@
 # This script will, when given a bed formatted file with mutation entries,
 # create a bed file with an expanded tri/pentanucleotide context around the mutation.
 
-from TkinterDialog import TkinterDialog, Selections
-from UsefulBioinformaticsFunctions import bedToFasta, FastaFileIterator
-from UsefulFileSystemFunctions import Metadata, generateFilePath, dataTypes, getContext
+from Tkinter.TkinterDialog import TkinterDialog, Selections
+from helper_scripts.UsefulBioinformaticsFunctions import bedToFasta, FastaFileIterator
+from helper_scripts.UsefulFileSystemFunctions import Metadata, generateFilePath, dataTypes, getContext, dataDirectory
 import os
 
 # Expands the range of each mutation position in the original mutation file to encompass one extra base on either side.
@@ -128,8 +128,8 @@ def expandContext(inputBedFilePaths, expansionContextNum):
 if __name__ == "__main__":
 
     # Create the Tkinter dialog.
-    dialog = TkinterDialog(workingDirectory=os.path.join(os.path.dirname(__file__),"..","data"))
-    dialog.createLabel("Note: Either single-base or trinuc context bed files will suffice.  Both are not necessary.",0,0,4)
+    dialog = TkinterDialog(workingDirectory=dataDirectory)
+    dialog.createLabel("Note: Either single-base or trinuc context bed files will suffice.  Both are not necessary.",0,0,2)
     dialog.createMultipleFileSelector("Single-Base Bed File:",1,"singlenuc_" + dataTypes.mutations + ".bed",("Bed Files",".bed"))
     dialog.createMultipleFileSelector("Trinuc Context Bed File:",2,"trinuc_" + dataTypes.mutations + ".bed",("Bed Files",".bed"))
     dialog.createDropdown("Expansion Context",3,0,("Trinuc", "Pentanuc"))

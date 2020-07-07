@@ -1,9 +1,9 @@
 # This script generates a mutational background file, given a mutation file and 
 # a genome fasta file.
 
-from UsefulBioinformaticsFunctions import reverseCompliment, FastaFileIterator, baseChromosomes
-from UsefulFileSystemFunctions import Metadata, dataTypes, generateFilePath
-from TkinterDialog import TkinterDialog, Selections
+from helper_scripts.UsefulBioinformaticsFunctions import reverseCompliment, FastaFileIterator, baseChromosomes
+from helper_scripts.UsefulFileSystemFunctions import Metadata, dataTypes, generateFilePath, dataDirectory
+from Tkinter.TkinterDialog import TkinterDialog, Selections
 import os
 
 # This function generates a file containing the frequencies of each tri/singlenuc context in a genome
@@ -275,7 +275,7 @@ def generateMutationBackground(mutationFilePaths, backgroundContextNum):
 if __name__ == "__main__":
 
     #Create the Tkinter UI
-    dialog = TkinterDialog(workingDirectory=os.path.join(os.path.dirname(__file__),"..","data"))
+    dialog = TkinterDialog(workingDirectory=dataDirectory)
     dialog.createMultipleFileSelector("Bed Mutation Files:",0,dataTypes.mutations + ".bed",("Bed Files",".bed"))
     dialog.createDropdown("Background Context",1,0,("Trinuc","Singlenuc", "Pentanuc"))
     dialog.createExitButtons(2,0)

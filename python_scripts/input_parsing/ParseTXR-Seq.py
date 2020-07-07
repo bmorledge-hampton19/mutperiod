@@ -1,8 +1,9 @@
 # This script takes the repair map data from tXR-Seq and converts it to a trinucleotide context
 # file of estimated lesion locations.
-from TkinterDialog import Selections, TkinterDialog
-from UsefulBioinformaticsFunctions import bedToFasta, FastaFileIterator, baseChromosomes
-from UsefulFileSystemFunctions import getIsolatedParentDir, generateFilePath, dataTypes, generateMetadata
+from Tkinter.TkinterDialog import Selections, TkinterDialog
+from helper_scripts.UsefulBioinformaticsFunctions import bedToFasta, FastaFileIterator, baseChromosomes
+from helper_scripts.UsefulFileSystemFunctions import (getIsolatedParentDir, generateFilePath, dataDirectory, 
+                                                      dataTypes, generateMetadata)
 from typing import List
 import os, subprocess
 
@@ -249,7 +250,7 @@ def parseTXRSeq(tXRSeqBigWigReadsFilePathPairs, tXRSeqBedReadsFilePaths, genomeF
 if __name__ == "__main__":
 
     # Create the Tkinter UI
-    dialog = TkinterDialog(workingDirectory=os.path.join(os.path.dirname(__file__),"..","data"))
+    dialog = TkinterDialog(workingDirectory=dataDirectory)
     dialog.createMultipleFileSelector("tXR-seq bigwig data (plus strand):",0,
                                       "+.bigWig",("BigWig Files",".bigWig"))
     dialog.createMultipleFileSelector("tXR-seq bed data (alternative to bigwig):",1,

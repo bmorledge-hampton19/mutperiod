@@ -3,9 +3,9 @@
 # NOTE:  Both input files must be sorted for this script to run properly. 
 #        (Sorted first by chromosome (string) and then by nucleotide position (numeric))
 import os, warnings
-from TkinterDialog import TkinterDialog, Selections
-from UsefulBioinformaticsFunctions import baseChromosomes
-from UsefulFileSystemFunctions import Metadata, generateFilePath
+from Tkinter.TkinterDialog import TkinterDialog, Selections
+from helper_scripts.UsefulBioinformaticsFunctions import baseChromosomes
+from helper_scripts.UsefulFileSystemFunctions import Metadata, generateFilePath, dataDirectory
 from typing import IO
 
 
@@ -240,7 +240,7 @@ def countNucleosomePositionMutations(mutationFilePaths, linkerOffset):
 if __name__ == "__main__":
 
     #Create the Tkinter UI
-    dialog = TkinterDialog(workingDirectory=os.path.join(os.path.dirname(__file__),"..","data"))
+    dialog = TkinterDialog(workingDirectory=dataDirectory)
     dialog.createMultipleFileSelector("Mutation Files:",0,"_context_mutations.bed",("Bed Files",".bed"))
     dialog.createCheckbox("Include 30 bp linker DNA on either side.",1, 0, 2)
     dialog.createExitButtons(2,0)

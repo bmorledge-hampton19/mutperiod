@@ -1,10 +1,10 @@
 # This script runs a suite of scripts from this project to take a singlenuc context (or trinuc if it's already available) bed file
 # and produce the normalized dyad position counts, along with all the relevant intermediate files.
 
-from TkinterDialog import TkinterDialog, Selections
+from Tkinter.TkinterDialog import TkinterDialog, Selections
 from typing import List
 import os
-from UsefulFileSystemFunctions import dataTypes
+from helper_scripts.UsefulFileSystemFunctions import dataTypes, dataDirectory
 from ExpandContext import expandContext
 from GenerateMutationBackground import generateMutationBackground
 from GenerateNucleosomeMutationBackground import generateNucleosomeMutationBackground
@@ -12,7 +12,7 @@ from CountNucleosomePositionMutations import countNucleosomePositionMutations
 from NormalizeMutationCounts import normalizeCounts
 
 # Create the Tkinter dialog.
-dialog = TkinterDialog(workingDirectory=os.path.join(os.path.dirname(__file__),"..","data"))
+dialog = TkinterDialog(workingDirectory=dataDirectory)
 dialog.createMultipleFileSelector("Bed Mutation Files:",0,dataTypes.mutations + ".bed",("Bed Files",".bed"))
 dialog.createDropdown("Background Context",1,0,("Trinuc","Singlenuc", "Pentanuc"))
 dialog.createCheckbox("Include 30 bp linker DNA",1,2)
