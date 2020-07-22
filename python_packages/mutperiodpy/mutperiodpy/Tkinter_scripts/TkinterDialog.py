@@ -1,20 +1,13 @@
+# A modular dialog window used to select relevant files and options for a script.
+
 import tkinter as tk
 import os
 from tkinter import filedialog
 from typing import List, Dict
+from mutperiodpy.helper_scripts.UsefulFileSystemFunctions import getFilesInDirectory
+from mutperiodpy.Tkinter_scripts.MultipleFileSelector import MultipleFileSelector
+from mutperiodpy.Tkinter_scripts.DynamicSelector import DynamicSelector
 
-if __name__ == '__main__' and __package__ is None:
-    import sys
-    scriptsRootDirectory = os.path.dirname(os.path.dirname(os.path.abspath(__file__))) 
-    if not scriptsRootDirectory in sys.path: sys.path.insert(0, scriptsRootDirectory)
-    from helper_scripts.UsefulFileSystemFunctions import getFilesInDirectory
-    from Tkinter_scripts.MultipleFileSelector import MultipleFileSelector
-    from Tkinter_scripts.DynamicSelector import DynamicSelector
-else:
-    print (__name__)
-    from ..helper_scripts.UsefulFileSystemFunctions import getFilesInDirectory
-    from ..Tkinter_scripts.MultipleFileSelector import MultipleFileSelector
-    from ..Tkinter_scripts.DynamicSelector import DynamicSelector
 
 class TkinterDialog(tk.Frame):
     "A modular dialog window used to select relevant files and options for a script."
