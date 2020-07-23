@@ -192,3 +192,6 @@ R_packages/RunNucPeriod/plots.pdf
 
 # Ignore test inputs
 python_packages/test.txt
+
+# Ignore test scripts
+R_packages/RunNucPeriod/PlotTests.R
