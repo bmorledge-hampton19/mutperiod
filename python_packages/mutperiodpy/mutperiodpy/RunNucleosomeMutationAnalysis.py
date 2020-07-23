@@ -3,7 +3,7 @@
 
 import os, subprocess
 from typing import List
-from mutperiodpy.helper_scripts.UsefulFileSystemFunctions import dataTypes, dataDirectory
+from mutperiodpy.helper_scripts.UsefulFileSystemFunctions import dataTypes, dataDirectory, RPackagesDirectory
 from mutperiodpy.Tkinter_scripts.TkinterDialog import TkinterDialog, Selections
 
 
@@ -21,7 +21,7 @@ def runNucleosomeMutationAnalysis(normalizedNucleosomeMutationCountsFilePaths: L
     if not outputFilePath.endswith(".rda"): raise ValueError("Output file should end with \".rda\".")
 
     # Write the inputs to a temporary file to be read by the R script
-    rScriptDirectory = os.path.join(os.path.dirname(__file__),"..","R_scripts","RunNucPeriod")
+    rScriptDirectory = os.path.join(RPackagesDirectory,"RunNucPeriod")
     inputsFilePath = os.path.join(rScriptDirectory,"inputs.txt")
 
     with open(inputsFilePath, 'w') as inputsFile:

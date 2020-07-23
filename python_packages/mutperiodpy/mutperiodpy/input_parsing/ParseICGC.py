@@ -5,7 +5,7 @@ import os, gzip, subprocess
 from typing import IO, List
 from mutperiodpy.Tkinter_scripts.TkinterDialog import TkinterDialog, Selections
 from mutperiodpy.helper_scripts.UsefulFileSystemFunctions import (dataTypes, generateFilePath, dataDirectory,
-                                                                  generateMetadata, getIsolatedParentDir)
+                                                                  generateMetadata, getIsolatedParentDir, RPackagesDirectory)
 from mutperiodpy.helper_scripts.UsefulBioinformaticsFunctions import reverseCompliment, isPurine, baseChromosomes
 
 
@@ -264,7 +264,7 @@ def generateMSIDonorList(ICGCFilePath, fileManager: ICGCParserFileManager):
 
     # Pass the path to the newly created MSIseq data file to the R script to generate the MSI Donor list
     print("Calling MSIseq to generate MSI donor list...")
-    subprocess.run(" ".join(("Rscript",os.path.join(os.path.dirname(__file__),"..","..","R_scripts","RunNucPeriod","FindMSIDonors.R"),
+    subprocess.run(" ".join(("Rscript",os.path.join(RPackagesDirectory,"RunNucPeriod","FindMSIDonors.R"),
                    fileManager.MSIseqDataFilePath, fileManager.mutationGroupName)), shell = True, check = True)
 
 

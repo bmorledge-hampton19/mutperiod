@@ -3,8 +3,9 @@
 import os
 
 # The directory containing genome and nucleosome data.
-dataDirectory = os.path.join(os.path.dirname(__file__),"..","..","data")
-externalDataDirectory = os.path.join(os.path.dirname(__file__),"..","..","data","__external_data")
+dataDirectory = os.path.join(os.path.dirname(__file__),"..","..","..","..","data")
+externalDataDirectory = os.path.join(os.path.dirname(__file__),"..","..","..","..","data","__external_data")
+RPackagesDirectory = os.path.join(os.path.dirname(__file__),"..","..","..","..","R_packages")
 
 
 # Stores information about data type identifiers

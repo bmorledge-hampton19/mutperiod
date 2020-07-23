@@ -3,8 +3,8 @@
 import os, subprocess
 from typing import List
 from mutperiodpy.Tkinter_scripts.TkinterDialog import TkinterDialog, Selections
-from mutperiodpy.helper_scripts.UsefulFileSystemFunctions import (getLinkerOffset, getContext, dataDirectory, 
-                                                                  Metadata, generateFilePath, dataTypes)
+from mutperiodpy.helper_scripts.UsefulFileSystemFunctions import (getLinkerOffset, getContext, dataDirectory, Metadata, 
+                                                                  generateFilePath, dataTypes, RPackagesDirectory)
 
 
 # Pairs each background file path with its respective raw counts file path.
@@ -58,8 +58,7 @@ def normalizeCounts(backgroundCountsFilePaths: List[str]):
 
         # Pass the path to the file paths to the R script to generate the normalized counts file.
         print("Calling R script to generate normalized counts...")
-        subprocess.run(" ".join(("Rscript",os.path.join(os.path.dirname(__file__),"..","R_scripts","RunNucPeriod",
-                                                        "NormalizeNucleosomeMutationCounts.R"),
+        subprocess.run(" ".join(("Rscript",os.path.join(RPackagesDirectory,"RunNucPeriod","NormalizeNucleosomeMutationCounts.R"),
                                  rawCountsFilePath,backgroundCountsFilePath,normalizedCountsFilePath)), 
                        shell = True, check = True)
 

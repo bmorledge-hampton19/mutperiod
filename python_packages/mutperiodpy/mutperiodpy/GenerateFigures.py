@@ -3,7 +3,7 @@
 
 import os, subprocess
 from mutperiodpy.Tkinter_scripts.TkinterDialog import TkinterDialog
-from mutperiodpy.helper_scripts.UsefulFileSystemFunctions import dataDirectory
+from mutperiodpy.helper_scripts.UsefulFileSystemFunctions import dataDirectory, RPackagesDirectory
 
 
 def generateFigures(tsvFilePaths, rdaFilePaths, exportPath, omitOutliers):
@@ -17,7 +17,7 @@ def generateFigures(tsvFilePaths, rdaFilePaths, exportPath, omitOutliers):
         exportFileName = os.path.basename(exportPath)
 
     # Create the temporary inputs file to pass to the R script
-    rScriptDirectory = os.path.join(os.path.dirname(__file__),"..","R_scripts","RunNucPeriod")
+    rScriptDirectory = os.path.join(RPackagesDirectory,"RunNucPeriod")
     inputsFilePath = os.path.join(rScriptDirectory,"inputs.txt")
 
     # Write the inputs
