@@ -187,8 +187,8 @@ scripts/test.py
 *.tar.gz
 
 # Ignore temporary input file and test outputs
-R_scripts/RunNucPeriod/inputs.txt
-R_scripts/RunNucPeriod/plots.pdf
+R_packages/RunNucPeriod/inputs.txt
+R_packages/RunNucPeriod/plots.pdf
 
 # Ignore test inputs
-python_scripts/test.txt
+python_packages/test.txt
