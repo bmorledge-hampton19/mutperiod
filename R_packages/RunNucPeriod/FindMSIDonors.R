@@ -18,6 +18,6 @@ if (length(args) == 0) {
 } else if (length(args) == 2) {
   findMSIDonors(args[1], args[2])
 } else {
-  stop("Invalid number of arguments passed.  Expected 2 arguments for MSIseq input data 
-       and mutation group name or no arguments to select input manually")
+  stop("Invalid number of arguments passed.  Expected 2 arguments for MSIseq input data path
+       and output data path or no arguments to select input manually")
 }

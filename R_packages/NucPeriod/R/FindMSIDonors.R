@@ -1,12 +1,9 @@
 # This function uses the MSIseq package to generate a list of MSI donors.
 #' @export
-findMSIDonors = function(inputDataPath, mutationGroupName, verbose = TRUE) {
+findMSIDonors = function(inputDataPath, outputFilePath, verbose = TRUE) {
 
   # The number of base pairs (in megabases) in the hg19 genome (excluding mitochondria).
   captureLength = 3096
-
-  # A path to the output file.
-  outputFilePath = file.path(dirname(inputDataPath), paste0(mutationGroupName,"_MSI_donors.txt"))
 
   ## download the Hg19repeats annotation file and load it
   if (verbose) print("Downloading genome information...")
@@ -17,7 +14,7 @@ findMSIDonors = function(inputDataPath, mutationGroupName, verbose = TRUE) {
 
   # Get the input data
   inputData = data.table::fread(inputDataPath)
-  if (dim(inputData)[0] == 0) {
+  if (dim(inputData)[1] == 0) {
     warning("MSI seq data file is empty.  Writing empty MSI donor file.")
     write('', file = outputFilePath)
   }
