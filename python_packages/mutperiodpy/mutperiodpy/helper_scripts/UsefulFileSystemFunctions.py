@@ -54,6 +54,12 @@ def getIsolatedParentDir(filePath: str):
     return filePath.rsplit(os.path.sep,2)[-2]
 
 
+# Checks to see if the given directories exist and creates them if they do not.
+def checkDirs(*directoryPaths):
+    for directoryPath in directoryPaths:
+        if not os.path.exists(directoryPath): os.makedirs(directoryPath)
+
+
 # Returns the context associated with a given file path as lowercase text (or an int if specified), or none if there is none.
 def getContext(filePath: str, asInt = False):
 
