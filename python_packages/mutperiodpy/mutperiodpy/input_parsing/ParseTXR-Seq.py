@@ -136,7 +136,7 @@ def writeTrinucLesions(fastaReadsFilePath, trinucLesionsFilePath):
                                              str(int(fastaEntry.sequenceLocation[1]) + lesionLocation),
                                              str(int(fastaEntry.sequenceLocation[1]) + lesionLocation + 1),
                                              fastaEntry.sequence[lesionLocation-1:lesionLocation+2],
-                                             "NA",
+                                             "OTHER",
                                              fastaEntry.sequenceLocation[3])) + '\n'
                     trinucLesionsFile.write(trinucEntry)
 
