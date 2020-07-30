@@ -84,30 +84,28 @@ class FastaFileIterator:
 
             self.sequence = sequence # The DNA sequence itself
 
+
     # Initialize the FastaFileIterator with an open fasta file object.
     def __init__(self, fastaFile: IO, containsLocationInformation = True):
         self.fastaFile = fastaFile # The file that will be parsed and read through.
         self.containsLocationInformation = containsLocationInformation # Whether or not the fasta file contains full
                                                                        # sequence location information
-        self.nextSequenceName = None # The name of the upcoming entry.
         self.eof = False # A flag for when the end of the file has been reached.
 
+        # Initialize the iterator with the first entry.
+        self.nextSequenceName = self.fastaFile.readline().strip()[1:]
+        # If the file is empty (and thus, the first line is blank) set the eof flag to true.
+        if not self.nextSequenceName: self.eof = True
 
-    # Make the class iteratable, returning each fasta entry one at a time.
-    def __iter__(self):
-        return self
-    def __next__(self):
 
-        # Make sure we haven't reached the end of the file.
-        if self.eof: raise StopIteration
+    # Reads in the next fasta entry and returns it.
+    def readEntry(self):
+
+        # Return None if we've reached the end of the file.
+        if self.eof: return None
 
         # Get the name for the upcoming sequence.
-        if self.nextSequenceName is None:
-            sequenceName = self.fastaFile.readline().strip()[1:]
-            # If the file is empty (and thus, the first line is blank) stop iteration immediately.
-            if not sequenceName: raise StopIteration
-        else: 
-            sequenceName = self.nextSequenceName
+        sequenceName = self.nextSequenceName
 
         # Get the sequence location for the current entry (if available).
         if self.containsLocationInformation: 
@@ -134,6 +132,17 @@ class FastaFileIterator:
 
         # Return the current fasta entry.
         return self.FastaEntry(sequenceLocation, sequence, sequenceName)
+
+
+    # Make the class iteratable, returning each fasta entry one at a time.
+    def __iter__(self):
+        return self
+    def __next__(self):
+
+        # Make sure we haven't reached the end of the file.
+        if self.eof: raise StopIteration
+
+        return self.readEntry()
 
 
 
