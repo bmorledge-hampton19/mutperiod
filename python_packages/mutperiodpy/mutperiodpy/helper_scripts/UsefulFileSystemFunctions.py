@@ -134,7 +134,7 @@ def generateFilePath(directory = None, dataGroup = None, context = None,
 
 # Generates a .metadata file from the given information.
 def generateMetadata(dataGroupName, associatedGenome, associatedNucleosomePositions, 
-                     localParentDataPath, metadataDirectory):
+                     localParentDataPath, metadataDirectory, *cohorts):
 
     # Open up the metadata file.
     with open(os.path.join(metadataDirectory,".metadata"), 'w') as metadataFile:
@@ -148,28 +148,41 @@ def generateMetadata(dataGroupName, associatedGenome, associatedNucleosomePositi
 
         metadataFile.write("localParentDataPath:\t" + localParentDataPath + '\n')
 
+        if len(cohorts) > 0:
+            metadataFile.write("cohorts:\t")
+            metadataFile.write(', '.join(cohorts) + '\n')
+        else:
+            metadataFile.write("cohorts:\tNone\n")
+
 # Keeps track of data about a given data group by accessing the metadata file in the same directory
 class Metadata:
 
+    # filePath can be a path to any file in the same directory as the desired metadata or the directory itself.
     def __init__(self,filePath):
 
         # Get the path to the metadata file.
-        metadataFilePath = os.path.join(os.path.dirname(filePath),".metadata")
+        if os.path.isdir(filePath):
+            metadataFilePath = os.path.join(filePath,".metadata")
+        else:
+            metadataFilePath = os.path.join(os.path.dirname(filePath),".metadata")
 
         # Read the metadata file and put its contents into and dictionary, key-value pairs in the file.
         self.metadata = dict()
         with open(metadataFilePath, 'r') as metadataFile:
             for line in metadataFile:
 
-                choppedUpLine = line.strip().split('\t')
+                choppedUpLine = str(line).strip().split(maxsplit = 1)
 
-                if len(choppedUpLine) != 2 or not choppedUpLine[0].endswith(':'):
+                if not choppedUpLine[0].endswith(':'):
                     raise ValueError("Malformed metadata line: " + line.strip())
 
                 self.metadata[choppedUpLine[0][:-1]] = choppedUpLine[1]
 
         # Add the metadata directory to the metadata! (So meta!)
-        self.metadata["metadataDirectory"] = os.path.dirname(filePath)
+        if os.path.isdir(filePath):
+            self.metadata["metadataDirectory"] = filePath
+        else:
+            self.metadata["metadataDirectory"] = os.path.dirname(filePath)
 
         # Generate quick and easy to use class members to access common metadata!
         self.wrapMetadataInMembers()
@@ -188,16 +201,19 @@ class Metadata:
 
         ### Get a variety of common metadata features, quick and easy!
 
-        self.dataGroupName = self.getMetadataByKey("dataGroupName")
+        self.dataGroupName: str = self.getMetadataByKey("dataGroupName")
 
-        self.genomeName = self.getMetadataByKey("associatedGenome")
+        self.genomeName: str = self.getMetadataByKey("associatedGenome")
 
-        self.nucPosName = self.getMetadataByKey("associatedNucleosomePositions")
+        self.nucPosName: str = self.getMetadataByKey("associatedNucleosomePositions")
 
-        self.localParentDataPath = self.getMetadataByKey("localParentDataPath")
+        self.localParentDataPath: str = self.getMetadataByKey("localParentDataPath")
 
-        self.directory = self.getMetadataByKey("metadataDirectory")
+        self.directory: str = self.getMetadataByKey("metadataDirectory")
 
+        self.cohorts = list()
+        if self.getMetadataByKey("cohorts") != "None":
+            self.cohorts += self.getMetadataByKey("cohorts").split('\t')
         
         ### Get file paths for useful metadata associated files.
 
