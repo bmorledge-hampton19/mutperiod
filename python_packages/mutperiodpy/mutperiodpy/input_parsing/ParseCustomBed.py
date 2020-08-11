@@ -2,13 +2,15 @@
 #   Col 0: chromosome identifier, e.g. "chr1" NOT just a single character.
 #   Col 1: 0 base start pos
 #   Col 2: 1 base end pos
-#   Col 3: The base in the reference genome at this position. (Will be auto-acquired if set to ".")
-#   Col 4: The base that the position was mutated to, or one of the following identifiers: 
-#          INS: An insertion at the given position.
-#          DEL: A deltion of the given region.
+#   Col 3: The base(s) in the reference genome at this position. 
+#          Will be auto-acquired if set to "."
+#          "*" indicates an insertion between the two given bases.
+#   Col 4: The base(s) that the position(s) were mutated to.
+#          "*" indicates a deletion of the given base
 #          OTHER: Any other lesion or feature
 #   Col 5: The strand the mutation/alteration occurred in.  Single-base mutations are flipped so that they occur in 
-#          the pyrimidine-containing strand if necessary.  (If set to ".", the strand is first determined from the genome file)
+#          the pyrimidine-containing strand if necessary.  
+#          (If set to ".", the strand is first determined from the genome file, if possible.)
 #   Col 6: The chort the tumor belongs to.  e.g. a donor ID or tumor type.  Optional, but required for stratifying 
 #          data in future steps.  If any cohort designations are given, ALL entries must have designations.  A "." character
 #          in this column can be used to avoid assigning an entry to another cohort without breaking this rule.
@@ -42,18 +44,25 @@ def checkForErrors(choppedUpLine: List[str], cohortDesignationPresent):
                          "The given coordinate pair, " + choppedUpLine[1] + ", " + choppedUpLine[2] + ' ' +
                          "does not satisfy these conditions.")
 
-    if choppedUpLine[3].upper() not in ('A','C','G','T','.'):
-        raise ValueError("Invalid reference base: \"" + choppedUpLine[3] + "\".  Should be one of the four DNA bases or \".\" " + 
-                         "to auto acquire it from the corresponding genome.")
+    if choppedUpLine[3] == '*' and choppedUpLine[4] == '*':
+        raise ValueError("The reference base and mutation columns are both set to \"*\".  " + 
+                         "(Entry cannot be insertion and deletion simultaneously)")
 
-    if choppedUpLine[4].upper() not in ('A','C','G','T',"INS","DEL","OTHER"):
-        raise ValueError("Invalid altered base: \"" + choppedUpLine[4] + "\".  Should be one of the four DNA bases or " + 
-                         "\"INS\", \"DEL\", or \"OTHER\".")
+    if not {'A','C','G','T'}.issuperset(choppedUpLine[3]) and not choppedUpLine[3] in ('*','.'):
+        raise ValueError("Invalid reference base(s): \"" + choppedUpLine[3] + "\".  Should be a string made up of the four DNA bases " + 
+                         "or \".\" to auto acquire the base(s) from the corresponding genome, or \"*\" to denote an insertion.")
+
+    if choppedUpLine[3] == '*' and int(choppedUpLine[2]) - int(choppedUpLine[1]) != 2:
+        raise ValueError("Reference column indicates an insertion, but the genome positions don't exactly flank the insertion site.  " +
+                         "(Indicated region should span exactly 2 bases.)")
+
+    if not {'A','C','G','T'}.issuperset(choppedUpLine[4]) and not choppedUpLine[4] in ('*',"OTHER"):
+        raise ValueError("Invalid mutation designation: \"" + choppedUpLine[3] + "\".  Should be a string made up of the four DNA bases " + 
+                         "or \"*\" to denote a deletion, or \"OTHER\" to denote an some other alteration.")
 
     if choppedUpLine[5] not in ('+','-','.'):
-        raise ValueError("Invalid strand designation: \"" + choppedUpLine[5] + "\".  Should be \"+\" or \"-\" or \".\" " + 
-                         "to auto acquire it based on pyrimidine containing strand (if single-base mutation) " + 
-                         "or set it to \"+\" if not.")
+        raise ValueError("Invalid strand designation: \"" + choppedUpLine[5] + "\".  Should be \"+\" or \"-\", or \".\" " + 
+                         "to auto acquire the base if possible.")
 
     if cohortDesignationPresent and len(choppedUpLine) == 6:
         raise ValueError("A cohort designation was given for previous entries, but an entry was found without one.  " + 
@@ -105,13 +114,14 @@ def convertToStandardInput(bedInputFilePath, genomeFilePath, autoAcquiredFilePat
             if not inputQAChecked: checkForErrors(choppedUpLine, cohortDesignationPresent)
 
             # If this is the first entry requiring auto-acquiring, generate the required fasta file.
-            if not autoAcquiring and (choppedUpLine[3] == '.' or choppedUpLine[5] == '.'):
+            if not autoAcquiring and (choppedUpLine[3] == '.' or (choppedUpLine[5] == '.' and choppedUpLine[3] != '*')):
                 print("Found line with auto-acquire requested.  Generating fasta...")
                 autoAcquiring = True
                 bedToFasta(bedInputFilePath, genomeFilePath, autoAcquiredFilePath)
                 autoAcquiredFile = open(autoAcquiredFilePath, 'r')
                 autoAcquireFastaIterator = FastaFileIterator(autoAcquiredFile)
                 fastaEntry = autoAcquireFastaIterator.readEntry()
+                print("Continuing...")
 
             # Check for any base identities that need to be auto-acquired.
             if choppedUpLine[3] == '.':
@@ -134,13 +144,17 @@ def convertToStandardInput(bedInputFilePath, genomeFilePath, autoAcquiredFilePat
                         raise ValueError("Reached end of fasta file without finding a match for: ",' '.join(choppedUpLine))
                     fastaEntry = autoAcquireFastaIterator.readEntry()
 
-                if fastaEntry.sequence == choppedUpLine[3]: choppedUpLine[5] = '+'
-                elif fastaEntry.sequence == reverseCompliment(choppedUpLine[3]): choppedUpLine[5] = '-'
-                else: raise ValueError("The given sequence " + choppedUpLine[3] + " for location " + fastaEntry.sequenceName + ' ' +
-                                       "does not match the corresponding sequence in the given genome, or its reverse compliment.")
+                # Make sure this isn't an insertion, in which case the strand designation cannot be determined.
+                if choppedUpLine[3] != '*': 
+
+                    # Determine which strand is represented.
+                    if fastaEntry.sequence == choppedUpLine[3]: choppedUpLine[5] = '+'
+                    elif fastaEntry.sequence == reverseCompliment(choppedUpLine[3]): choppedUpLine[5] = '-'
+                    else: raise ValueError("The given sequence " + choppedUpLine[3] + " for location " + fastaEntry.sequenceName + ' ' +
+                                        "does not match the corresponding sequence in the given genome, or its reverse compliment.")
 
             # Is this an SNP from a purine?  If so, flip the strand to the pyrimidine containing strand.
-            if len(choppedUpLine[4]) == 1 and len(choppedUpLine[3]) == 1 and isPurine(choppedUpLine[3]):
+            if isPurine(choppedUpLine[3]) and choppedUpLine[4].upper() in ('A','C','G','T'):
 
                 choppedUpLine[3] = reverseCompliment(choppedUpLine[3])
                 choppedUpLine[4] = reverseCompliment(choppedUpLine[4])
@@ -158,13 +172,15 @@ def convertToStandardInput(bedInputFilePath, genomeFilePath, autoAcquiredFilePat
 
 
 # Set up the WriteManager to stratify by microsatellite stability by idntifiying MSI cohorts.
-def setUpForMSStratification(writeManager, bedInputFilePath, inputQAChecked):
+def setUpForMSStratification(writeManager: WriteManager, bedInputFilePath, inputQAChecked):
 
     print("Prepping data for MSIseq...")
-
+    
     # Get the MSIIdentifier from the write manager and complete its process.
     with writeManager.setUpForMSStratification() as myMSIIdentifier:
         with open(bedInputFilePath, 'r') as bedInputFile:
+
+            mutType = None # Either SNP, INS, or DEL
 
             for line in bedInputFile:
 
@@ -173,13 +189,16 @@ def setUpForMSStratification(writeManager, bedInputFilePath, inputQAChecked):
 
                 if choppedUpLine[4] != "OTHER":
 
-                    if len(choppedUpLine[4]) == 1 and len(choppedUpLine[3]) == 1:
-                        choppedUpLine[4] = "SNP"
+                    if choppedUpLine[3] == '*':
+                        mutType = "INS"
+                    elif choppedUpLine[4] == '*':
+                        mutType = "DEL"
+                    else: mutType = "SNP"
 
                 else: continue
-
-                myMSIIdentifier.addData(choppedUpLine[0], choppedUpLine[1], choppedUpLine[2],
-                                        choppedUpLine[4], choppedUpLine[6])
+                
+                myMSIIdentifier.addData(choppedUpLine[0], str(int(choppedUpLine[1]) + 1), choppedUpLine[2],
+                                        mutType, choppedUpLine[6])
 
         myMSIIdentifier.identifyMSICohorts()
 
