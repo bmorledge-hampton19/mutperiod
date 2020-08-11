@@ -119,15 +119,15 @@ class TkinterDialog(tk.Frame):
         dropdownStringVar.set(options[0])
         self.dropdownVars.append(dropdownStringVar)
 
-        # Create a tk.Frame to encompass the checkbox.
-        checkboxFrame = tk.Frame(self)
-        checkboxFrame.grid(row = row, column = column, columnspan = columnSpan, sticky = tk.W)
+        # Create a tk.Frame to encompass the dropdown.
+        dropdownFrame = tk.Frame(self)
+        dropdownFrame.grid(row = row, column = column, columnspan = columnSpan, sticky = tk.W)
 
         # Add the label
-        tk.Label(checkboxFrame, text = labelText).grid(row = 0, column = 0)
+        tk.Label(dropdownFrame, text = labelText).grid(row = 0, column = 0)
 
         # Initialize the dropdown.
-        dropdown = tk.OptionMenu(checkboxFrame, dropdownStringVar,*options)
+        dropdown = tk.OptionMenu(dropdownFrame, dropdownStringVar,*options)
         dropdown.grid(row = 0, column = 1, pady = 5, padx = 5)
 
     
