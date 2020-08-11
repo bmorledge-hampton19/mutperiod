@@ -18,6 +18,7 @@ class DataTypes:
         self.nucMutBackground = "nucleosome_mutation_background"
         self.rawNucCounts = "raw_nucleosome_mutation_counts"
         self.normNucCounts = "normalized_nucleosome_mutation_counts"
+        self.customInput = "custom_input"
 
 # The data type identifiers
 dataTypes = DataTypes()
