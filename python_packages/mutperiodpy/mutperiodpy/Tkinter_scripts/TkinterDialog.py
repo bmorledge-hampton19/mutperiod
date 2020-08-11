@@ -249,8 +249,9 @@ class TkinterDialog(tk.Frame):
 
         # Add any Selections objects from any dialogs included in dynamic displays
         for dynamicSelector in self.dynamicSelectors:
-            dynamicSelector.getCurrentDisplay().generateSelections()
-            self.selections.addSelections(dynamicSelector.getCurrentDisplay().selections)         
+            if dynamicSelector.getCurrentDisplay().ID is not None:
+                dynamicSelector.getCurrentDisplay().generateSelections()
+                self.selections.addSelections(dynamicSelector.getCurrentDisplay().selections)         
 
         # Destroy the dialog if this is the top level.
         if self.ID == "Toplevel": self.master.destroy()
