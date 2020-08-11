@@ -5,7 +5,7 @@ from tkinter import filedialog
 
 
 class DynamicSelector(tk.Frame):
-    "A Tk widget wich changes based on the state of a given \"commander\" widget."
+    "A Tk widget which changes based on the state of a given \"commander\" widget."
 
     def __init__(self, master, workingDirectory):
 
@@ -41,11 +41,15 @@ class DynamicSelector(tk.Frame):
         self.controllerVar = tk.StringVar()
         self.controllerVar.set(options[0])
 
+        # Create a tk.Frame to encompass the dropdown.
+        dropdownFrame = tk.Frame(self)
+        dropdownFrame.grid(row = 0, column = 0, sticky = tk.W)
+
         # Add the label
-        tk.Label(self, text = labelText).grid(row = 0, column = 0)
+        tk.Label(dropdownFrame, text = labelText).grid(row = 0, column = 0)
 
         # Initialize the dropdown.
-        dropdown = tk.OptionMenu(self, self.controllerVar,*options, command = self.checkController)
+        dropdown = tk.OptionMenu(dropdownFrame, self.controllerVar,*options, command = self.checkController)
         dropdown.grid(row = 0, column = 1, pady = 5, padx = 5, sticky = tk.W)
 
         # Set the default display variable.
@@ -63,24 +67,26 @@ class DynamicSelector(tk.Frame):
         self.controllerVar = tk.IntVar()
 
         checkbox = tk.Checkbutton(self, text = labelText, variable = self.controllerVar, command = self.checkController)
-        checkbox.grid(row = 0, column = 0, columnspan = 2, pady = 3, sticky = tk.W)
+        checkbox.grid(row = 0, column = 0, pady = 3, sticky = tk.W)
 
 
-    def initDisplay(self, displayKey, selectionsID, workingDirectory = None):
+    def initDisplay(self, displayKey, selectionsID = None, row = 1, column = 0, columnSpan = 1, workingDirectory = None):
         "Creates and returns a display corresponding to the given display key, which is a controller variable state."
 
-        from mutperiodpy.Tkinter_scripts import TkinterDialog
+        from mutperiodpy.Tkinter_scripts.TkinterDialog import TkinterDialog
 
         # Make sure there is no display under this identifier already.
         if displayKey in self.dynamicDisplays:
             raise ValueError("Display key \"" + str(displayKey) + "\" already has an associated display.")
 
+        # Make sure the display does not overlap with the controller var.
+        if row == 0 and column == 0: raise ValueError("Display overlaps with controller variable!")
 
         # Create the dialog object.
         if workingDirectory is None: workingDirectory = self.workingDirectory
         tkinterDialog = TkinterDialog(master = self, title = None, ID = selectionsID, 
-                                          workingDirectory = workingDirectory) 
-        tkinterDialog.grid(row = 1, column = 0, columnspan = 2)
+                                      workingDirectory = workingDirectory) 
+        tkinterDialog.grid(row = row, column = column, columnspan = columnSpan, sticky = tk.W)
 
         # Add it to the dictionary of dynamic displays and return it.
         self.dynamicDisplays[displayKey] = tkinterDialog
