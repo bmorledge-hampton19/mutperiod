@@ -1,7 +1,7 @@
 #' @export
 generateNucPeriodData = function(mutationCountsFilePaths, outputFilePath,
                                  MSIFilePaths = '', MSSFilePaths = '',
-                                 dyadPosCutoff = 60,
+                                 nucleosomeDyadPosCutoff = 60,
                                  nucleosomeMutationCutoff = 5000,
                                  enforceInputNamingConventions = FALSE,
                                  outputGraphs = FALSE) {
@@ -16,7 +16,7 @@ generateNucPeriodData = function(mutationCountsFilePaths, outputFilePath,
 
   dataSetNames = getDataSetNames(mutationCountsFilePaths, enforceInputNamingConventions)
   rawNucleosomeMutationCounts = sapply(rawCountsFilePaths, getRawNucleosomeMutationCounts,
-                                       dyadPosCutoff)
+                                       nucleosomeDyadPosCutoff)
 
   rawCountsTable = data.table::data.table(File_Path = mutationCountsFilePaths, Data_Set = dataSetNames,
                                           Raw_Nucleosome_Mutation_Counts = rawNucleosomeMutationCounts)
@@ -72,6 +72,13 @@ generateNucPeriodData = function(mutationCountsFilePaths, outputFilePath,
     # Read in the data.
     nucleosomeCountsData = data.table::fread(file = validFilePaths[i])
     nucleosomeCountsTables[[i]] = nucleosomeCountsData
+
+    # Adjust the dyadPosCutoff if we have translational periodicity data.
+    if (grepl("nuc-group", validFilePaths[i], fixed = TRUE)) {
+      dyadPosCutoff = 1000
+    } else {
+      dyadPosCutoff = nucleosomeDyadPosCutoff
+    }
 
     ##### Periodicity Analysis #####
 
@@ -189,6 +196,9 @@ getRawCountsFilePath = function(rawOrNormalizedCountsFilePath) {
     return(rawOrNormalizedCountsFilePath)
   } else {
     dataSetName = strsplit(fileName,"singlenuc|trinuc|pentanuc")[[1]][1]
+    if (grepl("nuc-group",fileName,fixed = TRUE)) {
+      dyadRadius = "nuc-group_"
+    }  else dyadRadius = ''
     if (grepl("linker+",fileName,fixed = TRUE)) {
       linkerOffset = grep("linker+",strsplit(fileName,'_')[[1]],value = TRUE)
       linkerOffset = paste0(linkerOffset,'_')
@@ -196,7 +206,7 @@ getRawCountsFilePath = function(rawOrNormalizedCountsFilePath) {
       linkerOffset = ''
     }
     return(file.path(dirname(rawOrNormalizedCountsFilePath),
-                     paste0(dataSetName,linkerOffset,"raw_nucleosome_mutation_counts.tsv")))
+                     paste0(dataSetName,linkerOffset,dyadRadius,"raw_nucleosome_mutation_counts.tsv")))
   }
 
 }
