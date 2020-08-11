@@ -94,11 +94,21 @@ def getLinkerOffset(filePath: str):
     return linkerOffset
 
 
+# Returns whether or not the given file path uses the nuc-group radius.
+def checkForNucGroup(filePath: str):
+
+    # Get the basename of the file path
+    fileName = os.path.basename(filePath)
+
+    # Check for the "nuc-group" identifier.
+    return "nuc-group" in fileName
+
+
 # Generates a file path in standardized format based on given information about the file.
 # Many parts are optional, but the file must contain a directory, group name, and a file extension.
 # Additionally, the context parameter can be given as a string or an int representing a context.
-def generateFilePath(directory = None, dataGroup = None, context = None, 
-                     linkerOffset = 0, dataType = None, fileExtension = None):
+def generateFilePath(directory = None, dataGroup = None, context = None, linkerOffset = 0, 
+                     usesNucGroup = False, dataType = None, fileExtension = None):
 
     # Check to make sure the minimum necessary components are present.
     if directory is None or dataGroup is None or fileExtension is None:
@@ -124,7 +134,12 @@ def generateFilePath(directory = None, dataGroup = None, context = None,
                 raise ValueError(str(context) + " is not a valid context value.")
             filePathPieces.append(contexts[context])
 
+    if linkerOffset != 0 and usesNucGroup: 
+        raise ValueError("No linker offset should be present in a nuc group radius file.")
+
     if linkerOffset != 0: filePathPieces.append(str(linkerOffset) + "linker+")
+
+    if usesNucGroup: filePathPieces.append("nuc-group")
 
     if dataType is not None: filePathPieces.append(dataType)
 
