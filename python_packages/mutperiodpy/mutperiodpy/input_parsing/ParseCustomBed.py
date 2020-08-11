@@ -204,7 +204,7 @@ def parseCustomBed(bedInputFilePaths, genomeFilePath, nucPosFilePath, stratifyBy
         metadata = Metadata(dataDirectory)
         intermediateFilesDir = os.path.join(dataDirectory,"intermediate_files")
         checkDirs(intermediateFilesDir)
-        autoAcquiredFilePath = os.path.join(intermediateFilesDir,"autoAcquire.fa")
+        autoAcquiredFilePath = os.path.join(intermediateFilesDir,"auto_acquire.fa")
 
         inputQAChecked = False # Whether or not the input bed file has been checked for common errors.
 
