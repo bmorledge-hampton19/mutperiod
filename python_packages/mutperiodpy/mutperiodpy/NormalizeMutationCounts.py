@@ -4,7 +4,7 @@ import os, subprocess
 from typing import List
 from mutperiodpy.Tkinter_scripts.TkinterDialog import TkinterDialog, Selections
 from mutperiodpy.helper_scripts.UsefulFileSystemFunctions import (getLinkerOffset, getContext, dataDirectory, Metadata, 
-                                                                  generateFilePath, dataTypes, RPackagesDirectory)
+                                                                  generateFilePath, dataTypes, RPackagesDirectory, checkForNucGroup)
 
 
 # Pairs each background file path with its respective raw counts file path.
@@ -21,8 +21,9 @@ def getBackgroundRawPairs(backgroundCountsFilePaths):
         # Generate the expected raw counts file path
         metadata = Metadata(backgroundCountsFilePath)
         rawCountsFilePath = generateFilePath(directory = metadata.directory, dataGroup = metadata.dataGroupName,
-                                             linkerOffset = getLinkerOffset(backgroundCountsFilePath),
-                                             dataType = dataTypes.rawNucCounts, fileExtension = ".tsv")
+                                            linkerOffset = getLinkerOffset(backgroundCountsFilePath),
+                                            usesNucGroup = checkForNucGroup(backgroundCountsFilePath),
+                                            dataType = dataTypes.rawNucCounts, fileExtension = ".tsv")
 
         # Make sure it exists
         if not os.path.exists(rawCountsFilePath):
@@ -54,6 +55,7 @@ def normalizeCounts(backgroundCountsFilePaths: List[str]):
         normalizedCountsFilePath = generateFilePath(directory = metadata.directory, dataGroup = metadata.dataGroupName,
                                                     context = getContext(backgroundCountsFilePath),
                                                     linkerOffset = getLinkerOffset(backgroundCountsFilePath),
+                                                    usesNucGroup = checkForNucGroup(backgroundCountsFilePath),
                                                     dataType = dataTypes.normNucCounts, fileExtension = ".tsv")
 
         # Pass the path to the file paths to the R script to generate the normalized counts file.
