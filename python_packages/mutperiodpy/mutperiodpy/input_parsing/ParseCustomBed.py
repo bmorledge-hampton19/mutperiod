@@ -185,7 +185,7 @@ def setUpForMSStratification(writeManager, bedInputFilePath, inputQAChecked):
 
 
 # Handles the scripts main functionality.
-def parseCustomBed(bedInputFilePaths, genomeFilePath, nucPosFilePath, stratifyByMS):
+def parseCustomBed(bedInputFilePaths, genomeFilePath, nucPosFilePath, stratifyByMS, separateIndividualCohorts):
 
     for bedInputFilePath in bedInputFilePaths:
 
@@ -222,11 +222,13 @@ def parseCustomBed(bedInputFilePaths, genomeFilePath, nucPosFilePath, stratifyBy
                     # Include in sort function
                     optionalArgument = ("-k7,7",)
 
-                    # Prepare the write manager for individual cohorts.
-                    writeManager.setUpForIndividualCohorts()
+                    # Prepare the write manager for individual cohorts if desired.
+                    if separateIndividualCohorts: writeManager.setUpForIndividualCohorts()
 
                 elif stratifyByMS: 
                     raise ValueError("Stratification by microsatellite stability requested, but no cohort designation given.")
+                elif separateIndividualCohorts:
+                    raise ValueError("Separation by individual cohorts requested, but no cohort designation given.")
 
             # Sort the input data (should also ensure that the output data is sorted)
             subprocess.run(" ".join(("sort",) + optionalArgument + 
@@ -248,7 +250,8 @@ if __name__ == "__main__":
     dialog.createMultipleFileSelector("Custom bed Input Files:",0,"custom_input.bed",("bed files",".bed"))
     dialog.createFileSelector("Genome Fasta File:",1,("Fasta Files",".fa"))
     dialog.createFileSelector("Strongly Positioned Nucleosome File:",2,("Bed Files",".bed"))
-    dialog.createCheckbox("Stratify cohorts by microsatellite stability?", 3, 0)
+    dialog.createCheckbox("Stratify data by microsatellite stability?", 3, 0)
+    dialog.createCheckbox("Separate individual cohorts?", 3, 1)
     dialog.createExitButtons(4,0)
 
     # Run the UI
@@ -263,5 +266,6 @@ if __name__ == "__main__":
     genomeFilePath = list(selections.getIndividualFilePaths())[0]
     nucPosFilePath = list(selections.getIndividualFilePaths())[1]
     stratifyByMS = list(selections.getToggleStates())[0]
+    separateIndividualCohorts = list(selections.getToggleStates())[1]
 
-    parseCustomBed(bedInputFilePaths, genomeFilePath, nucPosFilePath, stratifyByMS)
+    parseCustomBed(bedInputFilePaths, genomeFilePath, nucPosFilePath, stratifyByMS, separateIndividualCohorts)
