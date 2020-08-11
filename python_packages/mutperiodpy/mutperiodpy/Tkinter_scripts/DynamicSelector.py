@@ -104,7 +104,7 @@ class DynamicSelector(tk.Frame):
         self.checkController()
 
 
-    def checkController(self):
+    def checkController(self, buffer = None):
         "Called whenever the controller variable is changed to determine what to display"
 
         # Make sure the dynamic display state has actually changed (or needs initializing.)
