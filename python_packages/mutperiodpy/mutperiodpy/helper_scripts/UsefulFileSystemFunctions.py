@@ -55,8 +55,14 @@ def getFilesInDirectory(directory,validEnding, *additionalValidEndings):
 
 
 # Returns just the name of the first directory above a given path. (e.g. test/file/path.txt would return "file")
-def getIsolatedParentDir(filePath: str):
-    return filePath.rsplit(os.path.sep,2)[-2]
+def getIsolatedParentDir(filePath: str, isDir = False):
+
+    if not os.path.isdir() == isDir:
+        if isDir: raise ValueError("Expected directory path, but received the file path: " + filePath)
+        else: raise ValueError("Expected file path, but received the directory path: " + filePath)
+
+    if isDir: return filePath.rsplit(os.path.sep,1)[-1]
+    else: return filePath.rsplit(os.path.sep,2)[-2]
 
 
 # Checks to see if the given directories exist and creates them if they do not.
