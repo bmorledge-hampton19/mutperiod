@@ -187,7 +187,7 @@ def setUpForMSStratification(writeManager: WriteManager, bedInputFilePath, input
                 choppedUpLine: List[str] = line.strip().split('\t')
                 if not inputQAChecked: checkForErrors(choppedUpLine, True)
 
-                if choppedUpLine[4] != "OTHER":
+                if choppedUpLine[4] != "OTHER" and choppedUpLine[6] != '.':
 
                     if choppedUpLine[3] == '*':
                         mutType = "INS"
