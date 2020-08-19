@@ -1,6 +1,6 @@
 # This script contains various functions that I think will often be useful when managing filesystems for projects.
 
-import os
+import os, datetime
 
 # The directory for the overarching project
 projectDirectory = os.path.abspath(__file__)
@@ -168,6 +168,8 @@ def generateMetadata(dataGroupName, associatedGenome, associatedNucleosomePositi
 
         metadataFile.write("localParentDataPath:\t" + localParentDataPath + '\n')
 
+        metadataFile.write("dateTime:\t" + str(datetime.datetime.now()).rsplit(':',1)[0] + '\n')
+
         if len(cohorts) > 0:
             metadataFile.write("cohorts:\t")
             metadataFile.write(', '.join(cohorts) + '\n')
@@ -230,6 +232,8 @@ class Metadata:
         self.localParentDataPath: str = self.getMetadataByKey("localParentDataPath")
 
         self.directory: str = self.getMetadataByKey("metadataDirectory")
+
+        self.dateTime: str = self.getMetadataByKey("dateTime")
 
         self.cohorts = list()
         if self.getMetadataByKey("cohorts") != "None":
