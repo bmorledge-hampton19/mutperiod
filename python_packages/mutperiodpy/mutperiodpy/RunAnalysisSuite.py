@@ -38,9 +38,14 @@ if dialog.selections is None: quit()
 selections: Selections = dialog.selections
 mutationFilePaths: List[str] = list(selections.getFilePathGroups())[0] # A list of paths to bed mutation files
 backgroundContext = list(selections.getDropdownSelections())[0] # The context to be used when generating the background
-useSingleNucRadius = selectNucleosomeDyadRadius.getControllerVar # Whether or not to generate data with a 73 bp single nuc dyad radius
-includeLinker = list(selections.getToggleStates("singleNuc"))[0] # Whether or not to include 30 bp linker DNA in nucleosome dyad positions
+useSingleNucRadius = selectNucleosomeDyadRadius.getControllerVar() # Whether or not to generate data with a 73 bp single nuc dyad radius
+if useSingleNucRadius: 
+    includeLinker = list(selections.getToggleStates("singleNuc"))[0] # Whether or not to include 30 bp linker DNA in nucleosome dyad positions
 useNucGroupRadius = selections.getToggleStates()[0] # Whether or not to generate data with a 1000 bp nuc group dyad radius
+
+# Make sure at least one radius was selected.
+if not useNucGroupRadius and not useSingleNucRadius:
+    raise ValueError("Must select at least one radius.")
 
 # Convert background context to int
 if backgroundContext == "Singlenuc":
