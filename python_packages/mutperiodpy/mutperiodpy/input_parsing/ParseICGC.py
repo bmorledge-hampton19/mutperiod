@@ -33,11 +33,6 @@ class ICGCMutation:
             raise ValueError("Error.  Strand field does not contain \"1\" for plus strand.  " + 
                              "Found " + str(choppedUpLine[11]) + " instead.")
 
-    # Return a string that contains the data necessary for deisgnating mutational signatures.
-    def formatForMutSig(self):
-        # Piece together the MutSig formatted line and then return it.
-        return( '\t'.join((self.donorID,self.chromosome,self.startPos,self.mutatedFrom,self.mutatedTo)) )
-
 
 # This class takes an ICGCFile object and, when iterated over, returns exactly once each mutation present in a donor that is
 # the result of whole genome sequencing using GRCh37 as the reference genome.
@@ -151,7 +146,7 @@ def parseICGC(ICGCFilePaths, genomeFilePath, nucPosFilePath, separateDonors,
 
     # Pass the parsed bed files to the custom bed parser for even more parsing! (Hooray for modularization!)
     print("\nPassing data to custom bed parser...")
-    parseCustomBed(outputBedFilePaths, genomeFilePath, nucPosFilePath, stratifyByMS, separateDonors)
+    parseCustomBed(outputBedFilePaths, genomeFilePath, nucPosFilePath, stratifyByMS, stratifyByMutSig, separateDonors)
 
 
 if __name__ == "__main__":
