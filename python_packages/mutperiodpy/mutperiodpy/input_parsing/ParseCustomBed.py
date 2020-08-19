@@ -25,6 +25,7 @@ from mutperiodpy.helper_scripts.UsefulBioinformaticsFunctions import (bedToFasta
                                                                       isPurine, reverseCompliment)
 from mutperiodpy.input_parsing.WriteManager import WriteManager
 from mutperiodpy.input_parsing.IdentifyMSI import MSIIdentifier
+from mutperiodpy.input_parsing.IdentifyMutSigs import MutSigIdentifier
 
 
 # Checks for common errors in a line of input.
@@ -104,7 +105,7 @@ def convertToStandardInput(bedInputFilePath, genomeFilePath, autoAcquiredFilePat
     # Iterate through the input file one line at a time, converting each line to an acceptable format for the rest of the pipeline.
     with open(bedInputFilePath,'r') as bedInputFile:
         for line in bedInputFile:
-
+            
             choppedUpLine = str(line).strip().split('\t')
 
             # If it isn't already, initialize the cohortDesignationPresent variable.
@@ -171,7 +172,7 @@ def convertToStandardInput(bedInputFilePath, genomeFilePath, autoAcquiredFilePat
                                        choppedUpLine[3], choppedUpLine[4], choppedUpLine[5])
 
 
-# Set up the WriteManager to stratify by microsatellite stability by idntifiying MSI cohorts.
+# Set up the WriteManager to stratify by microsatellite stability by identifiying MSI cohorts.
 def setUpForMSStratification(writeManager: WriteManager, bedInputFilePath, inputQAChecked):
 
     print("Prepping data for MSIseq...")
@@ -203,8 +204,35 @@ def setUpForMSStratification(writeManager: WriteManager, bedInputFilePath, input
         myMSIIdentifier.identifyMSICohorts()
 
 
+# Set up the WriteManager to stratify by mutation signature by assigning mutation signatures to cohorts.
+def setUpForMutSigStratification(writeManager: WriteManager, bedInputFilePath, inputQAChecked):
+
+    print("Prepping data for deconstructSigs...")
+
+    # Get the MutSigIdentifier from the write manager and complete its process.
+    with writeManager.setUpForMutSigStratification() as mutSigIdentifier:
+        with open(bedInputFilePath, 'r') as bedInputFile:
+
+            for line in bedInputFile:
+
+                choppedUpLine: List[str] = line.strip().split('\t')
+                if not inputQAChecked: checkForErrors(choppedUpLine, True)
+
+                # Only use SNP's.  Skip this entry if it does not represent an SNP.
+                if choppedUpLine[3] not in ('A','C','G','T') or choppedUpLine[4] not in ('A','C','G','T'): continue
+
+                # Skip any entries that are independent of cohorts.
+                if choppedUpLine[6] == '.': continue
+
+                mutSigIdentifier.addData(choppedUpLine[6], choppedUpLine[0], choppedUpLine[2], 
+                                         choppedUpLine[3], choppedUpLine[4])
+
+        mutSigIdentifier.identifyMutSigs()
+
+
 # Handles the scripts main functionality.
-def parseCustomBed(bedInputFilePaths, genomeFilePath, nucPosFilePath, stratifyByMS, separateIndividualCohorts):
+def parseCustomBed(bedInputFilePaths, genomeFilePath, nucPosFilePath, stratifyByMS, 
+                   stratifyByMutSig, separateIndividualCohorts):
 
     for bedInputFilePath in bedInputFilePaths:
 
@@ -244,8 +272,8 @@ def parseCustomBed(bedInputFilePaths, genomeFilePath, nucPosFilePath, stratifyBy
                     # Prepare the write manager for individual cohorts if desired.
                     if separateIndividualCohorts: writeManager.setUpForIndividualCohorts()
 
-                elif stratifyByMS: 
-                    raise ValueError("Stratification by microsatellite stability requested, but no cohort designation given.")
+                elif stratifyByMS or stratifyByMutSig: 
+                    raise ValueError("Additional stratification given, but no cohort designation given.")
                 elif separateIndividualCohorts:
                     raise ValueError("Separation by individual cohorts requested, but no cohort designation given.")
 
@@ -256,6 +284,10 @@ def parseCustomBed(bedInputFilePaths, genomeFilePath, nucPosFilePath, stratifyBy
             # If requested, also prepare for stratification by microsatellite stability.
             if stratifyByMS:             
                 setUpForMSStratification(writeManager, bedInputFilePath, inputQAChecked)
+                inputQAChecked = True
+
+            if stratifyByMutSig:
+                setUpForMutSigStratification(writeManager, bedInputFilePath, inputQAChecked)
                 inputQAChecked = True
 
             # Go, go, go!
@@ -270,8 +302,9 @@ if __name__ == "__main__":
     dialog.createFileSelector("Genome Fasta File:",1,("Fasta Files",".fa"))
     dialog.createFileSelector("Strongly Positioned Nucleosome File:",2,("Bed Files",".bed"))
     dialog.createCheckbox("Stratify data by microsatellite stability?", 3, 0)
-    dialog.createCheckbox("Separate individual cohorts?", 3, 1)
-    dialog.createExitButtons(4,0)
+    dialog.createCheckbox("Stratify by mutation signature?", 3, 1)
+    dialog.createCheckbox("Separate individual cohorts?", 4, 0)
+    dialog.createExitButtons(5,0)
 
     # Run the UI
     dialog.mainloop()
@@ -285,6 +318,8 @@ if __name__ == "__main__":
     genomeFilePath = list(selections.getIndividualFilePaths())[0]
     nucPosFilePath = list(selections.getIndividualFilePaths())[1]
     stratifyByMS = list(selections.getToggleStates())[0]
-    separateIndividualCohorts = list(selections.getToggleStates())[1]
+    stratifyByMutSig = list(selections.getToggleStates())[1]
+    separateIndividualCohorts = list(selections.getToggleStates())[2]
 
-    parseCustomBed(bedInputFilePaths, genomeFilePath, nucPosFilePath, stratifyByMS, separateIndividualCohorts)
+    parseCustomBed(bedInputFilePaths, genomeFilePath, nucPosFilePath, stratifyByMS, 
+                   stratifyByMutSig, separateIndividualCohorts)
