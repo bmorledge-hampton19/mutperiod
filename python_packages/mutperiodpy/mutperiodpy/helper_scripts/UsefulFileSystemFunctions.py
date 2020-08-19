@@ -2,11 +2,15 @@
 
 import os
 
-# The directory containing genome and nucleosome data.
-dataDirectory = os.path.join(os.path.dirname(__file__),"..","..","..","..","data")
-externalDataDirectory = os.path.join(os.path.dirname(__file__),"..","..","..","..","data","__external_data")
-RPackagesDirectory = os.path.join(os.path.dirname(__file__),"..","..","..","..","R_packages")
+# The directory for the overarching project
+projectDirectory = os.path.abspath(__file__)
+for i in range(5):
+    projectDirectory = os.path.dirname(projectDirectory)
 
+# Other useful directories
+dataDirectory = os.path.join(projectDirectory, "data")
+externalDataDirectory = os.path.join(dataDirectory, "__external_data")
+RPackagesDirectory = os.path.join(projectDirectory, "R_packages")
 
 # Stores information about data type identifiers
 class DataTypes:
