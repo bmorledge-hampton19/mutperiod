@@ -7,7 +7,7 @@ selectInputAndRun = function(){
                                filters = c(c("Tab Separated Files (*.tsv)","Any files"),
                                            c("*.tsv","*.*")), index = 1)
   
-  findMSIDonors(inputDataPath)
+  write(as.character(findMSIDonors(inputDataPath)), "output.txt", sep = '\n')
   
 }
 
@@ -16,7 +16,7 @@ args = commandArgs(trailingOnly = T)
 if (length(args) == 0) {
   selectInputAndRun()
 } else if (length(args) == 2) {
-  findMSIDonors(args[1], args[2])
+  write(as.character(findMSIDonors(args[1])), args[2], sep = '\n')
 } else {
   stop("Invalid number of arguments passed.  Expected 2 arguments for MSIseq input data path
        and output data path or no arguments to select input manually")

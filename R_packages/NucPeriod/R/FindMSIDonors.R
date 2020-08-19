@@ -1,6 +1,6 @@
 # This function uses the MSIseq package to generate a list of MSI donors.
 #' @export
-findMSIDonors = function(inputDataPath, outputFilePath, verbose = TRUE) {
+findMSIDonors = function(inputDataPath, verbose = TRUE) {
 
   # The number of base pairs (in megabases) in the hg19 genome (excluding mitochondria).
   captureLength = 3096
@@ -36,7 +36,6 @@ findMSIDonors = function(inputDataPath, outputFilePath, verbose = TRUE) {
   }
 
   # Export the MSI-H results to a text file.
-  if (verbose) print("Writing Results...")
-  MSIResults = result[MSI_status == "MSI-H",Tumor_Sample_Barcode]
-  write(as.character(MSIResults),sep = '\n', file = outputFilePath)
+  return(result[MSI_status == "MSI-H",Tumor_Sample_Barcode])
+
 }
