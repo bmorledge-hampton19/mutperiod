@@ -162,8 +162,7 @@ def autoAcquireAndQACheck(bedInputFilePath: str, genomeFilePath, autoAcquiredFil
     # If any lines were auto-acquired, replace the input bed file with the temporary bed file. (Which has auto-acquires)
     if autoAcquiring:
         print("Overwriting custom bed input with auto-acquired bases/strand designations.")
-        os.remove(bedInputFilePath)
-        os.rename(temporaryBedFilePath, bedInputFilePath)
+        os.replace(temporaryBedFilePath, bedInputFilePath)
     # Otherwise, just delete the temporary file.
     else: os.remove(temporaryBedFilePath)
     
