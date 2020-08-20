@@ -10,7 +10,7 @@
 #          OTHER: Any other lesion or feature
 #   Col 5: The strand the mutation/alteration occurred in.  Single-base mutations are flipped so that they occur in 
 #          the pyrimidine-containing strand if necessary.  
-#          (If set to ".", the strand is first determined from the genome file, if possible.)
+#          If set to ".", the strand is first determined from the genome file, if possible (not an insertion).
 #   Col 6: The chort the tumor belongs to.  e.g. a donor ID or tumor type.  Optional, but required for stratifying 
 #          data in future steps.  If any cohort designations are given, ALL entries must have designations.  A "." character
 #          in this column can be used to avoid assigning an entry to another cohort without breaking this rule.
@@ -88,71 +88,95 @@ def equivalentEntries(fastaEntry: FastaFileIterator.FastaEntry, choppedUpLine):
            fastaEntry.strand == choppedUpLine[5])
 
 
-# Converts the standard bed input into the singlenuc context format acceptable for further analysis.
-# Auto-acquire sequences if necessary.
-def convertToStandardInput(bedInputFilePath, genomeFilePath, autoAcquiredFilePath, writeManager: WriteManager, inputQAChecked = False):
+# Checks each line for errors and auto acquire bases/strand designations where requested. 
+# Overwrites the original bed file if auto-acquiring occurred.
+def autoAcquireAndQACheck(bedInputFilePath: str, genomeFilePath, autoAcquiredFilePath):
 
-    print("Converting custom bed file to standard bed input...")
+    print("Checking custom bed file for formatting and auto-acquire requests...")
 
     # To start, assume that no sequences need to be acquired, and do it on the fly if need be.
     autoAcquiring = False
     autoAcquireFastaIterator = None
     fastaEntry = None
+    cohortDesignationPresent = None
 
-    cohortDesignationPresent = None # Keeps track of whether cohort IDs are given in the data.
-    currentCohort = None # Keeps track of the current cohort
+    # Create a temporary file to write the data to (potentially after auto-acquiring).  
+    # Will replace original file at the end if auto-acquiring occurred.
+    temporaryBedFilePath = bedInputFilePath + ".tmp"
 
-    # Iterate through the input file one line at a time, converting each line to an acceptable format for the rest of the pipeline.
-    with open(bedInputFilePath,'r') as bedInputFile:
-        for line in bedInputFile:
-            
-            choppedUpLine = str(line).strip().split('\t')
+    # Iterate through the input file one line at a time, checking the format of each entry and looking for auto-acquire requests.
+    with open(bedInputFilePath, 'r') as bedInputFile:
+        with open(temporaryBedFilePath, 'w')as temporaryBedFile:
+            for line in bedInputFile:
 
-            # If it isn't already, initialize the cohortDesignationPresent variable.
-            if cohortDesignationPresent is None: cohortDesignationPresent = len(choppedUpLine) == 7
+                choppedUpLine = str(line).strip().split('\t')
 
-            # Check for some possible error states.
-            if not inputQAChecked: checkForErrors(choppedUpLine, cohortDesignationPresent)
+                # If it isn't already, initialize the cohortDesignationPresent variable.
+                if cohortDesignationPresent is None: cohortDesignationPresent = len(choppedUpLine) == 7
 
-            # If this is the first entry requiring auto-acquiring, generate the required fasta file.
-            if not autoAcquiring and (choppedUpLine[3] == '.' or (choppedUpLine[5] == '.' and choppedUpLine[3] != '*')):
-                print("Found line with auto-acquire requested.  Generating fasta...")
-                autoAcquiring = True
-                bedToFasta(bedInputFilePath, genomeFilePath, autoAcquiredFilePath)
-                autoAcquiredFile = open(autoAcquiredFilePath, 'r')
-                autoAcquireFastaIterator = FastaFileIterator(autoAcquiredFile)
-                fastaEntry = autoAcquireFastaIterator.readEntry()
-                print("Continuing...")
+                # Check for possible error states.
+                checkForErrors(choppedUpLine, cohortDesignationPresent)
 
-            # Check for any base identities that need to be auto-acquired.
-            if choppedUpLine[3] == '.':
-
-                # Find the equivalent fasta entry.
-                while not equivalentEntries(fastaEntry, choppedUpLine):
-                    if autoAcquireFastaIterator.eof:
-                        raise ValueError("Reached end of fasta file without finding a match for: ",' '.join(choppedUpLine))
+                # If this is the first entry requiring auto-acquiring, generate the required fasta file.
+                if not autoAcquiring and (choppedUpLine[3] == '.' or (choppedUpLine[5] == '.' and choppedUpLine[3] != '*')):
+                    print("Found line with auto-acquire requested.  Generating fasta...")
+                    autoAcquiring = True
+                    bedToFasta(bedInputFilePath, genomeFilePath, autoAcquiredFilePath)
+                    autoAcquiredFile = open(autoAcquiredFilePath, 'r')
+                    autoAcquireFastaIterator = FastaFileIterator(autoAcquiredFile)
                     fastaEntry = autoAcquireFastaIterator.readEntry()
+                    print("Continuing...")
 
-                # Set the sequence.
-                choppedUpLine[3] = fastaEntry.sequence
+                # Check for any base identities that need to be auto-acquired.
+                if choppedUpLine[3] == '.':
 
-            # Check for any strand designations that need to be auto-acquired.
-            if choppedUpLine[5] == '.':
+                    # Find the equivalent fasta entry.
+                    while not equivalentEntries(fastaEntry, choppedUpLine):
+                        if autoAcquireFastaIterator.eof:
+                            raise ValueError("Reached end of fasta file without finding a match for: ",' '.join(choppedUpLine))
+                        fastaEntry = autoAcquireFastaIterator.readEntry()
 
-                # Find the equivalent fasta entry.
-                while not equivalentEntries(fastaEntry, choppedUpLine):
-                    if autoAcquireFastaIterator.eof:
-                        raise ValueError("Reached end of fasta file without finding a match for: ",' '.join(choppedUpLine))
-                    fastaEntry = autoAcquireFastaIterator.readEntry()
+                    # Set the sequence.
+                    choppedUpLine[3] = fastaEntry.sequence
 
-                # Make sure this isn't an insertion, in which case the strand designation cannot be determined.
-                if choppedUpLine[3] != '*': 
+                # Check for any strand designations that need to be auto-acquired.
+                # Also, make sure this isn't an insertion, in which case the strand designation cannot be determined.
+                if choppedUpLine[5] == '.' and choppedUpLine[3] != '*':
+
+                    # Find the equivalent fasta entry.
+                    while not equivalentEntries(fastaEntry, choppedUpLine):
+                        if autoAcquireFastaIterator.eof:
+                            raise ValueError("Reached end of fasta file without finding a match for: ",' '.join(choppedUpLine))
+                        fastaEntry = autoAcquireFastaIterator.readEntry()
 
                     # Determine which strand is represented.
                     if fastaEntry.sequence == choppedUpLine[3]: choppedUpLine[5] = '+'
                     elif fastaEntry.sequence == reverseCompliment(choppedUpLine[3]): choppedUpLine[5] = '-'
                     else: raise ValueError("The given sequence " + choppedUpLine[3] + " for location " + fastaEntry.sequenceName + ' ' +
                                         "does not match the corresponding sequence in the given genome, or its reverse compliment.")
+
+                # Write the current line to the temporary bed file.
+                temporaryBedFile.write('\t'.join(choppedUpLine) + '\n')
+
+    # If any lines were auto-acquired, replace the input bed file with the temporary bed file. (Which has auto-acquires)
+    if autoAcquiring:
+        print("Overwriting custom bed input with auto-acquired bases/strand designations.")
+        os.remove(bedInputFilePath)
+        os.rename(temporaryBedFilePath, bedInputFilePath)
+    # Otherwise, just delete the temporary file.
+    else: os.remove(temporaryBedFilePath)
+    
+
+# Converts the custom bed input into the singlenuc context format acceptable for analysis further down the pipeline.
+def convertToStandardInput(bedInputFilePath, writeManager: WriteManager):
+
+    print("Converting custom bed file to standard bed input...")
+
+    # Iterate through the input file one line at a time, converting each line to an acceptable format for the rest of the pipeline.
+    with open(bedInputFilePath,'r') as bedInputFile:
+        for line in bedInputFile:
+            
+            choppedUpLine = str(line).strip().split('\t')
 
             # Is this an SNP from a purine?  If so, flip the strand to the pyrimidine containing strand.
             if isPurine(choppedUpLine[3]) and choppedUpLine[4].upper() in ('A','C','G','T'):
@@ -163,7 +187,7 @@ def convertToStandardInput(bedInputFilePath, genomeFilePath, autoAcquiredFilePat
                 elif choppedUpLine[5] == '-': choppedUpLine[5] = '+'
 
             # Call on the write manager to handle the rest!
-            if cohortDesignationPresent:
+            if len(choppedUpLine) == 7:
                 writeManager.writeData(choppedUpLine[0], choppedUpLine[1], choppedUpLine[2],
                                        choppedUpLine[3], choppedUpLine[4], choppedUpLine[5],
                                        choppedUpLine[6])
@@ -173,7 +197,7 @@ def convertToStandardInput(bedInputFilePath, genomeFilePath, autoAcquiredFilePat
 
 
 # Set up the WriteManager to stratify by microsatellite stability by identifiying MSI cohorts.
-def setUpForMSStratification(writeManager: WriteManager, bedInputFilePath, inputQAChecked):
+def setUpForMSStratification(writeManager: WriteManager, bedInputFilePath):
 
     print("Prepping data for MSIseq...")
     
@@ -186,7 +210,6 @@ def setUpForMSStratification(writeManager: WriteManager, bedInputFilePath, input
             for line in bedInputFile:
 
                 choppedUpLine: List[str] = line.strip().split('\t')
-                if not inputQAChecked: checkForErrors(choppedUpLine, True)
 
                 if choppedUpLine[4] != "OTHER" and choppedUpLine[6] != '.':
 
@@ -205,7 +228,7 @@ def setUpForMSStratification(writeManager: WriteManager, bedInputFilePath, input
 
 
 # Set up the WriteManager to stratify by mutation signature by assigning mutation signatures to cohorts.
-def setUpForMutSigStratification(writeManager: WriteManager, bedInputFilePath, inputQAChecked):
+def setUpForMutSigStratification(writeManager: WriteManager, bedInputFilePath):
 
     print("Prepping data for deconstructSigs...")
 
@@ -216,7 +239,6 @@ def setUpForMutSigStratification(writeManager: WriteManager, bedInputFilePath, i
             for line in bedInputFile:
 
                 choppedUpLine: List[str] = line.strip().split('\t')
-                if not inputQAChecked: checkForErrors(choppedUpLine, True)
 
                 # Only use SNP's.  Skip this entry if it does not represent an SNP.
                 if choppedUpLine[3] not in ('A','C','G','T') or choppedUpLine[4] not in ('A','C','G','T'): continue
@@ -253,7 +275,7 @@ def parseCustomBed(bedInputFilePaths, genomeFilePath, nucPosFilePath, stratifyBy
         checkDirs(intermediateFilesDir)
         autoAcquiredFilePath = os.path.join(intermediateFilesDir,"auto_acquire.fa")
 
-        inputQAChecked = False # Whether or not the input bed file has been checked for common errors.
+        autoAcquireAndQACheck(bedInputFilePath, genomeFilePath, autoAcquiredFilePath)
 
         # Create an instance of the WriteManager to handle writing.
         with WriteManager(dataDirectory) as writeManager:
@@ -283,15 +305,15 @@ def parseCustomBed(bedInputFilePaths, genomeFilePath, nucPosFilePath, stratifyBy
 
             # If requested, also prepare for stratification by microsatellite stability.
             if stratifyByMS:             
-                setUpForMSStratification(writeManager, bedInputFilePath, inputQAChecked)
+                setUpForMSStratification(writeManager, bedInputFilePath)
                 inputQAChecked = True
 
             if stratifyByMutSig:
-                setUpForMutSigStratification(writeManager, bedInputFilePath, inputQAChecked)
+                setUpForMutSigStratification(writeManager, bedInputFilePath)
                 inputQAChecked = True
 
             # Go, go, go!
-            convertToStandardInput(bedInputFilePath, genomeFilePath, autoAcquiredFilePath, writeManager, inputQAChecked)
+            convertToStandardInput(bedInputFilePath, writeManager)
 
 
 if __name__ == "__main__":
