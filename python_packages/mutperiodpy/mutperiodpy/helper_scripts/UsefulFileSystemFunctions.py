@@ -174,7 +174,7 @@ def generateMetadata(dataGroupName, associatedGenome, associatedNucleosomePositi
 
         metadataFile.write("localParentDataPath:\t" + localParentDataPath + '\n')
 
-        metadataFile.write("inputFormat: " + inputFormat)
+        metadataFile.write("inputFormat: " + inputFormat + '\n')
 
         metadataFile.write("dateTime:\t" + str(datetime.datetime.now()).rsplit(':',1)[0] + '\n')
 
