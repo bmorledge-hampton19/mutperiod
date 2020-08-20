@@ -67,9 +67,9 @@ class WriteManager:
         checkDirs(aggregateMSSDirectory, aggregateMSIDirectory)
 
         generateMetadata("MSS_" + self.rootMetadata.dataGroupName, self.rootMetadata.genomeName, self.rootMetadata.nucPosName,
-                         os.path.join('..','..',self.rootMetadata.localParentDataPath), aggregateMSSDirectory, "MSS")
+                         os.path.join('..','..',self.rootMetadata.localParentDataPath), self.rootMetadata.inputFormat, aggregateMSSDirectory, "MSS")
         generateMetadata("MSI_" + self.rootMetadata.dataGroupName, self.rootMetadata.genomeName, self.rootMetadata.nucPosName,
-                         os.path.join('..','..',self.rootMetadata.localParentDataPath), aggregateMSIDirectory, "MSI")
+                         os.path.join('..','..',self.rootMetadata.localParentDataPath), self.rootMetadata.inputFormat, aggregateMSIDirectory, "MSI")
 
         self.aggregateMSSFilePath = generateFilePath(directory = aggregateMSSDirectory, dataGroup = "MSS_" + self.rootMetadata.dataGroupName,
                                                      context = "singlenuc", dataType = dataTypes.mutations, fileExtension = ".bed")
@@ -114,7 +114,8 @@ class WriteManager:
 
             # Metadata
             generateMetadata(thisMutSigDataGroup, self.rootMetadata.genomeName, self.rootMetadata.nucPosName,
-                             os.path.join('..','..',self.rootMetadata.localParentDataPath), thisMutSigDirectory, "mutSig" + mutSig)
+                             os.path.join('..','..',self.rootMetadata.localParentDataPath), 
+                             self.rootMetadata.inputFormat, thisMutSigDirectory, "mutSig" + mutSig)
 
             # File path
             self.mutSigFilePaths[mutSig] = generateFilePath(directory = thisMutSigDirectory, dataGroup = thisMutSigDataGroup, 
@@ -172,7 +173,8 @@ class WriteManager:
                                                          context = "singlenuc", dataType = dataTypes.mutations, fileExtension = ".bed")
         self.currentIndividualCohortFile = open(self.individualCohortFilePath, 'w')
         generateMetadata(individualCohortDataGroup, self.rootMetadata.genomeName, self.rootMetadata.nucPosName,
-                         os.path.join("..",self.rootMetadata.localParentDataPath), individualCohortDirectory, *cohortMembership)
+                         os.path.join("..",self.rootMetadata.localParentDataPath),
+                         self.rootMetadata.inputFormat, individualCohortDirectory, *cohortMembership)
 
 
     # Writes the given data to all the relevant files based on how the manager was set up.

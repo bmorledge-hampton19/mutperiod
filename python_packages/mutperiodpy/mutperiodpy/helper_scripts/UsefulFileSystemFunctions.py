@@ -160,7 +160,7 @@ def generateFilePath(directory = None, dataGroup = None, context = None, linkerO
 
 # Generates a .metadata file from the given information.
 def generateMetadata(dataGroupName, associatedGenome, associatedNucleosomePositions, 
-                     localParentDataPath, metadataDirectory, *cohorts):
+                     localParentDataPath, inputFormat, metadataDirectory, *cohorts):
 
     # Open up the metadata file.
     with open(os.path.join(metadataDirectory,".metadata"), 'w') as metadataFile:
@@ -173,6 +173,8 @@ def generateMetadata(dataGroupName, associatedGenome, associatedNucleosomePositi
         metadataFile.write("associatedNucleosomePositions:\t" + associatedNucleosomePositions + '\n')
 
         metadataFile.write("localParentDataPath:\t" + localParentDataPath + '\n')
+
+        metadataFile.write("inputFormat: " + inputFormat)
 
         metadataFile.write("dateTime:\t" + str(datetime.datetime.now()).rsplit(':',1)[0] + '\n')
 
@@ -236,6 +238,8 @@ class Metadata:
         self.nucPosName: str = self.getMetadataByKey("associatedNucleosomePositions")
 
         self.localParentDataPath: str = self.getMetadataByKey("localParentDataPath")
+
+        self.inputFormat: str = self.getMetadataByKey("inputFormat")
 
         self.directory: str = self.getMetadataByKey("metadataDirectory")
 
