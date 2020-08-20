@@ -31,6 +31,6 @@ getMutSigs = function(inputFilePath) {
   }
 
   # Create and return a data table of the sample IDs and their dominant signatures.
-  return(data.table(sampleIDs, sapply(sampleIDs, findDominantSigs)))
+  return(data.table(Cohort_ID = sampleIDs, Signatures = sapply(sampleIDs, findDominantSigs)))
 
 }
