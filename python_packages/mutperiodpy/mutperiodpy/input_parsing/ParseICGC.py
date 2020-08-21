@@ -8,6 +8,7 @@ from mutperiodpy.helper_scripts.UsefulFileSystemFunctions import (dataTypes, gen
                                                                   generateMetadata, getIsolatedParentDir, RPackagesDirectory)
 from mutperiodpy.helper_scripts.UsefulBioinformaticsFunctions import reverseCompliment, isPurine, baseChromosomes
 from mutperiodpy.input_parsing.ParseCustomBed import parseCustomBed
+from mutperiodpy.project_management.FileSystemManager import InputFormat
 
 
 # This class represents the mutation data obtained from ICGC in a more precise form.
@@ -118,7 +119,7 @@ def parseICGC(ICGCFilePaths, genomeFilePath, nucPosFilePath, separateDonors,
         checkDirs(intermediateFilesDir)
 
         generateMetadata(getIsolatedParentDir(ICGCFilePath), getIsolatedParentDir(genomeFilePath), getIsolatedParentDir(nucPosFilePath), 
-                         os.path.basename(ICGCFilePath), os.path.dirname(ICGCFilePath))
+                         os.path.basename(ICGCFilePath), InputFormat.ICGC, os.path.dirname(ICGCFilePath))
 
         # Generate the output file.
         outputBedFilePath = generateFilePath(directory = intermediateFilesDir, dataGroup = getIsolatedParentDir(ICGCFilePath),

@@ -23,7 +23,7 @@ from mutperiodpy.helper_scripts.UsefulFileSystemFunctions import (dataDirectory,
                                                                   generateFilePath, dataTypes, Metadata, checkDirs)
 from mutperiodpy.helper_scripts.UsefulBioinformaticsFunctions import (bedToFasta, FastaFileIterator, baseChromosomes,
                                                                       isPurine, reverseCompliment)
-from mutperiodpy.helper_scripts.FileSystemManager import inputFormats
+from mutperiodpy.project_management.FileSystemManager import InputFormat
 from mutperiodpy.input_parsing.WriteManager import WriteManager
 from mutperiodpy.input_parsing.IdentifyMSI import MSIIdentifier
 from mutperiodpy.input_parsing.IdentifyMutSigs import MutSigIdentifier
@@ -268,7 +268,7 @@ def parseCustomBed(bedInputFilePaths, genomeFilePath, nucPosFilePath, stratifyBy
         else:
             dataDirectory = os.path.dirname(bedInputFilePath)
             generateMetadata(os.path.basename(dataDirectory), getIsolatedParentDir(genomeFilePath), getIsolatedParentDir(nucPosFilePath), 
-                             os.path.basename(bedInputFilePath), inputFormats.customBed,  os.path.dirname(bedInputFilePath))
+                             os.path.basename(bedInputFilePath), InputFormat.customBed,  os.path.dirname(bedInputFilePath))
 
         metadata = Metadata(dataDirectory)
         intermediateFilesDir = os.path.join(dataDirectory,"intermediate_files")

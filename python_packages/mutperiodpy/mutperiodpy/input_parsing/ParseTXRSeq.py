@@ -7,6 +7,7 @@ from mutperiodpy.Tkinter_scripts.TkinterDialog import TkinterDialog, Selections
 from mutperiodpy.helper_scripts.UsefulBioinformaticsFunctions import bedToFasta, FastaFileIterator, baseChromosomes
 from mutperiodpy.helper_scripts.UsefulFileSystemFunctions import (getIsolatedParentDir, generateFilePath, dataDirectory,
                                                                   dataTypes, generateMetadata)
+from mutperiodpy.project_management.FileSystemManager import InputFormat
 
 
 # Estimates (Most likely with perfect accuracy) the minimum adjusted counts value that is then assumed to represent one count.
@@ -177,7 +178,7 @@ def parseTXRSeq(tXRSeqBigWigReadsFilePathPairs, tXRSeqBedReadsFilePaths, genomeF
         
         # Generate metadata
         generateMetadata(dataGroupName, getIsolatedParentDir(genomeFilePath), getIsolatedParentDir(nucPosFilePath),
-                         os.path.basename(tXRSeqBigWigReadsFilePathPair[0]), localRootDirectory)
+                         os.path.basename(tXRSeqBigWigReadsFilePathPair[0]), InputFormat.tXRSeqBigWig, localRootDirectory)
 
         # Convert from bigWig to bedGraph format.
         print("Converting to bedGraph...")
@@ -230,7 +231,7 @@ def parseTXRSeq(tXRSeqBigWigReadsFilePathPairs, tXRSeqBedReadsFilePaths, genomeF
 
         # Generate metadata.
         generateMetadata(dataGroupName, getIsolatedParentDir(genomeFilePath), getIsolatedParentDir(nucPosFilePath),
-                         os.path.basename(tXRSeqBedReadsFilePath), localRootDirectory)
+                         os.path.basename(tXRSeqBedReadsFilePath), InputFormat.tXRSeqBed, localRootDirectory)
 
         # Trim the bedGraph file pair.
         print("Trimming bed data...")

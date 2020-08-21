@@ -1,6 +1,8 @@
 # This script contains various functions that I think will often be useful when managing filesystems for projects.
 
 import os, datetime
+from mutperiodpy.project_management.FileSystemManager import InputFormat
+
 
 # The directory for the overarching project
 projectDirectory = os.path.abspath(__file__)
@@ -174,7 +176,7 @@ def generateMetadata(dataGroupName, associatedGenome, associatedNucleosomePositi
 
         metadataFile.write("localParentDataPath:\t" + localParentDataPath + '\n')
 
-        metadataFile.write("inputFormat: " + inputFormat + '\n')
+        metadataFile.write("inputFormat: " + inputFormat.value + '\n')
 
         metadataFile.write("dateTime:\t" + str(datetime.datetime.now()).rsplit(':',1)[0] + '\n')
 
@@ -239,7 +241,7 @@ class Metadata:
 
         self.localParentDataPath: str = self.getMetadataByKey("localParentDataPath")
 
-        self.inputFormat: str = self.getMetadataByKey("inputFormat")
+        self.inputFormat = InputFormat(self.getMetadataByKey("inputFormat"))
 
         self.directory: str = self.getMetadataByKey("metadataDirectory")
 
