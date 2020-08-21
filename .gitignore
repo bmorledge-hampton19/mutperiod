@@ -196,3 +196,4 @@ python_packages/test.txt
 # Ignore test scripts
 R_packages/RunNucPeriod/PlotTests.R
 R_packages/RunNucPeriod/COSMIC_Mutational_Signatures_v3.1.tsv
+python_packages/mutperiodpy/test.py
