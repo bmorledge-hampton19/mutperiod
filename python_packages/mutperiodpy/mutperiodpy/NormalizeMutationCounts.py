@@ -4,7 +4,7 @@ import os, subprocess
 from typing import List
 from mutperiodpy.Tkinter_scripts.TkinterDialog import TkinterDialog, Selections
 from mutperiodpy.helper_scripts.UsefulFileSystemFunctions import (getLinkerOffset, getContext, dataDirectory, Metadata, 
-                                                                  generateFilePath, dataTypes, RPackagesDirectory, checkForNucGroup)
+                                                                  generateFilePath, DataTypeStr, RPackagesDirectory, checkForNucGroup)
 
 
 # Pairs each background file path with its respective raw counts file path.
@@ -15,15 +15,15 @@ def getBackgroundRawPairs(backgroundCountsFilePaths):
     backgroundRawPairs = dict()
     for backgroundCountsFilePath in backgroundCountsFilePaths:
 
-        if not dataTypes.nucMutBackground in os.path.basename(backgroundCountsFilePath): 
-            raise ValueError("Background counts file should have \"" + dataTypes.nucMutBackground + "\" in the name.")
+        if not DataTypeStr.nucMutBackground in os.path.basename(backgroundCountsFilePath): 
+            raise ValueError("Background counts file should have \"" + DataTypeStr.nucMutBackground + "\" in the name.")
 
         # Generate the expected raw counts file path
         metadata = Metadata(backgroundCountsFilePath)
         rawCountsFilePath = generateFilePath(directory = metadata.directory, dataGroup = metadata.dataGroupName,
                                             linkerOffset = getLinkerOffset(backgroundCountsFilePath),
                                             usesNucGroup = checkForNucGroup(backgroundCountsFilePath),
-                                            dataType = dataTypes.rawNucCounts, fileExtension = ".tsv")
+                                            dataType = DataTypeStr.rawNucCounts, fileExtension = ".tsv")
 
         # Make sure it exists
         if not os.path.exists(rawCountsFilePath):
@@ -56,7 +56,7 @@ def normalizeCounts(backgroundCountsFilePaths: List[str]):
                                                     context = getContext(backgroundCountsFilePath),
                                                     linkerOffset = getLinkerOffset(backgroundCountsFilePath),
                                                     usesNucGroup = checkForNucGroup(backgroundCountsFilePath),
-                                                    dataType = dataTypes.normNucCounts, fileExtension = ".tsv")
+                                                    dataType = DataTypeStr.normNucCounts, fileExtension = ".tsv")
 
         # Pass the path to the file paths to the R script to generate the normalized counts file.
         print("Calling R script to generate normalized counts...")
@@ -74,7 +74,7 @@ if __name__ == "__main__":
     #Create the Tkinter UI
     dialog = TkinterDialog(workingDirectory=dataDirectory)
     dialog.createMultipleFileSelector("Background Nucleosome Mutation Counts Files:",0,
-                                      dataTypes.nucMutBackground + ".tsv",("Tab Seperated Values Files",".tsv"))
+                                      DataTypeStr.nucMutBackground + ".tsv",("Tab Seperated Values Files",".tsv"))
     dialog.createExitButtons(1,0)
 
     # Run the UI

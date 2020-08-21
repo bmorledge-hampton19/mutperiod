@@ -4,7 +4,7 @@
 import os
 from mutperiodpy.Tkinter_scripts.TkinterDialog import TkinterDialog, Selections
 from mutperiodpy.helper_scripts.UsefulBioinformaticsFunctions import bedToFasta, FastaFileIterator
-from mutperiodpy.helper_scripts.UsefulFileSystemFunctions import Metadata, generateFilePath, dataTypes, getContext, dataDirectory
+from mutperiodpy.helper_scripts.UsefulFileSystemFunctions import Metadata, generateFilePath, DataTypeStr, getContext, dataDirectory
 
 
 # Expands the range of each mutation position in the original mutation file to encompass one extra base on either side.
@@ -83,8 +83,8 @@ def expandContext(inputBedFilePaths, expansionContextNum):
 
         # Make sure file names look valid.
         print("\nWorking in:",os.path.split(inputBedFilePath)[1])
-        if not dataTypes.mutations in os.path.split(inputBedFilePath)[1]:
-            raise ValueError("Error:  Expected file with \"" + dataTypes.mutations + "\" in the name.")
+        if not DataTypeStr.mutations.value in os.path.split(inputBedFilePath)[1]:
+            raise ValueError("Error:  Expected file with \"" + DataTypeStr.mutations + "\" in the name.")
         
         # Make sure the context of the input bed file is less than the expansion context.
         if getContext(inputBedFilePath, asInt = True) >= expansionContextNum:
@@ -102,7 +102,7 @@ def expandContext(inputBedFilePaths, expansionContextNum):
 
         # Generate a path to the final output file.
         expandedContextFilePath = generateFilePath(directory = metadata.directory, dataGroup = metadata.dataGroupName,
-                                                  context = contextText, dataType = dataTypes.mutations, fileExtension = ".bed")
+                                                  context = contextText, dataType = DataTypeStr.mutations, fileExtension = ".bed")
 
         # Create a directory for intermediate files if it does not already exist...
         if not os.path.exists(intermediateFilesDirectory):
@@ -131,8 +131,8 @@ if __name__ == "__main__":
     # Create the Tkinter dialog.
     dialog = TkinterDialog(workingDirectory=dataDirectory)
     dialog.createLabel("Note: Either single-base or trinuc context bed files will suffice.  Both are not necessary.",0,0,2)
-    dialog.createMultipleFileSelector("Single-Base Bed File:",1,"singlenuc_" + dataTypes.mutations + ".bed",("Bed Files",".bed"))
-    dialog.createMultipleFileSelector("Trinuc Context Bed File:",2,"trinuc_" + dataTypes.mutations + ".bed",("Bed Files",".bed"))
+    dialog.createMultipleFileSelector("Single-Base Bed File:",1,"singlenuc_" + DataTypeStr.mutations + ".bed",("Bed Files",".bed"))
+    dialog.createMultipleFileSelector("Trinuc Context Bed File:",2,"trinuc_" + DataTypeStr.mutations + ".bed",("Bed Files",".bed"))
     dialog.createDropdown("Expansion Context",3,0,("Trinuc", "Pentanuc"))
     dialog.createExitButtons(4,0)
 

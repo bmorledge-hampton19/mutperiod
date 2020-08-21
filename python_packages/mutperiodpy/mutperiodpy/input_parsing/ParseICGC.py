@@ -4,7 +4,7 @@
 import os, gzip, subprocess
 from typing import IO, List
 from mutperiodpy.Tkinter_scripts.TkinterDialog import TkinterDialog, Selections
-from mutperiodpy.helper_scripts.UsefulFileSystemFunctions import (dataTypes, generateFilePath, dataDirectory, checkDirs,
+from mutperiodpy.helper_scripts.UsefulFileSystemFunctions import (DataTypeStr, generateFilePath, dataDirectory, checkDirs,
                                                                   generateMetadata, getIsolatedParentDir, RPackagesDirectory)
 from mutperiodpy.helper_scripts.UsefulBioinformaticsFunctions import reverseCompliment, isPurine, baseChromosomes
 from mutperiodpy.input_parsing.ParseCustomBed import parseCustomBed
@@ -123,7 +123,7 @@ def parseICGC(ICGCFilePaths, genomeFilePath, nucPosFilePath, separateDonors,
 
         # Generate the output file.
         outputBedFilePath = generateFilePath(directory = intermediateFilesDir, dataGroup = getIsolatedParentDir(ICGCFilePath),
-                                             dataType = dataTypes.customInput, fileExtension = ".bed")
+                                             dataType = DataTypeStr.customInput, fileExtension = ".bed")
 
         # Write the relevant information from the ICGC file to the output file.
         print("Writing data to custom bed format.")

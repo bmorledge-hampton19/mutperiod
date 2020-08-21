@@ -6,7 +6,7 @@ import os, subprocess
 from mutperiodpy.Tkinter_scripts.TkinterDialog import TkinterDialog, Selections
 from mutperiodpy.helper_scripts.UsefulBioinformaticsFunctions import bedToFasta, FastaFileIterator, baseChromosomes
 from mutperiodpy.helper_scripts.UsefulFileSystemFunctions import (getIsolatedParentDir, generateFilePath, dataDirectory,
-                                                                  dataTypes, generateMetadata)
+                                                                  DataTypeStr, generateMetadata)
 from mutperiodpy.project_management.FileSystemManager import InputFormat
 
 
@@ -174,7 +174,7 @@ def parseTXRSeq(tXRSeqBigWigReadsFilePathPairs, tXRSeqBedReadsFilePaths, genomeF
         trimmedReadsFilePath = os.path.join(intermediateFilesDirectory,dataGroupName+"_trimmed_reads.bed")
         fastaReadsFilePath = os.path.join(intermediateFilesDirectory,dataGroupName+"_fasta_reads.fa")
         trinucLesionsFilePath = generateFilePath(directory = localRootDirectory, dataGroup = dataGroupName,
-                                                 context = "trinuc", dataType = dataTypes.mutations, fileExtension = ".bed")
+                                                 context = "trinuc", dataType = DataTypeStr.mutations, fileExtension = ".bed")
         
         # Generate metadata
         generateMetadata(dataGroupName, getIsolatedParentDir(genomeFilePath), getIsolatedParentDir(nucPosFilePath),
@@ -227,7 +227,7 @@ def parseTXRSeq(tXRSeqBigWigReadsFilePathPairs, tXRSeqBedReadsFilePaths, genomeF
         trimmedReadsFilePath = os.path.join(intermediateFilesDirectory,dataGroupName+"_trimmed_reads.bed")
         fastaReadsFilePath = os.path.join(intermediateFilesDirectory,dataGroupName+"_fasta_reads.fa")
         trinucLesionsFilePath = generateFilePath(directory = localRootDirectory, dataGroup = dataGroupName,
-                                                 context = "trinuc", dataType = dataTypes.mutations, fileExtension = ".bed")
+                                                 context = "trinuc", dataType = DataTypeStr.mutations, fileExtension = ".bed")
 
         # Generate metadata.
         generateMetadata(dataGroupName, getIsolatedParentDir(genomeFilePath), getIsolatedParentDir(nucPosFilePath),

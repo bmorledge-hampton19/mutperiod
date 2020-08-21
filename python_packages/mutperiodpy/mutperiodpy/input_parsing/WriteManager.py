@@ -3,7 +3,7 @@
 
 import os, subprocess
 from typing import IO
-from mutperiodpy.helper_scripts.UsefulFileSystemFunctions import (Metadata, checkDirs, dataTypes, generateFilePath,
+from mutperiodpy.helper_scripts.UsefulFileSystemFunctions import (Metadata, checkDirs, DataTypeStr, generateFilePath,
                                                                   generateMetadata, getIsolatedParentDir)
 from mutperiodpy.input_parsing.IdentifyMSI import MSIIdentifier
 from mutperiodpy.input_parsing.IdentifyMutSigs import MutSigIdentifier
@@ -19,7 +19,7 @@ class WriteManager:
 
         # create and open the output file in the same directory as the root data.
         self.rootOutputFilePath = generateFilePath(directory = self.rootDataDir, dataGroup = self.rootMetadata.dataGroupName,
-                                                   context = "singlenuc", dataType = dataTypes.mutations, fileExtension = ".bed")
+                                                   context = "singlenuc", dataType = DataTypeStr.mutations, fileExtension = ".bed")
         self.rootOutputFile = open(self.rootOutputFilePath, 'w')
 
         # By default, all other write options are off unless otherwise specified.
@@ -72,10 +72,10 @@ class WriteManager:
                          os.path.join('..','..',self.rootMetadata.localParentDataPath), self.rootMetadata.inputFormat, aggregateMSIDirectory, "MSI")
 
         self.aggregateMSSFilePath = generateFilePath(directory = aggregateMSSDirectory, dataGroup = "MSS_" + self.rootMetadata.dataGroupName,
-                                                     context = "singlenuc", dataType = dataTypes.mutations, fileExtension = ".bed")
+                                                     context = "singlenuc", dataType = DataTypeStr.mutations, fileExtension = ".bed")
         self.aggregateMSSFile = open(self.aggregateMSSFilePath, 'w')
         self.aggregateMSIFilePath = generateFilePath(directory = aggregateMSIDirectory, dataGroup = "MSI_" + self.rootMetadata.dataGroupName,
-                                                     context = "singlenuc", dataType = dataTypes.mutations, fileExtension = ".bed")
+                                                     context = "singlenuc", dataType = DataTypeStr.mutations, fileExtension = ".bed")
         self.aggregateMSIFile = open(self.aggregateMSIFilePath, 'w')
 
         # Set up the MSIIdentifier to be returned.
@@ -119,7 +119,7 @@ class WriteManager:
 
             # File path
             self.mutSigFilePaths[mutSig] = generateFilePath(directory = thisMutSigDirectory, dataGroup = thisMutSigDataGroup, 
-                                                            context = "singlenuc", dataType = dataTypes.mutations, fileExtension = ".bed")
+                                                            context = "singlenuc", dataType = DataTypeStr.mutations, fileExtension = ".bed")
             self.mutSigFiles[mutSig] = open(self.mutSigFilePaths[mutSig], 'w')
 
         # Set up the MutSigIdentifier object to be returned.
@@ -170,7 +170,7 @@ class WriteManager:
 
         # Generate the file path and metadata file and open the file for writing.
         self.individualCohortFilePath = generateFilePath(directory = individualCohortDirectory, dataGroup = individualCohortDataGroup, 
-                                                         context = "singlenuc", dataType = dataTypes.mutations, fileExtension = ".bed")
+                                                         context = "singlenuc", dataType = DataTypeStr.mutations, fileExtension = ".bed")
         self.currentIndividualCohortFile = open(self.individualCohortFilePath, 'w')
         generateMetadata(individualCohortDataGroup, self.rootMetadata.genomeName, self.rootMetadata.nucPosName,
                          os.path.join("..",self.rootMetadata.localParentDataPath),

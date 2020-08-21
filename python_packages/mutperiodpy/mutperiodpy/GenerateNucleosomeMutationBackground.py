@@ -5,7 +5,7 @@ import os, subprocess
 from typing import Dict
 from mutperiodpy.Tkinter_scripts.TkinterDialog import TkinterDialog, Selections
 from mutperiodpy.helper_scripts.UsefulBioinformaticsFunctions import bedToFasta, reverseCompliment, FastaFileIterator
-from mutperiodpy.helper_scripts.UsefulFileSystemFunctions import getContext, getLinkerOffset, Metadata, generateFilePath, dataTypes, dataDirectory
+from mutperiodpy.helper_scripts.UsefulFileSystemFunctions import getContext, getLinkerOffset, Metadata, generateFilePath, DataTypeStr, dataDirectory
 
 
 # This function takes a bed file of strongly positioned nucleosomes and expands their coordinates to encompass
@@ -225,8 +225,8 @@ def generateNucleosomeMutationBackground(mutationBackgroundFilePaths, useSingleN
     for mutationBackgroundFilePath in mutationBackgroundFilePaths:
 
         print("\nWorking with",os.path.basename(mutationBackgroundFilePath))
-        if not dataTypes.mutBackground in os.path.basename(mutationBackgroundFilePath): 
-            raise ValueError("Error, expected file with \"" + dataTypes.mutBackground + "\" in the name.")
+        if not DataTypeStr.mutBackground in os.path.basename(mutationBackgroundFilePath): 
+            raise ValueError("Error, expected file with \"" + DataTypeStr.mutBackground + "\" in the name.")
 
         # Get metadata
         metadata = Metadata(mutationBackgroundFilePath)
@@ -265,7 +265,7 @@ def generateNucleosomeMutationBackground(mutationBackgroundFilePaths, useSingleN
             nucleosomeMutationBackgroundFilePath = generateFilePath(directory = metadata.directory, dataGroup = metadata.dataGroupName,
                                                                     context = contextText, linkerOffset = linkerOffset,
                                                                     usesNucGroup = usesNucGroup,
-                                                                    dataType = dataTypes.nucMutBackground, fileExtension = ".tsv")
+                                                                    dataType = DataTypeStr.nucMutBackground, fileExtension = ".tsv")
 
             # Generate the nucleosome mutation background file!
             generateNucleosomeMutationBackgroundFile(dyadPosContextCountsFilePath,mutationBackgroundFilePath,
@@ -284,7 +284,7 @@ def generateNucleosomeMutationBackground(mutationBackgroundFilePaths, useSingleN
 if __name__ == "__main__":
     #Create the Tkinter UI
     dialog = TkinterDialog(workingDirectory=dataDirectory)
-    dialog.createMultipleFileSelector("Mutation Background Files:",0,dataTypes.mutBackground + ".tsv",("Tab Seperated Values Files",".tsv"))
+    dialog.createMultipleFileSelector("Mutation Background Files:",0,DataTypeStr.mutBackground + ".tsv",("Tab Seperated Values Files",".tsv"))
 
     selectSingleNuc = dialog.createDynamicSelector(1,0)
     selectSingleNuc.initCheckboxController("Generate background with a single nucleosome radius (73 bp)")

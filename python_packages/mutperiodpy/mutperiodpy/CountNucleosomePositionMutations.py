@@ -9,7 +9,7 @@ from mutperiodpy.Tkinter_scripts.TkinterDialog import TkinterDialog, Selections
 from mutperiodpy.Tkinter_scripts.DynamicSelector import DynamicSelector
 from mutperiodpy.helper_scripts.UsefulBioinformaticsFunctions import baseChromosomes
 from mutperiodpy.helper_scripts.UsefulFileSystemFunctions import (Metadata, generateFilePath, dataDirectory,
-                                                                  dataTypes)
+                                                                  DataTypeStr)
 
 
 # Contains data on a single mutation position obtained by reading the next available line in a given file.
@@ -235,7 +235,7 @@ def countNucleosomePositionMutations(mutationFilePaths, countSingleNuc, countNuc
             # Generate the output file path
             nucleosomeMutationCountsFilePath = generateFilePath(directory = metadata.directory,
                                                                 dataGroup = metadata.dataGroupName, linkerOffset = linkerOffset, 
-                                                                fileExtension = ".tsv", dataType = dataTypes.rawNucCounts)
+                                                                fileExtension = ".tsv", dataType = DataTypeStr.rawNucCounts)
 
             # Ready, set, go!
             print("Counting mutations at each nucleosome position in a 73 bp radius +", str(linkerOffset), "bp linker DNA.")
@@ -250,7 +250,7 @@ def countNucleosomePositionMutations(mutationFilePaths, countSingleNuc, countNuc
             # Generate the output file path
             nucleosomeMutationCountsFilePath = generateFilePath(directory = metadata.directory,
                                                                 dataGroup = metadata.dataGroupName, usesNucGroup = True,
-                                                                fileExtension = ".tsv", dataType = dataTypes.rawNucCounts)
+                                                                fileExtension = ".tsv", dataType = DataTypeStr.rawNucCounts)
 
             # Ready, set, go!
             print("Counting mutations at each nucleosome position in a 1000 bp radius.")

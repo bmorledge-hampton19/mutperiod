@@ -3,7 +3,7 @@
 
 import os, subprocess
 from typing import List
-from mutperiodpy.helper_scripts.UsefulFileSystemFunctions import dataTypes, dataDirectory, RPackagesDirectory
+from mutperiodpy.helper_scripts.UsefulFileSystemFunctions import DataTypeStr, dataDirectory, RPackagesDirectory
 from mutperiodpy.Tkinter_scripts.TkinterDialog import TkinterDialog, Selections
 
 
@@ -47,12 +47,12 @@ if __name__ == "__main__":
     #Create the Tkinter UI
     dialog = TkinterDialog(workingDirectory=dataDirectory)
     dialog.createMultipleFileSelector("Normalized Nucleosome Mutation Counts files:",0,
-                                      dataTypes.normNucCounts + ".tsv",("Tab Seperated Values Files",".tsv"))
+                                      DataTypeStr.normNucCounts + ".tsv",("Tab Seperated Values Files",".tsv"))
     dialog.createFileSelector("Output File", 1, ("R Data File", ".rda"), newFile = True)
     dialog.createMultipleFileSelector("MSI files (optional):",2,
-                                      dataTypes.normNucCounts + ".tsv",("Tab Seperated Values Files",".tsv"))
+                                      DataTypeStr.normNucCounts + ".tsv",("Tab Seperated Values Files",".tsv"))
     dialog.createMultipleFileSelector("MSS files (optional):",3,
-                                      dataTypes.normNucCounts + ".tsv",("Tab Seperated Values Files",".tsv"))                                  
+                                      DataTypeStr.normNucCounts + ".tsv",("Tab Seperated Values Files",".tsv"))                                  
     dialog.createExitButtons(4,0)
 
     # Run the UI

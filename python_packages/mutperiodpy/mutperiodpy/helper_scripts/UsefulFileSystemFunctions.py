@@ -1,6 +1,7 @@
 # This script contains various functions that I think will often be useful when managing filesystems for projects.
 
 import os, datetime
+from enum import Enum
 from mutperiodpy.project_management.FileSystemManager import InputFormat
 
 
@@ -14,20 +15,15 @@ dataDirectory = os.path.join(projectDirectory, "data")
 externalDataDirectory = os.path.join(dataDirectory, "__external_data")
 RPackagesDirectory = os.path.join(projectDirectory, "R_packages")
 
-# Stores information about data type identifiers
-class DataTypes:
+# Stores information about data type identifier strings
+class DataTypeStr:
 
-    def __init__(self):
-
-        self.mutations = "context_mutations"
-        self.mutBackground = "mutation_background"
-        self.nucMutBackground = "nucleosome_mutation_background"
-        self.rawNucCounts = "raw_nucleosome_mutation_counts"
-        self.normNucCounts = "normalized_nucleosome_mutation_counts"
-        self.customInput = "custom_input"
-
-# The data type identifiers
-dataTypes = DataTypes()
+    mutations = "context_mutations"
+    mutBackground = "mutation_background"
+    nucMutBackground = "nucleosome_mutation_background"
+    rawNucCounts = "raw_nucleosome_mutation_counts"
+    normNucCounts = "normalized_nucleosome_mutation_counts"
+    customInput = "custom_input"
 
 
 # Recursively searches the given directory for files with the specified ending. Returns a list of the resulting file paths.

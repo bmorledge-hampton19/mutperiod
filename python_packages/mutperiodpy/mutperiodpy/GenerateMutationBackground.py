@@ -3,7 +3,7 @@
 
 import os
 from mutperiodpy.helper_scripts.UsefulBioinformaticsFunctions import reverseCompliment, FastaFileIterator, baseChromosomes
-from mutperiodpy.helper_scripts.UsefulFileSystemFunctions import Metadata, dataTypes, generateFilePath, dataDirectory
+from mutperiodpy.helper_scripts.UsefulFileSystemFunctions import Metadata, DataTypeStr, generateFilePath, dataDirectory
 from mutperiodpy.Tkinter_scripts.TkinterDialog import TkinterDialog, Selections
 
 
@@ -234,7 +234,7 @@ def generateMutationBackground(mutationFilePaths, backgroundContextNum):
 
         print("\nWorking in:",os.path.split(mutationFilePath)[1])
         if not dataTypes.mutations in os.path.split(mutationFilePath)[1]:
-            raise ValueError("Error:  Expected file with \"" + dataTypes.mutations + "\" in the name.")
+            raise ValueError("Error:  Expected file with \"" + DataTypeStr.mutations + "\" in the name.")
 
         # Generate the file path for the genome context frequency file.
         genomeContextFrequencyFilePath = generateFilePath(directory = os.path.dirname(metadata.genomeFilePath),
@@ -248,7 +248,7 @@ def generateMutationBackground(mutationFilePaths, backgroundContextNum):
 
         # Generate the file path for the background mutation rate file.
         mutationBackgroundFilePath = generateFilePath(directory = metadata.directory, dataGroup = metadata.dataGroupName,
-                                                      context = contextText, dataType = dataTypes.mutBackground,
+                                                      context = contextText, dataType = DataTypeStr.mutBackground,
                                                       fileExtension = ".tsv")
 
         # If the genome context frequency file doesn't exist, create it.
@@ -277,7 +277,7 @@ if __name__ == "__main__":
 
     #Create the Tkinter UI
     dialog = TkinterDialog(workingDirectory=dataDirectory)
-    dialog.createMultipleFileSelector("Bed Mutation Files:",0,dataTypes.mutations + ".bed",("Bed Files",".bed"))
+    dialog.createMultipleFileSelector("Bed Mutation Files:",0,DataTypeStr.mutations + ".bed",("Bed Files",".bed"))
     dialog.createDropdown("Background Context",1,0,("Trinuc","Singlenuc", "Pentanuc"))
     dialog.createExitButtons(2,0)
 

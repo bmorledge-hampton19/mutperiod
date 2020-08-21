@@ -4,7 +4,7 @@
 from typing import List
 import os
 from mutperiodpy.Tkinter_scripts.TkinterDialog import TkinterDialog, Selections
-from mutperiodpy.helper_scripts.UsefulFileSystemFunctions import dataTypes, dataDirectory
+from mutperiodpy.helper_scripts.UsefulFileSystemFunctions import DataTypeStr, dataDirectory
 from mutperiodpy.ExpandContext import expandContext
 from mutperiodpy.GenerateMutationBackground import generateMutationBackground
 from mutperiodpy.GenerateNucleosomeMutationBackground import generateNucleosomeMutationBackground
@@ -14,7 +14,7 @@ from mutperiodpy.NormalizeMutationCounts import normalizeCounts
 
 # Create the Tkinter dialog.
 dialog = TkinterDialog(workingDirectory=dataDirectory)
-dialog.createMultipleFileSelector("Bed Mutation Files:",0,dataTypes.mutations + ".bed",("Bed Files",".bed"))
+dialog.createMultipleFileSelector("Bed Mutation Files:",0,DataTypeStr.mutations + ".bed",("Bed Files",".bed"))
 dialog.createDropdown("Background Context",1,0,("Trinuc","Singlenuc", "Pentanuc"))
 
 selectNucleosomeDyadRadius = dialog.createDynamicSelector(2,0)
