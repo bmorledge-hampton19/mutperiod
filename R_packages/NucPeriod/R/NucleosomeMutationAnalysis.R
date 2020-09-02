@@ -33,8 +33,8 @@ generateNucPeriodData = function(mutationCountsFilePaths, outputFilePath,
     validDataSetNames = filteredCountsTable$Associated_Data_Set
 
   } else {
-    validFilePaths = rawCountsTable$File_Path
-    validDataSetNames = rawCountsTable$Data_Set
+    validFilePaths = rawCountsTable$Associated_File_Path
+    validDataSetNames = rawCountsTable$Associated_Data_Set
   }
 
   # Generate a list of raw counts tables from the set of valid file paths.
