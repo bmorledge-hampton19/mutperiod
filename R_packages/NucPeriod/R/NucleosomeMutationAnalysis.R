@@ -18,23 +18,29 @@ generateNucPeriodData = function(mutationCountsFilePaths, outputFilePath,
   rawNucleosomeMutationCounts = sapply(rawCountsFilePaths, getRawNucleosomeMutationCounts,
                                        nucleosomeDyadPosCutoff)
 
-  rawCountsTable = data.table::data.table(File_Path = mutationCountsFilePaths, Data_Set = dataSetNames,
+  rawCountsTable = data.table::data.table(Associated_File_Path = mutationCountsFilePaths,
+                                          Associated_Data_Set = dataSetNames,
                                           Raw_Nucleosome_Mutation_Counts = rawNucleosomeMutationCounts)
   # Sort the newly created table by data set names.
-  data.table::setorder(rawCountsTable,Data_Set)
+  data.table::setorder(rawCountsTable,Associated_Data_Set)
 
   # If a cutoff greater than 0 was given for nucleosome mutation counts, enforce it.
   if (nucleosomeMutationCutoff > 0) {
 
     filteredCountsTable = rawCountsTable[mapply(filterCounts, Raw_Nucleosome_Mutation_Counts,
-                                                nucleosomeMutationCutoff, Data_Set)]
-    validFilePaths = filteredCountsTable$File_Path
-    validDataSetNames = filteredCountsTable$Data_Set
+                                                nucleosomeMutationCutoff, Associated_Data_Set)]
+    validFilePaths = filteredCountsTable$Associated_File_Path
+    validDataSetNames = filteredCountsTable$Associated_Data_Set
 
   } else {
     validFilePaths = rawCountsTable$File_Path
     validDataSetNames = rawCountsTable$Data_Set
   }
+
+  # Generate a list of raw counts tables from the set of valid file paths.
+  validRawFilePaths = unique(sapply(validFilePaths, getRawCountsFilePath))
+  rawNucleosomeCountsTables = lapply(validRawFilePaths, function(x) data.table::fread(file = x))
+  names(rawNucleosomeCountsTables) = getDataSetNames(validRawFilePaths, enforceInputNamingConventions)
 
   # Prep for MSI vs MSS analysis if the respective file path lists were given.
   compareMS = (MSIFilePaths != '' && MSSFilePaths != '')
@@ -43,8 +49,8 @@ generateNucPeriodData = function(mutationCountsFilePaths, outputFilePath,
     MSSDataSetNames = sapply(strsplit(basename(MSSFilePaths),"_nucleosome"), function(x) x[1])
   }
 
-  nucleosomeCountsTables = vector("list",length(validFilePaths))
-  names(nucleosomeCountsTables) = validDataSetNames
+  normalizedNucleosomeCountsTables = vector("list",length(validFilePaths))
+  names(normalizedNucleosomeCountsTables) = validDataSetNames
 
   peakPeriodicities = numeric(length(validFilePaths))
   periodicityPValues = numeric(length(validFilePaths))
@@ -71,7 +77,7 @@ generateNucPeriodData = function(mutationCountsFilePaths, outputFilePath,
 
     # Read in the data.
     nucleosomeCountsData = data.table::fread(file = validFilePaths[i])
-    nucleosomeCountsTables[[i]] = nucleosomeCountsData
+    normalizedNucleosomeCountsTables[[i]] = nucleosomeCountsData
 
     # Adjust the dyadPosCutoff if we have translational periodicity data.
     if (grepl("nuc-group", validFilePaths[i], fixed = TRUE)) {
@@ -176,14 +182,18 @@ generateNucPeriodData = function(mutationCountsFilePaths, outputFilePath,
   }
 
   # Create the data object to return
+  nucPeriodData = list(dyadPosCutoff = dyadPosCutoff,
+                       normalizedNucleosomeCountsTables = normalizedNucleosomeCountsTables,
+                       rawNucleosomeCountsTables = rawNucleosomeCountsTables,
+                       periodicityResults = periodicityResults)
+
+  # Add the MS results if requested.
   if (compareMS) {
-    nucPeriodData = list(dyadPosCutoff = dyadPosCutoff, nucleosomeCountsTables = nucleosomeCountsTables,
-                         rawCountsData = rawCountsTable, periodicityResults = periodicityResults,
-                         MSIInputs = MSIDataSetNames, MSSInputs = MSSDataSetNames, wilcoxinResult = wilcoxinResult)
-  } else {
-    nucPeriodData = list(dyadPosCutoff = dyadPosCutoff, nucleosomeCountsTables = nucleosomeCountsTables,
-                         rawCountsData = rawCountsTable, periodicityResults = periodicityResults)
+    nucPeriodData = append(nucPeriodData, list(MSIInputs = MSIDataSetNames,
+                                               MSSInputs = MSSDataSetNames,
+                                               wilcoxinResult = wilcoxinResult))
   }
+
   save(nucPeriodData, file = outputFilePath)
 
 }
