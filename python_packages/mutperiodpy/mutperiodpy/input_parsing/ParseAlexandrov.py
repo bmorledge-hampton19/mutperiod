@@ -2,7 +2,7 @@
 
 import os
 from mutperiodpy.Tkinter_scripts.TkinterDialog import TkinterDialog, Selections
-from mutperiodpy.helper_scripts.UsefulFileSystemFunctions import (generateFilePath, generateMetadata, dataTypes,
+from mutperiodpy.helper_scripts.UsefulFileSystemFunctions import (generateFilePath, generateMetadata, DataTypeStr, InputFormat,
                                                                   checkDirs, getIsolatedParentDir, dataDirectory)
 from mutperiodpy.helper_scripts.UsefulBioinformaticsFunctions import baseChromosomes
 from mutperiodpy.input_parsing.ParseCustomBed import parseCustomBed
@@ -19,14 +19,14 @@ def parseAlexandrov (bedInputFilePaths, genomeFilePath, nucPosFilePath):
         # Get some important file system paths for the rest of the function and generate metadata.
         dataDirectory = os.path.dirname(bedInputFilePath)
         generateMetadata(os.path.basename(dataDirectory), getIsolatedParentDir(genomeFilePath), getIsolatedParentDir(nucPosFilePath), 
-                            os.path.basename(bedInputFilePath), os.path.dirname(bedInputFilePath))
+                            os.path.basename(bedInputFilePath), InputFormat.customBed, os.path.dirname(bedInputFilePath))
 
         intermediateFilesDir = os.path.join(dataDirectory,"intermediate_files")
         checkDirs(intermediateFilesDir)
 
         # Generate the output file.
         outputBedFilePath = generateFilePath(directory = intermediateFilesDir, dataGroup = getIsolatedParentDir(bedInputFilePath),
-                                             dataType = dataTypes.customInput, fileExtension = ".bed")
+                                             dataType = DataTypeStr.customInput, fileExtension = ".bed")
 
         # Write data to the output file.
         with open(bedInputFilePath, 'r') as bedInputFile:
@@ -50,7 +50,7 @@ def parseAlexandrov (bedInputFilePaths, genomeFilePath, nucPosFilePath):
 
     # Pass the data to the custome bed parser.
     print("\nPassing data to custom bed parser.\n")
-    parseCustomBed(outputBedFilePaths, genomeFilePath, nucPosFilePath, False)
+    parseCustomBed(outputBedFilePaths, genomeFilePath, nucPosFilePath, False, False, False)
 
 
 if __name__ == "__main__":
