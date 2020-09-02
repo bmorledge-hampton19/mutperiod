@@ -233,7 +233,7 @@ def generateMutationBackground(mutationFilePaths, backgroundContextNum):
         intermediateFilesDirectory = os.path.join(metadata.directory,"intermediate_files")
 
         print("\nWorking in:",os.path.split(mutationFilePath)[1])
-        if not dataTypes.mutations in os.path.split(mutationFilePath)[1]:
+        if not DataTypeStr.mutations in os.path.split(mutationFilePath)[1]:
             raise ValueError("Error:  Expected file with \"" + DataTypeStr.mutations + "\" in the name.")
 
         # Generate the file path for the genome context frequency file.

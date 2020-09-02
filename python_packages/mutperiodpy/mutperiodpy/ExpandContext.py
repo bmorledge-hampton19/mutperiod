@@ -83,7 +83,7 @@ def expandContext(inputBedFilePaths, expansionContextNum):
 
         # Make sure file names look valid.
         print("\nWorking in:",os.path.split(inputBedFilePath)[1])
-        if not DataTypeStr.mutations.value in os.path.split(inputBedFilePath)[1]:
+        if not DataTypeStr.mutations in os.path.split(inputBedFilePath)[1]:
             raise ValueError("Error:  Expected file with \"" + DataTypeStr.mutations + "\" in the name.")
         
         # Make sure the context of the input bed file is less than the expansion context.
