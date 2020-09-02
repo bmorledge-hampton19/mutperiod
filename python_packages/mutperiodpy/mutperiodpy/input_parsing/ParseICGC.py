@@ -5,10 +5,9 @@ import os, gzip, subprocess
 from typing import IO, List
 from mutperiodpy.Tkinter_scripts.TkinterDialog import TkinterDialog, Selections
 from mutperiodpy.helper_scripts.UsefulFileSystemFunctions import (DataTypeStr, generateFilePath, dataDirectory, checkDirs,
-                                                                  generateMetadata, getIsolatedParentDir, RPackagesDirectory)
+                                                                  generateMetadata, getIsolatedParentDir, RPackagesDirectory, InputFormat)
 from mutperiodpy.helper_scripts.UsefulBioinformaticsFunctions import reverseCompliment, isPurine, baseChromosomes
 from mutperiodpy.input_parsing.ParseCustomBed import parseCustomBed
-from mutperiodpy.project_management.FileSystemManager import InputFormat
 
 
 # This class represents the mutation data obtained from ICGC in a more precise form.

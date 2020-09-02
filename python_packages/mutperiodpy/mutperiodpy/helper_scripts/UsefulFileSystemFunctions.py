@@ -2,7 +2,6 @@
 
 import os, datetime
 from enum import Enum
-from mutperiodpy.project_management.FileSystemManager import InputFormat
 
 
 # The directory for the overarching project
@@ -24,6 +23,15 @@ class DataTypeStr:
     rawNucCounts = "raw_nucleosome_mutation_counts"
     normNucCounts = "normalized_nucleosome_mutation_counts"
     customInput = "custom_input"
+
+
+# Data input format identifiers and their relevant strings.
+class InputFormat(Enum):
+
+    ICGC = "ICGC"
+    tXRSeqBigWig = "tXR-seqBigWig"
+    tXRSeqBed = "tXR-seqBed"
+    customBed = "customBed"
 
 
 # Recursively searches the given directory for files with the specified ending. Returns a list of the resulting file paths.
@@ -181,6 +189,7 @@ def generateMetadata(dataGroupName, associatedGenome, associatedNucleosomePositi
             metadataFile.write(', '.join(cohorts) + '\n')
         else:
             metadataFile.write("cohorts:\tNone\n")
+
 
 # Keeps track of data about a given data group by accessing the metadata file in the same directory
 class Metadata:

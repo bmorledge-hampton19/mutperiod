@@ -20,10 +20,9 @@ import os, subprocess
 from typing import List
 from mutperiodpy.Tkinter_scripts.TkinterDialog import TkinterDialog, Selections
 from mutperiodpy.helper_scripts.UsefulFileSystemFunctions import (dataDirectory, getIsolatedParentDir, generateMetadata,
-                                                                  generateFilePath, Metadata, checkDirs)
+                                                                  generateFilePath, Metadata, checkDirs, InputFormat)
 from mutperiodpy.helper_scripts.UsefulBioinformaticsFunctions import (bedToFasta, FastaFileIterator, baseChromosomes,
                                                                       isPurine, reverseCompliment)
-from mutperiodpy.project_management.FileSystemManager import InputFormat
 from mutperiodpy.input_parsing.WriteManager import WriteManager
 from mutperiodpy.input_parsing.IdentifyMSI import MSIIdentifier
 from mutperiodpy.input_parsing.IdentifyMutSigs import MutSigIdentifier

@@ -6,8 +6,7 @@ import os, subprocess
 from mutperiodpy.Tkinter_scripts.TkinterDialog import TkinterDialog, Selections
 from mutperiodpy.helper_scripts.UsefulBioinformaticsFunctions import bedToFasta, FastaFileIterator, baseChromosomes
 from mutperiodpy.helper_scripts.UsefulFileSystemFunctions import (getIsolatedParentDir, generateFilePath, dataDirectory,
-                                                                  DataTypeStr, generateMetadata)
-from mutperiodpy.project_management.FileSystemManager import InputFormat
+                                                                  DataTypeStr, generateMetadata, InputFormat)
 
 
 # Estimates (Most likely with perfect accuracy) the minimum adjusted counts value that is then assumed to represent one count.
