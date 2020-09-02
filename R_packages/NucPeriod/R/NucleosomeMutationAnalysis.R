@@ -80,10 +80,14 @@ generateNucPeriodData = function(mutationCountsFilePaths, outputFilePath,
     normalizedNucleosomeCountsTables[[i]] = nucleosomeCountsData
 
     # Adjust the dyadPosCutoff if we have translational periodicity data.
-    if (grepl("nuc-group", validFilePaths[i], fixed = TRUE)) {
+    if (grepl("nuc-group", basename(validFilePaths[i]), fixed = TRUE)) {
       dyadPosCutoff = 1000
+      lombFrom = 50
+      lombTo = 250
     } else {
       dyadPosCutoff = nucleosomeDyadPosCutoff
+      lombFrom = 7
+      lombTo = 20
     }
 
     ##### Periodicity Analysis #####
@@ -93,7 +97,7 @@ generateNucPeriodData = function(mutationCountsFilePaths, outputFilePath,
     # Calculate the periodicity of the data using a Lomb-Scargle periodiagram.
     lombResult = lomb::lsp(nucleosomeCountsData[Dyad_Position >= -dyadPosCutoff & Dyad_Position <= dyadPosCutoff,
                                                   .(Dyad_Position,Normalized_Both_Strands)],
-                     type = "period", from = 2, to = 50, ofac = 100, plot = outputGraphs)
+                     type = "period", from = lombFrom, to = lombTo, ofac = 100, plot = outputGraphs)
     if (outputGraphs) {
       plot(nucleosomeCountsData[Dyad_Position >= -dyadPosCutoff & Dyad_Position <= dyadPosCutoff,
                                   .(Dyad_Position,Normalized_Both_Strands)],
