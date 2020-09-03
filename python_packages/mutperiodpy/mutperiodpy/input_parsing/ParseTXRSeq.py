@@ -141,113 +141,143 @@ def writeTrinucLesions(fastaReadsFilePath, trinucLesionsFilePath):
                     trinucLesionsFile.write(trinucEntry)
 
 
-def parseTXRSeq(tXRSeqBigWigReadsFilePathPairs, tXRSeqBedReadsFilePaths, genomeFilePath, nucPosFilePath):
+# Given a file path, looks for the complementary file path (with the opposite strand designation) and returns both as a tuple.
+def getFilePathPair(filePath: str) -> str:
     
-    # Parse reads given in bigwig file pair format.
-    for tXRSeqBigWigReadsFilePathPair in tXRSeqBigWigReadsFilePathPairs:
+    strandReverser = {'+': '-', '-': '+'}
 
-        print("\nWorking in:",os.path.basename(tXRSeqBigWigReadsFilePathPair[0]),
-              "and",os.path.basename(tXRSeqBigWigReadsFilePathPair[1]))
-        if (not os.path.basename(tXRSeqBigWigReadsFilePathPair[0]).endswith(".bigWig") or 
-            not os.path.basename(tXRSeqBigWigReadsFilePathPair[1]).endswith(".bigWig")):
-            raise ValueError("Error:  Expected bigWig file format.")
+    fileExtension = filePath.rsplit('.', 1)[-1]
+    strandDesignation = filePath.rsplit('.', 1)[-2][-1]
 
-        ### Prep the file system for the output files.
+    if not strandDesignation in strandReverser:
+        raise ValueError("No strand designation (\'+\' or \'-\') immediately preceding file extension for file path: " + filePath)
+
+    complementaryPath = (filePath.rsplit( '.'.join((strandDesignation,fileExtension)) , 1)[0] + 
+                         '.'.join((strandReverser[strandDesignation],fileExtension)) )
+
+    if not os.path.exists(complementaryPath):
+            raise ValueError("Complementary file path not found at " + complementaryPath)
+
+    return (filePath, complementaryPath)
+
+
+# A class which stores all the relevant info for tXR-Seq data as it is parsed from a variety of input formats,
+# and converts them to the output format.
+class TXRSeqInputDataPipeline:
+
+    def __init__(self, inputDataFilePath: str, genomeFilePath: str, nucPosFilePath: str):
+
+        self.inputDataFilePath = inputDataFilePath
+        self.genomeFilePath = genomeFilePath
+        self.nucPosFilePath = nucPosFilePath
+
+        # Initialize these values as empty until we know what form the input data is in.
+        self.bigWigReadsFilePathPair = None
+        self.bedGraphReadsFilePathPair = None
+        self.bedInputFilePath = None
+
+        # Initialize a variable to keep track of whether or not the input reads have been trimmed.
+        self.readsHaveBeenTrimmed = False
+
+        # Determine what form the input data is in and assign it accordingly.
+        if self.inputDataFilePath.endswith(".bigWig"):
+            self.bigWigReadsFilePathPair = getFilePathPair(self.inputDataFilePath)
+
+        elif self.inputDataFilePath.endswith(".bedGraph"):
+            self.bedGraphReadsFilePathPair = getFilePathPair(self.inputDataFilePath)
+
+        elif self.inputDataFilePath.endswith(".bed"):
+            self.bedInputFilePath = self.inputDataFilePath
+
+        else: raise ValueError("Input data file path: " + self.inputDataFilePath + " is not in an acceptable format.  " +
+                               "Expected a bigWig, bedGraph, or bed file type.")
+
+        self.setUpFileSystem()
+
+
+    # Prepares and stores data about the file system surrounding the input data for the rest of the pipeline.
+    def setUpFileSystem(self):
 
         # Store useful paths and names.
-        localRootDirectory = os.path.dirname(tXRSeqBigWigReadsFilePathPair[0])
-        dataGroupName = getIsolatedParentDir(tXRSeqBigWigReadsFilePathPair[0])
+        localRootDirectory = os.path.dirname(self.inputDataFilePath)
+        dataGroupName = getIsolatedParentDir(self.inputDataFilePath)
 
         # Create the intermediate files directory if necessary
         intermediateFilesDirectory = os.path.join(localRootDirectory,"intermediate_files")
         if not os.path.exists(intermediateFilesDirectory):
             os.mkdir(intermediateFilesDirectory)
 
-        # Generate the file paths to the intermediate bedGraph files.
-        tXRSeqBedGraphReadsFilePathPair = list()
-        for tXRSeqBigWigReadsFilePath in tXRSeqBigWigReadsFilePathPair:
-            tXRSeqBedGraphReadsFilePathPair.append(os.path.join(intermediateFilesDirectory,
-                                                                os.path.basename(tXRSeqBigWigReadsFilePath).rsplit('.',1)[0]+".bedGraph"))
+        # If the given input data is in bigWig form, use it to generate the file paths to the intermediate bedGraph files.
+        if self.bigWigReadsFilePathPair is not None:
+            self.bedGraphReadsFilePathPair = list()
+            for bigWigReadsFilePath in self.bigWigReadsFilePathPair:
+                self.bedGraphReadsFilePathPair.append(os.path.join(intermediateFilesDirectory,
+                                                                   os.path.basename(bigWigReadsFilePath).rsplit('.',1)[0]+".bedGraph"))
 
         # Generate the trimmed reads output, the fasta output, and trinuc lesions output file paths.
-        trimmedReadsFilePath = os.path.join(intermediateFilesDirectory,dataGroupName+"_trimmed_reads.bed")
-        fastaReadsFilePath = os.path.join(intermediateFilesDirectory,dataGroupName+"_fasta_reads.fa")
-        trinucLesionsFilePath = generateFilePath(directory = localRootDirectory, dataGroup = dataGroupName,
-                                                 context = "trinuc", dataType = DataTypeStr.mutations, fileExtension = ".bed")
-        
+        self.trimmedReadsFilePath = os.path.join(intermediateFilesDirectory,dataGroupName+"_trimmed_reads.bed")
+        self.fastaReadsFilePath = os.path.join(intermediateFilesDirectory,dataGroupName+"_fasta_reads.fa")
+        self.trinucLesionsFilePath = generateFilePath(directory = localRootDirectory, dataGroup = dataGroupName,
+                                                      context = "trinuc", dataType = DataTypeStr.mutations, fileExtension = ".bed") 
+
         # Generate metadata
-        generateMetadata(dataGroupName, getIsolatedParentDir(genomeFilePath), getIsolatedParentDir(nucPosFilePath),
-                         os.path.basename(tXRSeqBigWigReadsFilePathPair[0]), InputFormat.tXRSeqBigWig, localRootDirectory)
+        generateMetadata(dataGroupName, getIsolatedParentDir(self.genomeFilePath), getIsolatedParentDir(self.nucPosFilePath),
+                         os.path.basename(self.inputDataFilePath), InputFormat.tXRSeq, localRootDirectory)
 
-        # Convert from bigWig to bedGraph format.
-        print("Converting to bedGraph...")
-        for i in range(2):
-            subprocess.run(" ".join(("bigWigToBedGraph",tXRSeqBigWigReadsFilePathPair[i],
-                                     tXRSeqBedGraphReadsFilePathPair[i])), shell = True, check = True)
+    
+    # Generates a bed file of trimmed reads, a process which is dependent on the input format given in the class's initialization.
+    def generateTrimmedReads(self):
+        
+        # If the input data is in bed format, generate the trimmed reads from that data.
+        if self.bedInputFilePath is not None:
+            trimBedTXRSeqData(self.bedInputFilePath, self.trimmedReadsFilePath)
 
-        # Trim the bedGraph file pair.
-        print("Trimming bedGraph data and combining to one bed file...")
-        trimBedGraphTXRSeqData(tXRSeqBedGraphReadsFilePathPair, trimmedReadsFilePath, 
-                               getMinAdjustedCountValue(tXRSeqBedGraphReadsFilePathPair[0]))
+        # Otherwise, generate the trimmed reads from bedGraph data.
+        else:
 
-        # Convert the trimmed file to fasta format to get the sequences associated with each read.
-        print("Generating fasta file from trimmed bed file...")
-        bedToFasta(trimmedReadsFilePath, genomeFilePath, fastaReadsFilePath)
+            # If we were given bigWig input data, convert it to bedGraph format first.
+            if self.bigWigReadsFilePathPair is not None:
+                for i in range(2):
+                    subprocess.run(" ".join(("bigWigToBedGraph",self.bigWigReadsFilePathPair[i],
+                                            self.bedGraphReadsFilePathPair[i])), shell = True, check = True)
 
-        # Find the lesions and write them in their trinuc context to the final output file.
-        print("Finding lesions and writing their trinuc context to final output file...")
-        writeTrinucLesions(fastaReadsFilePath, trinucLesionsFilePath)
+            # Generate the trimmed reads.
+            trimBedGraphTXRSeqData(self.bedGraphReadsFilePathPair, self.trimmedReadsFilePath, 
+                                   getMinAdjustedCountValue(self.bedGraphReadsFilePathPair[0]))
 
-        # Sort the trinuc context file.
-        print("Sorting trinuc context data...")
-        subprocess.run(" ".join(("sort","-k1,1","-k2,2n",trinucLesionsFilePath,"-o",trinucLesionsFilePath)), 
-                       shell = True, check = True)
+        self.readsHaveBeenTrimmed = True
 
+    
+    # Generates the trinuc output file that contains the locations of estimated lesion location and their trinuc context.
+    def generateTrinucLesionsOutputFile(self):
 
-    # Parse reads given in bed format.
-    for tXRSeqBedReadsFilePath in tXRSeqBedReadsFilePaths:
-
-        print("\nWorking in:",os.path.basename(tXRSeqBedReadsFilePath))
-        if not os.path.basename(tXRSeqBedReadsFilePath).endswith(".bed"):
-            raise ValueError("Error:  Expected bed file format.")
-
-        ### Prep the file system for the output files.
-
-        # Store useful paths and names.
-        localRootDirectory = os.path.dirname(tXRSeqBedReadsFilePath)
-        dataGroupName = getIsolatedParentDir(tXRSeqBedReadsFilePath)
-
-        # Create the intermediate files directory if necessary
-        intermediateFilesDirectory = os.path.join(localRootDirectory,"intermediate_files")
-        if not os.path.exists(intermediateFilesDirectory):
-            os.mkdir(intermediateFilesDirectory)
-
-        # Generate the trimmed reads output, the fasta output, and trinuc lesions output file paths.
-        trimmedReadsFilePath = os.path.join(intermediateFilesDirectory,dataGroupName+"_trimmed_reads.bed")
-        fastaReadsFilePath = os.path.join(intermediateFilesDirectory,dataGroupName+"_fasta_reads.fa")
-        trinucLesionsFilePath = generateFilePath(directory = localRootDirectory, dataGroup = dataGroupName,
-                                                 context = "trinuc", dataType = DataTypeStr.mutations, fileExtension = ".bed")
-
-        # Generate metadata.
-        generateMetadata(dataGroupName, getIsolatedParentDir(genomeFilePath), getIsolatedParentDir(nucPosFilePath),
-                         os.path.basename(tXRSeqBedReadsFilePath), InputFormat.tXRSeqBed, localRootDirectory)
-
-        # Trim the bedGraph file pair.
-        print("Trimming bed data...")
-        trimBedTXRSeqData(tXRSeqBedReadsFilePath, trimmedReadsFilePath)
+        if not self.readsHaveBeenTrimmed: raise ValueError("Trying to generate final output without trimmed reads.")
 
         # Convert the trimmed file to fasta format to get the sequences associated with each read.
-        print("Generating fasta file from trimmed bed file...")
-        bedToFasta(trimmedReadsFilePath, genomeFilePath, fastaReadsFilePath)
+        bedToFasta(self.trimmedReadsFilePath, self.genomeFilePath, self.fastaReadsFilePath)
 
         # Find the lesions and write them in their trinuc context to the final output file.
-        print("Finding lesions and writing their trinuc context to final output file...")
-        writeTrinucLesions(fastaReadsFilePath, trinucLesionsFilePath)
+        writeTrinucLesions(self.fastaReadsFilePath, self.trinucLesionsFilePath)
 
         # Sort the trinuc context file.
-        print("Sorting trinuc context data...")
-        subprocess.run(" ".join(("sort","-k1,1","-k2,2n",trinucLesionsFilePath,"-o",trinucLesionsFilePath)), 
-                       shell = True, check = True)
+        subprocess.run(" ".join(("sort","-k1,1","-k2,2n", self.trinucLesionsFilePath,"-o", self.trinucLesionsFilePath)), 
+                       shell = True, check = True)    
+
+
+def parseTXRSeq(inputDataFilePaths, genomeFilePath, nucPosFilePath):
+
+    # Use the TXRSeqInputDataPipeline object to convert the input data to the output data!
+    for inputDataFilePath in inputDataFilePaths:
+
+        print("\nWorking with:",os.path.basename(inputDataFilePath))
+        tXRSeqInputDataPipeline = TXRSeqInputDataPipeline(inputDataFilePath, genomeFilePath, nucPosFilePath)
+
+        print("Generating trimmed reads bed file...")
+        tXRSeqInputDataPipeline.generateTrimmedReads()
+
+        print("Locating and writing lesion locations to final output file...")
+        tXRSeqInputDataPipeline.generateTrinucLesionsOutputFile()
+ 
 
 if __name__ == "__main__":
 
@@ -274,13 +304,4 @@ if __name__ == "__main__":
     genomeFilePath = list(selections.getIndividualFilePaths())[0]
     nucPosFilePath = list(selections.getIndividualFilePaths())[1]
 
-    # Pair up the plus and minus strands for each data set.
-    tXRSeqBigWigReadsFilePathPairs = list()
-    for tXRSeqBigWigPlusReadsFilePath in tXRSeqBigWigPlusReadsFilePaths:
-        correspondingMinusPath = tXRSeqBigWigPlusReadsFilePath.rsplit("+.bigWig")[0] + "-.bigWig"
-        if not os.path.exists(correspondingMinusPath):
-            raise ValueError("Corresponding minus file path not found at " + correspondingMinusPath)
-        else:
-            tXRSeqBigWigReadsFilePathPairs.append((tXRSeqBigWigPlusReadsFilePath, correspondingMinusPath))
-
-    parseTXRSeq(tXRSeqBigWigReadsFilePathPairs, tXRSeqBedReadsFilePaths, genomeFilePath, nucPosFilePath)
+    parseTXRSeq(tXRSeqBigWigPlusReadsFilePaths + tXRSeqBedReadsFilePaths, genomeFilePath, nucPosFilePath)
