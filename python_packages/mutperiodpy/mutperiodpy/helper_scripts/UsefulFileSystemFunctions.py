@@ -29,8 +29,7 @@ class DataTypeStr:
 class InputFormat(Enum):
 
     ICGC = "ICGC"
-    tXRSeqBigWig = "tXR-seqBigWig"
-    tXRSeqBed = "tXR-seqBed"
+    tXRSeq = "tXR-seq"
     customBed = "customBed"
 
 
