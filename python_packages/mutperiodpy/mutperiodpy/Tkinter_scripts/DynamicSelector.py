@@ -21,7 +21,13 @@ class DynamicSelector(tk.Frame):
         self.currentDisplayKey = None # The current active display.  Helps prevent unnecessary dispaly switching.
         self.defaultDisplayKey = None # Determines which display starts as active.
 
-    def getCurrentDisplay(self): return self.dynamicDisplays[self.currentDisplayKey]
+    def getCurrentDisplay(self): 
+        
+        # Check to see if we actually have a display for the given key, and initialize an empty display if necessary.
+        if not self.currentDisplayKey in self.dynamicDisplays:
+            self.initDisplay(self.currentDisplayKey)
+
+        return self.dynamicDisplays[self.currentDisplayKey]
 
     # Gives me confidence I am accessing Tkinter's strange variable system correctly.
     def getControllerVar(self): return self.controllerVar.get()
@@ -56,7 +62,7 @@ class DynamicSelector(tk.Frame):
         defaultDisplayKey = options[0]
 
 
-    def initCheckboxController(self, labelText):
+    def initCheckboxController(self, labelText, default = 0):
         "Initialize a checkbox as the controller for what dynamic content is displayed."
 
         # Make sure we haven't already initialized another controller
@@ -68,6 +74,8 @@ class DynamicSelector(tk.Frame):
 
         checkbox = tk.Checkbutton(self, text = labelText, variable = self.controllerVar, command = self.checkController)
         checkbox.grid(row = 0, column = 0, pady = 3, sticky = tk.W)
+
+        if default != 0: checkbox.select()
 
 
     def initDisplay(self, displayKey, selectionsID = None, row = 1, column = 0, columnSpan = 1, workingDirectory = None):
