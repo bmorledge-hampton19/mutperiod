@@ -165,7 +165,8 @@ def generateFilePath(directory = None, dataGroup = None, context = None, linkerO
 
 # Generates a .metadata file from the given information.
 def generateMetadata(dataGroupName, associatedGenome, associatedNucleosomePositions, 
-                     localParentDataPath, inputFormat, metadataDirectory, *cohorts):
+                     localParentDataPath, inputFormat, metadataDirectory, callParamsFilePath = None,
+                     *cohorts):
 
     # Open up the metadata file.
     with open(os.path.join(metadataDirectory,".metadata"), 'w') as metadataFile:
@@ -182,6 +183,9 @@ def generateMetadata(dataGroupName, associatedGenome, associatedNucleosomePositi
         metadataFile.write("inputFormat: " + inputFormat.value + '\n')
 
         metadataFile.write("dateTime:\t" + str(datetime.datetime.now()).rsplit(':',1)[0] + '\n')
+
+        if callParamsFilePath is not None:
+            metadataFile.write("callParamsFilePath:\t" + callParamsFilePath + '\n')
 
         if len(cohorts) > 0:
             metadataFile.write("cohorts:\t")
@@ -225,10 +229,11 @@ class Metadata:
 
 
     # Search the metadata for a value paired to a given key.
-    def getMetadataByKey(self, key):
+    def getMetadataByKey(self, key, enforceKey = True):
 
         if not key in self.metadata:
-            raise ValueError("Identifier " + key + " not found in metadata.")
+            if enforceKey: raise ValueError("Identifier " + key + " not found in metadata.")
+            else: return None
         
         return self.metadata[key]
     
@@ -250,6 +255,8 @@ class Metadata:
         self.directory: str = self.getMetadataByKey("metadataDirectory")
 
         self.dateTime: str = self.getMetadataByKey("dateTime")
+
+        self.callParamsFilePath: str = self.getMetadataByKey("callParamsFilePath", False)
 
         self.cohorts = list()
         if self.getMetadataByKey("cohorts") != "None":
