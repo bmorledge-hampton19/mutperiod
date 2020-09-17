@@ -134,6 +134,9 @@ def writeLesions(fastaReadsFilePath, lesionsBedFilePath, expectedLocationsByLeng
 
                     if lesionLocation is not None:
                         
+                        # IMPORTANT: If the sequence is on the minus strand, the location needs to be inverted with respect to the fragment
+                        # because reverse complement and stuff.
+                        if fastaEntry.strand == '-': lesionLocation = len(fastaEntry.sequence) - (lesionLocation + 1)
 
                         bedEntry = '\t'.join((fastaEntry.sequenceLocation[0],
                                                 str(int(fastaEntry.sequenceLocation[1]) + lesionLocation),
