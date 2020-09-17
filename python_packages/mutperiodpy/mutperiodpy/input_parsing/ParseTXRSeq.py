@@ -1,4 +1,4 @@
-# This script takes the repair map data from tXR-Seq and converts it to a trinucleotide context
+# This script takes the repair map data from tXR-Seq, calls BPDE lesions, and writes them to a bed file.
 # file of estimated lesion locations.
 
 from typing import List
@@ -41,7 +41,7 @@ def getMinAdjustedCountValue(tXRSeqBedGraphReadsFilePath):
 # Also, convert normalized counts to actual counts and swap out the counts column for duplicated entries with multiple counts.
 # The input format should be a bedGraph file.
 def trimBedGraphTXRSeqData(tXRSeqBedGraphReadsFilePathPair: List[str], trimmedReadsFilePath, minAdjustedCountValue, 
-                           minReadLength = 26, maxReadLength = 28, roundingErrorLeniency = 0.01):
+                           acceptableLengths, roundingErrorLeniency = 0.01):
     
    with open(trimmedReadsFilePath, 'w') as trimmedReadsFile:
 
@@ -60,7 +60,7 @@ def trimBedGraphTXRSeqData(tXRSeqBedGraphReadsFilePathPair: List[str], trimmedRe
 
                     # Make sure we have a valid read length
                     readLength = int(choppedUpLine[2]) - int(choppedUpLine[1])
-                    if not (readLength < minReadLength or readLength > maxReadLength):
+                    if readLength in acceptableLengths:
 
                         # determine the actual counts for the current entry to enter it that many times in the output file.
                         counts = float(choppedUpLine[3]) / minAdjustedCountValue
@@ -79,7 +79,7 @@ def trimBedGraphTXRSeqData(tXRSeqBedGraphReadsFilePathPair: List[str], trimmedRe
 # Create a new reads file which filters out any reads with a length greater than 28 or less than 26.
 # Also, replace the columns with the read ID and score with NA.
 # The input format should be a bed file.
-def trimBedTXRSeqData(tXRSeqBedReadsFilePath: str, trimmedReadsFilePath, minReadLength = 26, maxReadLength = 28):
+def trimBedTXRSeqData(tXRSeqBedReadsFilePath: str, trimmedReadsFilePath, acceptableLengths):
     
    with open(trimmedReadsFilePath, 'w') as trimmedReadsFile:
 
@@ -94,51 +94,54 @@ def trimBedTXRSeqData(tXRSeqBedReadsFilePath: str, trimmedReadsFilePath, minRead
 
                 # Make sure we have a valid read length
                 readLength = int(choppedUpLine[2]) - int(choppedUpLine[1])
-                if not (readLength < minReadLength or readLength > maxReadLength):
+                if readLength in acceptableLengths:
                     
                     # Write the data
                     trimmedReadsFile.write('\t'.join((choppedUpLine[0],choppedUpLine[1],choppedUpLine[2],'NA','NA',choppedUpLine[5])) + '\n')
 
 
-# Given a nucleotide sequence, find the most probable location of the BPDE-dG lesion.
-# The lesion 3' shift value is the number of bases to shift from the 3' end to determine the expected lesion location.
-#    A value of 1 indicates the first base at the 3' end.
-# The exclusion values represent how many bases around the expected lesion location should be free of G's for the lesion 
-#    to be considered valid.
+# Given a nucleotide sequence, do the conditions suggest a lesion is present?
+# The search location indicates the position to look for the lesion relative to one end of the sequence.
+#    A value of 1 indicates the first base at the 5' end, while a value of -1 indicates the first base at the 3' end.
 # The function outputs the index of the lesion in the input sequence if it is found or "None" if it is not.
-def findBPDEdGLesion(sequence, lesionThreePrimeShift = 7, upstreamExclusion = 0, downstreamExclusion = 0):
+def searchForLesion(sequence, expectedLocation, acceptableBases):
 
-    if sequence[-lesionThreePrimeShift] != 'G': return None
+    assert expectedLocation != 0
+    assert abs(expectedLocation) <= len(sequence), ("Sequence of length {} does not have a {} position.".
+                                                    format(len(sequence), expectedLocation))
 
-    for i in range(-lesionThreePrimeShift - upstreamExclusion, -lesionThreePrimeShift):
-        if sequence[i] == 'G': return None
+    if expectedLocation > 0: expectedLocation -= 1
 
-    for i in range(-lesionThreePrimeShift + 1, -lesionThreePrimeShift + downstreamExclusion + 1):
-        if sequence[i] == 'G': return None
+    if sequence[expectedLocation] not in acceptableBases: return None
 
-    return len(sequence) - lesionThreePrimeShift
+    else:
+        if expectedLocation >= 0: return expectedLocation
+        else: return len(sequence) + expectedLocation
 
 
 # From a given fasta file of reads, find likely BPDE-dG lesions and write their
-# location and trinuc context to a bed file.
-def writeTrinucLesions(fastaReadsFilePath, trinucLesionsFilePath):
+# location to a bed file.
+def writeLesions(fastaReadsFilePath, lesionsBedFilePath, expectedLocationsByLength, acceptableBasesByLength):
 
     with open(fastaReadsFilePath, 'r') as fastaReadsFile:
-        with open(trinucLesionsFilePath, 'w') as trinucLesionsFile:
+        with open(lesionsBedFilePath, 'w') as lesionsBedFile:
 
-            # Look for lesions in each fasta entry and write them to the trinuc file.
+            # Look for lesions in each fasta entry and write them to the bed file.
             for fastaEntry in FastaFileIterator(fastaReadsFile):
+                for expectedLocation in expectedLocationsByLength[len(fastaEntry.sequence)]:
 
-                lesionLocation = findBPDEdGLesion(fastaEntry.sequence)
+                    lesionLocation = searchForLesion(fastaEntry.sequence, expectedLocation, acceptableBasesByLength[len(fastaEntry.sequence)])
 
-                if lesionLocation is not None:
-                    trinucEntry = '\t'.join((fastaEntry.sequenceLocation[0],
-                                             str(int(fastaEntry.sequenceLocation[1]) + lesionLocation),
-                                             str(int(fastaEntry.sequenceLocation[1]) + lesionLocation + 1),
-                                             fastaEntry.sequence[lesionLocation-1:lesionLocation+2],
-                                             "OTHER",
-                                             fastaEntry.sequenceLocation[3])) + '\n'
-                    trinucLesionsFile.write(trinucEntry)
+                    if lesionLocation is not None:
+                        
+
+                        bedEntry = '\t'.join((fastaEntry.sequenceLocation[0],
+                                                str(int(fastaEntry.sequenceLocation[1]) + lesionLocation),
+                                                str(int(fastaEntry.sequenceLocation[1]) + lesionLocation + 1),
+                                                fastaEntry.sequence[lesionLocation],
+                                                "OTHER",
+                                                fastaEntry.sequenceLocation[3])) + '\n'
+                        lesionsBedFile.write(bedEntry)
 
 
 # Given a file path, looks for the complementary file path (with the opposite strand designation) and returns both as a tuple.
@@ -165,11 +168,27 @@ def getFilePathPair(filePath: str) -> str:
 # and converts them to the output format.
 class TXRSeqInputDataPipeline:
 
-    def __init__(self, inputDataFilePath: str, genomeFilePath: str, nucPosFilePath: str):
+    def __init__(self, inputDataFilePath: str, callParamsFilePath: str, genomeFilePath: str, nucPosFilePath: str):
 
         self.inputDataFilePath = inputDataFilePath
         self.genomeFilePath = genomeFilePath
         self.nucPosFilePath = nucPosFilePath
+
+        # Read in information from the callParams File.
+        self.callParamsFilePath = callParamsFilePath
+        self.expectedLocationsByLength = dict()
+        self.acceptableBasesByLength = dict()
+
+        with open(self.callParamsFilePath, 'r') as callParamsFile:
+            for line in callParamsFile:
+
+                choppedUpLine: List[str] = line.strip().split('\t')
+
+                sequenceLength = int(choppedUpLine[0])
+                assert sequenceLength not in self.expectedLocationsByLength
+
+                self.expectedLocationsByLength[sequenceLength] = [int(location) for location in choppedUpLine[1].split(',')]
+                self.acceptableBasesByLength[sequenceLength] = choppedUpLine[2].split(',')
 
         # Initialize these values as empty until we know what form the input data is in.
         self.bigWigReadsFilePathPair = None
@@ -214,15 +233,15 @@ class TXRSeqInputDataPipeline:
                 self.bedGraphReadsFilePathPair.append(os.path.join(intermediateFilesDirectory,
                                                                    os.path.basename(bigWigReadsFilePath).rsplit('.',1)[0]+".bedGraph"))
 
-        # Generate the trimmed reads output, the fasta output, and trinuc lesions output file paths.
+        # Generate the trimmed reads output, the fasta output, and bed output file paths.
         self.trimmedReadsFilePath = os.path.join(intermediateFilesDirectory,dataGroupName+"_trimmed_reads.bed")
         self.fastaReadsFilePath = os.path.join(intermediateFilesDirectory,dataGroupName+"_fasta_reads.fa")
-        self.trinucLesionsFilePath = generateFilePath(directory = localRootDirectory, dataGroup = dataGroupName,
-                                                      context = "trinuc", dataType = DataTypeStr.mutations, fileExtension = ".bed") 
+        self.lesionsBedFilePath = generateFilePath(directory = localRootDirectory, dataGroup = dataGroupName,
+                                                      context = "singlenuc", dataType = DataTypeStr.mutations, fileExtension = ".bed") 
 
         # Generate metadata
         generateMetadata(dataGroupName, getIsolatedParentDir(self.genomeFilePath), getIsolatedParentDir(self.nucPosFilePath),
-                         os.path.basename(self.inputDataFilePath), InputFormat.tXRSeq, localRootDirectory)
+                         os.path.basename(self.inputDataFilePath), InputFormat.tXRSeq, localRootDirectory, self.callParamsFilePath)
 
     
     # Generates a bed file of trimmed reads, a process which is dependent on the input format given in the class's initialization.
@@ -230,7 +249,7 @@ class TXRSeqInputDataPipeline:
         
         # If the input data is in bed format, generate the trimmed reads from that data.
         if self.bedInputFilePath is not None:
-            trimBedTXRSeqData(self.bedInputFilePath, self.trimmedReadsFilePath)
+            trimBedTXRSeqData(self.bedInputFilePath, self.trimmedReadsFilePath, self.acceptableBasesByLength.keys())
 
         # Otherwise, generate the trimmed reads from bedGraph data.
         else:
@@ -243,40 +262,42 @@ class TXRSeqInputDataPipeline:
 
             # Generate the trimmed reads.
             trimBedGraphTXRSeqData(self.bedGraphReadsFilePathPair, self.trimmedReadsFilePath, 
-                                   getMinAdjustedCountValue(self.bedGraphReadsFilePathPair[0]))
+                                   getMinAdjustedCountValue(self.bedGraphReadsFilePathPair[0]),
+                                   self.acceptableBasesByLength.keys())
 
         self.readsHaveBeenTrimmed = True
 
     
-    # Generates the trinuc output file that contains the locations of estimated lesion location and their trinuc context.
-    def generateTrinucLesionsOutputFile(self):
+    # Generates the output file that contains the locations of estimated lesions.
+    def generateLesionsBedOutputFile(self):
 
         if not self.readsHaveBeenTrimmed: raise ValueError("Trying to generate final output without trimmed reads.")
 
         # Convert the trimmed file to fasta format to get the sequences associated with each read.
         bedToFasta(self.trimmedReadsFilePath, self.genomeFilePath, self.fastaReadsFilePath)
 
-        # Find the lesions and write them in their trinuc context to the final output file.
-        writeTrinucLesions(self.fastaReadsFilePath, self.trinucLesionsFilePath)
+        # Find the lesions and write them to the final output file.
+        writeLesions(self.fastaReadsFilePath, self.lesionsBedFilePath, 
+                     self.expectedLocationsByLength, self.acceptableBasesByLength)
 
-        # Sort the trinuc context file.
-        subprocess.run(" ".join(("sort","-k1,1","-k2,2n", self.trinucLesionsFilePath,"-o", self.trinucLesionsFilePath)), 
+        # Sort the output file.
+        subprocess.run(" ".join(("sort","-k1,1","-k2,2n", self.lesionsBedFilePath,"-o", self.lesionsBedFilePath)), 
                        shell = True, check = True)    
 
 
-def parseTXRSeq(inputDataFilePaths, genomeFilePath, nucPosFilePath):
+def parseTXRSeq(inputDataFilePaths, callParamsFilePath, genomeFilePath, nucPosFilePath):
 
     # Use the TXRSeqInputDataPipeline object to convert the input data to the output data!
     for inputDataFilePath in inputDataFilePaths:
 
         print("\nWorking with:",os.path.basename(inputDataFilePath))
-        tXRSeqInputDataPipeline = TXRSeqInputDataPipeline(inputDataFilePath, genomeFilePath, nucPosFilePath)
+        tXRSeqInputDataPipeline = TXRSeqInputDataPipeline(inputDataFilePath, callParamsFilePath, genomeFilePath, nucPosFilePath)
 
         print("Generating trimmed reads bed file...")
         tXRSeqInputDataPipeline.generateTrimmedReads()
 
         print("Locating and writing lesion locations to final output file...")
-        tXRSeqInputDataPipeline.generateTrinucLesionsOutputFile()
+        tXRSeqInputDataPipeline.generateLesionsBedOutputFile()
  
 
 if __name__ == "__main__":
@@ -287,9 +308,15 @@ if __name__ == "__main__":
                                       "+.bigWig",("BigWig Files",".bigWig"))
     dialog.createMultipleFileSelector("tXR-seq bed data (alternative to bigwig):",1,
                                       "aligned_reads.bed",("Bed Files",".bed"))
-    dialog.createFileSelector("Human Genome Fasta File:",2,("Fasta Files",".fa"))
-    dialog.createFileSelector("Strongly Positioned Nucleosome File:",3,("Bed Files",".bed"))                    
-    dialog.createExitButtons(4,0)
+
+    callParamsSelector = dialog.createDynamicSelector(2,0)      
+    callParamsSelector.initCheckboxController("Use Default Lesion Call Parameters", 1)
+    callParamsSelector.initDisplay(0, "Non-Default").createFileSelector("Lesion Call Parameter File:", 0, ("Tab Seperated Values",".tsv"))
+    callParamsSelector.initDisplayState()
+
+    dialog.createFileSelector("Human Genome Fasta File:",3,("Fasta Files",".fa"))
+    dialog.createFileSelector("Strongly Positioned Nucleosome File:",4,("Bed Files",".bed"))
+    dialog.createExitButtons(5,0)
 
     # Run the UI
     dialog.mainloop()
@@ -304,4 +331,7 @@ if __name__ == "__main__":
     genomeFilePath = list(selections.getIndividualFilePaths())[0]
     nucPosFilePath = list(selections.getIndividualFilePaths())[1]
 
-    parseTXRSeq(tXRSeqBigWigPlusReadsFilePaths + tXRSeqBedReadsFilePaths, genomeFilePath, nucPosFilePath)
+    if callParamsSelector.getControllerVar(): callParamsFilePath = os.path.join(os.path.dirname(os.path.abspath(__file__)),"default_BPDE_lesion_calling.tsv")
+    else: callParamsFilePath = selections.getIndividualFilePaths("Non-Default")[0]
+
+    parseTXRSeq(tXRSeqBigWigPlusReadsFilePaths + tXRSeqBedReadsFilePaths, callParamsFilePath, genomeFilePath, nucPosFilePath)
