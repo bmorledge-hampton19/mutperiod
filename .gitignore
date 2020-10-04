@@ -176,16 +176,25 @@ docs/
 
 
 ##### My Ignores #####
-# Data Files
-data/
+# Data files
+nucperiod_data/
 
-# Ignores "at least" R package source files
+# VSC workspace files
+*.code-workspace
+
+# "At least" R package source files
 *.tar.gz
 
-# Ignore test scripts
-R_packages/RunNucPeriod/PlotTests.R
-python_packages/mutperiodpy/test.py
-python_packages/mutperiodpy/test.ipynb
+# Test scripts
+python_packages/nucperiod/test.py
+python_packages/nucperiod/test.ipynb
 
-# Misc. Ignores
+# Files from building debian source package
+python_packages/*.dsc
+python_packages/*source.build
+python_packages/*source.buildinfo
+python_packages/*source.changes
+python_packages/*source.ppa.upload
+
+# Misc.
 python_packages/nucperiod/nucperiodpy/helper_scripts/data_dir.txt
