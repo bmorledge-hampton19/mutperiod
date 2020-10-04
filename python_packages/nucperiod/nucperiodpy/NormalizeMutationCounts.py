@@ -69,7 +69,7 @@ def normalizeCounts(backgroundCountsFilePaths: List[str]):
     return normalizedCountsFilePaths
 
 
-if __name__ == "__main__":
+def main():
 
     #Create the Tkinter UI
     dialog = TkinterDialog(workingDirectory=dataDirectory)
@@ -88,3 +88,5 @@ if __name__ == "__main__":
     backgroundCountsFilePaths = list(selections.getFilePathGroups())[0] # A list of background mutation counts file paths
 
     normalizeCounts(backgroundCountsFilePaths)
+
+if __name__ == "__main__": main()

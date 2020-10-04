@@ -273,7 +273,7 @@ def generateMutationBackground(mutationFilePaths, backgroundContextNum):
     return mutationBackgroundFilePaths
 
 
-if __name__ == "__main__":
+def main():
 
     #Create the Tkinter UI
     dialog = TkinterDialog(workingDirectory=dataDirectory)
@@ -302,3 +302,5 @@ if __name__ == "__main__":
     else: raise ValueError("Matching strings is hard.")
 
     generateMutationBackground(mutationFilePaths, backgroundContextNum)
+
+if __name__ == "__main__": main()

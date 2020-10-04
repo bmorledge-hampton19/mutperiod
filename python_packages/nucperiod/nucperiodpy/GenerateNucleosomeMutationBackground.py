@@ -281,7 +281,8 @@ def generateNucleosomeMutationBackground(mutationBackgroundFilePaths, useSingleN
     return nucleosomeMutationBackgroundFilePaths
 
 
-if __name__ == "__main__":
+def main():
+
     #Create the Tkinter UI
     dialog = TkinterDialog(workingDirectory=dataDirectory)
     dialog.createMultipleFileSelector("Mutation Background Files:",0,DataTypeStr.mutBackground + ".tsv",("Tab Seperated Values Files",".tsv"))
@@ -318,3 +319,5 @@ if __name__ == "__main__":
 
     generateNucleosomeMutationBackground(mutationBackgroundFilePaths, useSingleNucRadius, 
                                          useNucGroupRadius, linkerOffset)
+
+if __name__ == "__main__": main()

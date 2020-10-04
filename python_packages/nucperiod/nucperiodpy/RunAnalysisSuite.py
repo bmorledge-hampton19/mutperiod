@@ -12,84 +12,88 @@ from nucperiodpy.CountNucleosomePositionMutations import countNucleosomePosition
 from nucperiodpy.NormalizeMutationCounts import normalizeCounts
 
 
-# Create the Tkinter dialog.
-dialog = TkinterDialog(workingDirectory=dataDirectory)
-dialog.createMultipleFileSelector("Bed Mutation Files:",0,DataTypeStr.mutations + ".bed",("Bed Files",".bed"))
-dialog.createDropdown("Background Context",1,0,("Trinuc","Singlenuc", "Pentanuc"))
+def main():
 
-selectNucleosomeDyadRadius = dialog.createDynamicSelector(2,0)
-selectNucleosomeDyadRadius.initCheckboxController("Run analysis with a single nucleosome dyad radius (73 bp)")
-linkerSelectionDialog = selectNucleosomeDyadRadius.initDisplay(1, "singleNuc")
-linkerSelectionDialog.createCheckbox("Include 30 bp linker DNA on either side of single nucleosome dyad radius.",0,0)
-selectNucleosomeDyadRadius.initDisplay(0)
-selectNucleosomeDyadRadius.initDisplayState()
+    # Create the Tkinter dialog.
+    dialog = TkinterDialog(workingDirectory=dataDirectory)
+    dialog.createMultipleFileSelector("Bed Mutation Files:",0,DataTypeStr.mutations + ".bed",("Bed Files",".bed"))
+    dialog.createDropdown("Background Context",1,0,("Trinuc","Singlenuc", "Pentanuc"))
 
-dialog.createCheckbox("Count with a nucleosome group radius (1000 bp)", 3, 0)
+    selectNucleosomeDyadRadius = dialog.createDynamicSelector(2,0)
+    selectNucleosomeDyadRadius.initCheckboxController("Run analysis with a single nucleosome dyad radius (73 bp)")
+    linkerSelectionDialog = selectNucleosomeDyadRadius.initDisplay(1, "singleNuc")
+    linkerSelectionDialog.createCheckbox("Include 30 bp linker DNA on either side of single nucleosome dyad radius.",0,0)
+    selectNucleosomeDyadRadius.initDisplay(0)
+    selectNucleosomeDyadRadius.initDisplayState()
 
-dialog.createExitButtons(4,0)
+    dialog.createCheckbox("Count with a nucleosome group radius (1000 bp)", 3, 0)
 
-# Run the UI
-dialog.mainloop()
+    dialog.createExitButtons(4,0)
 
-# If no input was received (i.e. the UI was terminated prematurely), then quit!
-if dialog.selections is None: quit()
+    # Run the UI
+    dialog.mainloop()
 
-# Get the user's input from the dialog.
-selections: Selections = dialog.selections
-mutationFilePaths: List[str] = list(selections.getFilePathGroups())[0] # A list of paths to bed mutation files
-backgroundContext = list(selections.getDropdownSelections())[0] # The context to be used when generating the background
-useSingleNucRadius = selectNucleosomeDyadRadius.getControllerVar() # Whether or not to generate data with a 73 bp single nuc dyad radius
-if useSingleNucRadius: 
-    includeLinker = list(selections.getToggleStates("singleNuc"))[0] # Whether or not to include 30 bp linker DNA in nucleosome dyad positions
-useNucGroupRadius = selections.getToggleStates()[0] # Whether or not to generate data with a 1000 bp nuc group dyad radius
+    # If no input was received (i.e. the UI was terminated prematurely), then quit!
+    if dialog.selections is None: quit()
 
-# Make sure at least one radius was selected.
-if not useNucGroupRadius and not useSingleNucRadius:
-    raise ValueError("Must select at least one radius.")
+    # Get the user's input from the dialog.
+    selections: Selections = dialog.selections
+    mutationFilePaths: List[str] = list(selections.getFilePathGroups())[0] # A list of paths to bed mutation files
+    backgroundContext = list(selections.getDropdownSelections())[0] # The context to be used when generating the background
+    useSingleNucRadius = selectNucleosomeDyadRadius.getControllerVar() # Whether or not to generate data with a 73 bp single nuc dyad radius
+    if useSingleNucRadius: 
+        includeLinker = list(selections.getToggleStates("singleNuc"))[0] # Whether or not to include 30 bp linker DNA in nucleosome dyad positions
+    useNucGroupRadius = selections.getToggleStates()[0] # Whether or not to generate data with a 1000 bp nuc group dyad radius
 
-# Convert background context to int
-if backgroundContext == "Singlenuc":
-    backgroundContextNum = 1
-elif backgroundContext == "Trinuc":
-    backgroundContextNum = 3
-elif backgroundContext == "Pentanuc":
-    backgroundContextNum = 5
-else: raise ValueError("Matching strings is hard.")
+    # Make sure at least one radius was selected.
+    if not useNucGroupRadius and not useSingleNucRadius:
+        raise ValueError("Must select at least one radius.")
 
-# Set the linker offset
-if includeLinker: linkerOffset = 30
-else: linkerOffset = 0
+    # Convert background context to int
+    if backgroundContext == "Singlenuc":
+        backgroundContextNum = 1
+    elif backgroundContext == "Trinuc":
+        backgroundContextNum = 3
+    elif backgroundContext == "Pentanuc":
+        backgroundContextNum = 5
+    else: raise ValueError("Matching strings is hard.")
 
-### Ensure that every mutation file has a context sufficient for the requested background.
+    # Set the linker offset
+    if includeLinker: linkerOffset = 30
+    else: linkerOffset = 0
 
-# Returns the number associated with the context of the given mutation file.
-def determineMutationFileContext(mutationFilePath: str):
+    ### Ensure that every mutation file has a context sufficient for the requested background.
 
-    if mutationFilePath.endswith("singlenuc_context_mutations.bed"): return 1
-    elif mutationFilePath.endswith("trinuc_context_mutations.bed"): return 3
-    elif mutationFilePath.endswith("pentanuc_context_mutations.bed"): return 5
-    else: raise ValueError("Unexpected file ending for " + os.path.basename(mutationFilePath))
+    # Returns the number associated with the context of the given mutation file.
+    def determineMutationFileContext(mutationFilePath: str):
 
-# create a new list of mutation file paths, replacing any with contexts that are too low.
-print("\nExpanding file context where necessary...\n")
-updatedMutationFilePaths = list()
-for mutationFilePath in mutationFilePaths:
-    if determineMutationFileContext(mutationFilePath) < backgroundContextNum:
-        updatedMutationFilePaths += expandContext((mutationFilePath,),backgroundContextNum)
-    else: updatedMutationFilePaths.append(mutationFilePath)
+        if mutationFilePath.endswith("singlenuc_context_mutations.bed"): return 1
+        elif mutationFilePath.endswith("trinuc_context_mutations.bed"): return 3
+        elif mutationFilePath.endswith("pentanuc_context_mutations.bed"): return 5
+        else: raise ValueError("Unexpected file ending for " + os.path.basename(mutationFilePath))
 
-### Run the rest of the analysis.
+    # create a new list of mutation file paths, replacing any with contexts that are too low.
+    print("\nExpanding file context where necessary...\n")
+    updatedMutationFilePaths = list()
+    for mutationFilePath in mutationFilePaths:
+        if determineMutationFileContext(mutationFilePath) < backgroundContextNum:
+            updatedMutationFilePaths += expandContext((mutationFilePath,),backgroundContextNum)
+        else: updatedMutationFilePaths.append(mutationFilePath)
 
-print("\nGenerating genome-wide mutation background...\n")
-mutationBackgroundFilePaths = generateMutationBackground(updatedMutationFilePaths,backgroundContextNum)
+    ### Run the rest of the analysis.
 
-print("\nGenerating nucleosome mutation background...\n")
-nucleosomeMutationBackgroundFilePaths = generateNucleosomeMutationBackground(mutationBackgroundFilePaths, useSingleNucRadius, 
-                                                                             useNucGroupRadius, linkerOffset)
+    print("\nGenerating genome-wide mutation background...\n")
+    mutationBackgroundFilePaths = generateMutationBackground(updatedMutationFilePaths,backgroundContextNum)
 
-print("\nCounting mutations at each dyad position...\n")                                                                             
-nucleosomeMutationCountsFilePaths = countNucleosomePositionMutations(updatedMutationFilePaths, useSingleNucRadius,
-                                                                     useNucGroupRadius, linkerOffset)
+    print("\nGenerating nucleosome mutation background...\n")
+    nucleosomeMutationBackgroundFilePaths = generateNucleosomeMutationBackground(mutationBackgroundFilePaths, useSingleNucRadius, 
+                                                                                useNucGroupRadius, linkerOffset)
 
-print("\nNormalizing counts with nucleosome background data...\n")
-normalizedNucleosomeMutationCountsFilePaths = normalizeCounts(nucleosomeMutationBackgroundFilePaths)
+    print("\nCounting mutations at each dyad position...\n")                                                                             
+    nucleosomeMutationCountsFilePaths = countNucleosomePositionMutations(updatedMutationFilePaths, useSingleNucRadius,
+                                                                        useNucGroupRadius, linkerOffset)
+
+    print("\nNormalizing counts with nucleosome background data...\n")
+    normalizedNucleosomeMutationCountsFilePaths = normalizeCounts(nucleosomeMutationBackgroundFilePaths)
+
+if __name__ == "__main__": main()

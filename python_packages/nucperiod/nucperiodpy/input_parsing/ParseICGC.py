@@ -149,7 +149,7 @@ def parseICGC(ICGCFilePaths, genomeFilePath, nucPosFilePath, separateDonors,
     parseCustomBed(outputBedFilePaths, genomeFilePath, nucPosFilePath, stratifyByMS, stratifyByMutSig, separateDonors)
 
 
-if __name__ == "__main__":
+def main():
 
     #Create the Tkinter UI
     dialog = TkinterDialog(workingDirectory=dataDirectory)
@@ -178,3 +178,5 @@ if __name__ == "__main__":
 
     parseICGC(ICGCFilePaths, genomeFilePath, nucPosFilePath, separateDonors, 
               stratifyByMS, stratifyByMutSig)
+
+if __name__ == "__main__": main()

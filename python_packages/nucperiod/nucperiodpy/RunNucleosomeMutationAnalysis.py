@@ -42,7 +42,7 @@ def runNucleosomeMutationAnalysis(normalizedNucleosomeMutationCountsFilePaths: L
     print("Results can be found at",outputFilePath)
 
 
-if __name__ == "__main__":
+def main():
 
     #Create the Tkinter UI
     dialog = TkinterDialog(workingDirectory=dataDirectory)
@@ -70,3 +70,5 @@ if __name__ == "__main__":
 
     runNucleosomeMutationAnalysis(normalizedNucleosomeMutationCountsFilePaths, outputFilePath,
                                   MSIFilePaths, MSSFilePaths)
+
+if __name__ == "__main__": main()

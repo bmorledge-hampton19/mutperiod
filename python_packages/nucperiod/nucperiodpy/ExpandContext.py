@@ -126,7 +126,7 @@ def expandContext(inputBedFilePaths, expansionContextNum):
     return expandedContextFilePaths
 
 
-if __name__ == "__main__":
+def main():
 
     # Create the Tkinter dialog.
     dialog = TkinterDialog(workingDirectory=dataDirectory)
@@ -155,3 +155,5 @@ if __name__ == "__main__":
     else: raise ValueError("Matching strings is hard.")
 
     expandContext(inputBedFilePaths + trinucContextBedFilePaths, expansionContextNum)
+
+if __name__ == "__main__": main()

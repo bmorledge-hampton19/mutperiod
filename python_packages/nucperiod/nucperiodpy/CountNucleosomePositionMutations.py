@@ -262,7 +262,7 @@ def countNucleosomePositionMutations(mutationFilePaths, countSingleNuc, countNuc
     return nucleosomeMutationCountsFilePaths
 
 
-if __name__ == "__main__":
+def main():
 
     #Create the Tkinter UI
     dialog = TkinterDialog(workingDirectory=dataDirectory)
@@ -299,3 +299,5 @@ if __name__ == "__main__":
     else: linkerOffset = 0
 
     countNucleosomePositionMutations(mutationFilePaths, countSingleNuc, countNucGroup, linkerOffset)
+
+if __name__ == "__main__": main()

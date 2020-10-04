@@ -315,7 +315,7 @@ def parseCustomBed(bedInputFilePaths, genomeFilePath, nucPosFilePath, stratifyBy
             convertToStandardInput(bedInputFilePath, writeManager)
 
 
-if __name__ == "__main__":
+def main():
 
     #Create the Tkinter UI
     dialog = TkinterDialog(workingDirectory=dataDirectory)
@@ -344,3 +344,5 @@ if __name__ == "__main__":
 
     parseCustomBed(bedInputFilePaths, genomeFilePath, nucPosFilePath, stratifyByMS, 
                    stratifyByMutSig, separateIndividualCohorts)
+
+if __name__ == "__main__": main()

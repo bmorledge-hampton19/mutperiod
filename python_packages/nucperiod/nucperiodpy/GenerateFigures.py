@@ -33,7 +33,7 @@ def generateFigures(tsvFilePaths, rdaFilePaths, exportPath, omitOutliers):
                    shell = True, check = True)
 
 
-if __name__ == "__main__":
+def main():
 
     #Create the Tkinter UI
     dialog = TkinterDialog(workingDirectory=dataDirectory)
@@ -68,3 +68,5 @@ if __name__ == "__main__":
     omitOutliers = bool(selections.getToggleStates()[0])
 
     generateFigures(tsvFilePaths, rdaFilePaths, exportPath, omitOutliers)
+
+if __name__ == "__main__": main()
