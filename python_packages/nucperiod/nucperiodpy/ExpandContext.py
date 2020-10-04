@@ -4,7 +4,7 @@
 import os
 from nucperiodpy.Tkinter_scripts.TkinterDialog import TkinterDialog, Selections
 from nucperiodpy.helper_scripts.UsefulBioinformaticsFunctions import bedToFasta, FastaFileIterator
-from nucperiodpy.helper_scripts.UsefulFileSystemFunctions import Metadata, generateFilePath, DataTypeStr, getContext, dataDirectory
+from nucperiodpy.helper_scripts.UsefulFileSystemFunctions import Metadata, generateFilePath, DataTypeStr, getContext, getDataDirectory
 
 
 # Expands the range of each mutation position in the original mutation file to encompass one extra base on either side.
@@ -129,7 +129,7 @@ def expandContext(inputBedFilePaths, expansionContextNum):
 def main():
 
     # Create the Tkinter dialog.
-    dialog = TkinterDialog(workingDirectory=dataDirectory)
+    dialog = TkinterDialog(workingDirectory=getDataDirectory())
     dialog.createLabel("Note: Either single-base or trinuc context bed files will suffice.  Both are not necessary.",0,0,2)
     dialog.createMultipleFileSelector("Single-Base Bed File:",1,"singlenuc_" + DataTypeStr.mutations + ".bed",("Bed Files",".bed"))
     dialog.createMultipleFileSelector("Trinuc Context Bed File:",2,"trinuc_" + DataTypeStr.mutations + ".bed",("Bed Files",".bed"))

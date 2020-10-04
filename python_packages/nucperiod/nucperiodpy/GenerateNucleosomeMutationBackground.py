@@ -5,7 +5,7 @@ import os, subprocess
 from typing import Dict
 from nucperiodpy.Tkinter_scripts.TkinterDialog import TkinterDialog, Selections
 from nucperiodpy.helper_scripts.UsefulBioinformaticsFunctions import bedToFasta, reverseCompliment, FastaFileIterator
-from nucperiodpy.helper_scripts.UsefulFileSystemFunctions import getContext, getLinkerOffset, Metadata, generateFilePath, DataTypeStr, dataDirectory
+from nucperiodpy.helper_scripts.UsefulFileSystemFunctions import getContext, getLinkerOffset, Metadata, generateFilePath, DataTypeStr, getDataDirectory
 
 
 # This function takes a bed file of strongly positioned nucleosomes and expands their coordinates to encompass
@@ -284,7 +284,7 @@ def generateNucleosomeMutationBackground(mutationBackgroundFilePaths, useSingleN
 def main():
 
     #Create the Tkinter UI
-    dialog = TkinterDialog(workingDirectory=dataDirectory)
+    dialog = TkinterDialog(workingDirectory=getDataDirectory())
     dialog.createMultipleFileSelector("Mutation Background Files:",0,DataTypeStr.mutBackground + ".tsv",("Tab Seperated Values Files",".tsv"))
 
     selectSingleNuc = dialog.createDynamicSelector(1,0)

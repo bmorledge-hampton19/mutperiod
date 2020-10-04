@@ -8,7 +8,7 @@ from typing import IO
 from nucperiodpy.Tkinter_scripts.TkinterDialog import TkinterDialog, Selections
 from nucperiodpy.Tkinter_scripts.DynamicSelector import DynamicSelector
 from nucperiodpy.helper_scripts.UsefulBioinformaticsFunctions import baseChromosomes
-from nucperiodpy.helper_scripts.UsefulFileSystemFunctions import (Metadata, generateFilePath, dataDirectory,
+from nucperiodpy.helper_scripts.UsefulFileSystemFunctions import (Metadata, generateFilePath, getDataDirectory,
                                                                   DataTypeStr)
 
 
@@ -265,7 +265,7 @@ def countNucleosomePositionMutations(mutationFilePaths, countSingleNuc, countNuc
 def main():
 
     #Create the Tkinter UI
-    dialog = TkinterDialog(workingDirectory=dataDirectory)
+    dialog = TkinterDialog(workingDirectory=getDataDirectory())
     dialog.createMultipleFileSelector("Mutation Files:",0,"_context_mutations.bed",("Bed Files",".bed"))
     
     selectSingleNuc = dialog.createDynamicSelector(1,0)

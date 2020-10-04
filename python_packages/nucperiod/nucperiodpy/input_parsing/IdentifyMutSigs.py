@@ -2,7 +2,7 @@
 # then assigns the most prominent mutation signature(s) for each cohort.
 
 import subprocess, os
-from nucperiodpy.helper_scripts.UsefulFileSystemFunctions import RPackagesDirectory
+from nucperiodpy.helper_scripts.UsefulFileSystemFunctions import rScriptsDirectory
 
 
 class MutSigIdentifier:
@@ -47,7 +47,7 @@ class MutSigIdentifier:
             self.deconstructSigsInputDataFile.close()
 
         if verbose: print("Calling deconstructSigs to identify mutation signatures")
-        subprocess.run(" ".join(("Rscript",os.path.join(RPackagesDirectory,"RunNucPeriod","GetMutSigs.R"),
+        subprocess.run(" ".join(("Rscript",os.path.join(rScriptsDirectory,"GetMutSigs.R"),
                                 self.deconstructSigsInputDataFilePath, self.deconstructSigsOutputFilePath)), shell = True, check = True)
 
         self.mutSigsIdentified = True

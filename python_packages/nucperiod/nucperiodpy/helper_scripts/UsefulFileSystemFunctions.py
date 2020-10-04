@@ -3,16 +3,61 @@
 import os, datetime
 from enum import Enum
 
+# Get the data directory for nucperiod, creating it from user input if necessary.
+def getDataDirectory():
 
-# The directory for the overarching project
-projectDirectory = os.path.abspath(__file__)
-for i in range(5):
-    projectDirectory = os.path.dirname(projectDirectory)
+    # Check for the text file which should contain the path to the data directory.
+    dataDirectoryTextFilePath = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data_dir.txt")
 
-# Other useful directories
-dataDirectory = os.path.join(projectDirectory, "data")
-externalDataDirectory = os.path.join(dataDirectory, "__external_data")
-RPackagesDirectory = os.path.join(projectDirectory, "R_packages")
+    # If it exists, return the directory path within.
+    if os.path.exists(dataDirectoryTextFilePath):
+        with open(dataDirectoryTextFilePath, 'r') as dataDirectoryTextFile:
+            
+            dataDirectory = dataDirectoryTextFile.readline().strip()
+            
+            # Double check to make sure the data directory is still intact.  
+            # If it isn't, inform the user, and progress through the function to recreate it.
+            if not os.path.exists(dataDirectory):
+                print("Data directory not found at expected location: {}".format(dataDirectory))
+                print("Please select a new location to create a data directory.")
+            else: return dataDirectory
+
+    else:
+
+        # Create a simple dialog to select a new data directory location.
+        from nucperiodpy.Tkinter_scripts.TkinterDialog import TkinterDialog, Selections
+        dialog = TkinterDialog(workingDirectory=dataDirectory)
+        dialog.createFileSelector("Location to create new data directory:",0,("Fasta Files",".fa"))
+
+        # Run the UI
+        dialog.mainloop()
+
+        # If no input was received (i.e. the UI was terminated prematurely), then quit!
+        if dialog.selections is None: quit()
+
+        selections: Selections = dialog.selections
+        dataDirectoryDirectory = selections.getIndividualFilePaths()[0]
+
+        # Make sure a valid directory was given.  Then create the new directory (if it doesn't exist already), 
+        # write it to the text file, and return it!
+        assert os.path.exists(dataDirectoryDirectory), "Given directory does not exist."
+
+        dataDirectory = os.path.join(dataDirectoryDirectory,"nucPeriod_data")
+        checkDirs(dataDirectory)
+        with open(dataDirectoryTextFilePath, 'w') as dataDirectoryTextFile:
+            dataDirectoryTextFile.write(dataDirectory + '\n')
+        return dataDirectory
+
+
+# Get the external data directory, creating it if necessary.
+def getExternalDataDirectory(): 
+    
+    externalDataDirectory = os.path.join(getDataDirectory(), "__external_data")
+    checkDirs(externalDataDirectory)
+    return externalDataDirectory
+
+# The directory containing the R scripts to call the nucperiodR package functionality.
+rScriptsDirectory = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "run_nucperiodR")
 
 # Stores information about data type identifier strings
 class DataTypeStr:
@@ -264,9 +309,9 @@ class Metadata:
         
         ### Get file paths for useful metadata associated files.
 
-        self.genomeFilePath = os.path.join(externalDataDirectory,self.genomeName,self.genomeName+".fa")
+        self.genomeFilePath = os.path.join(getExternalDataDirectory(),self.genomeName,self.genomeName+".fa")
 
-        self.baseNucPosFilePath = os.path.join(externalDataDirectory, self.genomeName,
+        self.baseNucPosFilePath = os.path.join(getExternalDataDirectory(), self.genomeName,
                                                self.nucPosName, self.nucPosName+".bed")
 
         self.parentDataFilePath = os.path.join(self.directory, self.localParentDataPath)

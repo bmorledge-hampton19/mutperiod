@@ -3,8 +3,8 @@
 import os, subprocess
 from typing import List
 from nucperiodpy.Tkinter_scripts.TkinterDialog import TkinterDialog, Selections
-from nucperiodpy.helper_scripts.UsefulFileSystemFunctions import (getLinkerOffset, getContext, dataDirectory, Metadata, 
-                                                                  generateFilePath, DataTypeStr, RPackagesDirectory, checkForNucGroup)
+from nucperiodpy.helper_scripts.UsefulFileSystemFunctions import (getLinkerOffset, getContext, getDataDirectory, Metadata, 
+                                                                  generateFilePath, DataTypeStr, rScriptsDirectory, checkForNucGroup)
 
 
 # Pairs each background file path with its respective raw counts file path.
@@ -60,7 +60,7 @@ def normalizeCounts(backgroundCountsFilePaths: List[str]):
 
         # Pass the path to the file paths to the R script to generate the normalized counts file.
         print("Calling R script to generate normalized counts...")
-        subprocess.run(" ".join(("Rscript",os.path.join(RPackagesDirectory,"RunNucPeriod","NormalizeNucleosomeMutationCounts.R"),
+        subprocess.run(" ".join(("Rscript",os.path.join(rScriptsDirectory,"NormalizeNucleosomeMutationCounts.R"),
                                  rawCountsFilePath,backgroundCountsFilePath,normalizedCountsFilePath)), 
                        shell = True, check = True)
 
@@ -72,7 +72,7 @@ def normalizeCounts(backgroundCountsFilePaths: List[str]):
 def main():
 
     #Create the Tkinter UI
-    dialog = TkinterDialog(workingDirectory=dataDirectory)
+    dialog = TkinterDialog(workingDirectory=getDataDirectory())
     dialog.createMultipleFileSelector("Background Nucleosome Mutation Counts Files:",0,
                                       DataTypeStr.nucMutBackground + ".tsv",("Tab Seperated Values Files",".tsv"))
     dialog.createExitButtons(1,0)

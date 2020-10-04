@@ -3,7 +3,7 @@
 
 import os
 from nucperiodpy.helper_scripts.UsefulBioinformaticsFunctions import reverseCompliment, FastaFileIterator, baseChromosomes
-from nucperiodpy.helper_scripts.UsefulFileSystemFunctions import Metadata, DataTypeStr, generateFilePath, dataDirectory
+from nucperiodpy.helper_scripts.UsefulFileSystemFunctions import Metadata, DataTypeStr, generateFilePath, getDataDirectory
 from nucperiodpy.Tkinter_scripts.TkinterDialog import TkinterDialog, Selections
 
 
@@ -276,7 +276,7 @@ def generateMutationBackground(mutationFilePaths, backgroundContextNum):
 def main():
 
     #Create the Tkinter UI
-    dialog = TkinterDialog(workingDirectory=dataDirectory)
+    dialog = TkinterDialog(workingDirectory=getDataDirectory())
     dialog.createMultipleFileSelector("Bed Mutation Files:",0,DataTypeStr.mutations + ".bed",("Bed Files",".bed"))
     dialog.createDropdown("Background Context",1,0,("Trinuc","Singlenuc", "Pentanuc"))
     dialog.createExitButtons(2,0)

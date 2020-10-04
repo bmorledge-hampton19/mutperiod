@@ -19,7 +19,7 @@
 import os, subprocess
 from typing import List
 from nucperiodpy.Tkinter_scripts.TkinterDialog import TkinterDialog, Selections
-from nucperiodpy.helper_scripts.UsefulFileSystemFunctions import (dataDirectory, getIsolatedParentDir, generateMetadata,
+from nucperiodpy.helper_scripts.UsefulFileSystemFunctions import (getDataDirectory, getIsolatedParentDir, generateMetadata,
                                                                   generateFilePath, Metadata, checkDirs, InputFormat)
 from nucperiodpy.helper_scripts.UsefulBioinformaticsFunctions import (bedToFasta, FastaFileIterator, baseChromosomes,
                                                                       isPurine, reverseCompliment)
@@ -269,7 +269,7 @@ def parseCustomBed(bedInputFilePaths, genomeFilePath, nucPosFilePath, stratifyBy
             generateMetadata(os.path.basename(dataDirectory), getIsolatedParentDir(genomeFilePath), getIsolatedParentDir(nucPosFilePath), 
                              os.path.basename(bedInputFilePath), InputFormat.customBed,  os.path.dirname(bedInputFilePath))
 
-        metadata = Metadata(dataDirectory)
+        metadata = Metadata(getDataDirectory())
         intermediateFilesDir = os.path.join(dataDirectory,"intermediate_files")
         checkDirs(intermediateFilesDir)
         autoAcquiredFilePath = os.path.join(intermediateFilesDir,"auto_acquire.fa")
@@ -318,7 +318,7 @@ def parseCustomBed(bedInputFilePaths, genomeFilePath, nucPosFilePath, stratifyBy
 def main():
 
     #Create the Tkinter UI
-    dialog = TkinterDialog(workingDirectory=dataDirectory)
+    dialog = TkinterDialog(workingDirectory=getDataDirectory())
     dialog.createMultipleFileSelector("Custom bed Input Files:",0,"custom_input.bed",("bed files",".bed"))
     dialog.createFileSelector("Genome Fasta File:",1,("Fasta Files",".fa"))
     dialog.createFileSelector("Strongly Positioned Nucleosome File:",2,("Bed Files",".bed"))

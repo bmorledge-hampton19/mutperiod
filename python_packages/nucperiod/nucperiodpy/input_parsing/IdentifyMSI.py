@@ -2,7 +2,7 @@
 # then generates a list of MSI cohorts.
 
 import subprocess, os
-from nucperiodpy.helper_scripts.UsefulFileSystemFunctions import RPackagesDirectory
+from nucperiodpy.helper_scripts.UsefulFileSystemFunctions import rScriptsDirectory
 
 
 class MSIIdentifier:
@@ -46,7 +46,7 @@ class MSIIdentifier:
             self.MSISeqInputDataFile.close()
 
         if verbose: print("Calling MSIseq to generate MSI donor list...")
-        subprocess.run(" ".join(("Rscript",os.path.join(RPackagesDirectory,"RunNucPeriod","FindMSIDonors.R"),
+        subprocess.run(" ".join(("Rscript",os.path.join(rScriptsDirectory,"FindMSIDonors.R"),
                                 self.MSISeqInputDataFilePath, self.MSICohortsFilePath)), shell = True, check = True)
 
         self.MSICohortsIdentified = True
