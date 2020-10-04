@@ -179,22 +179,13 @@ docs/
 # Data Files
 data/
 
-# Dr. Wyrick's Scripts
-scripts/perl_scripts/
-scripts/test.py
-
 # Ignores "at least" R package source files
 *.tar.gz
 
-# Ignore temporary input file and test outputs
-R_packages/RunNucPeriod/inputs.txt
-R_packages/RunNucPeriod/plots.pdf
-
-# Ignore test inputs
-python_packages/test.txt
-
 # Ignore test scripts
 R_packages/RunNucPeriod/PlotTests.R
-R_packages/RunNucPeriod/COSMIC_Mutational_Signatures_v3.1.tsv
 python_packages/mutperiodpy/test.py
 python_packages/mutperiodpy/test.ipynb
+
+# Misc. Ignores
+python_packages/nucperiod/nucperiodpy/helper_scripts/data_dir.txt
