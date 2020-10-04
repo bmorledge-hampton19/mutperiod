@@ -42,7 +42,7 @@ def getDataDirectory():
         # write it to the text file, and return it!
         assert os.path.exists(dataDirectoryDirectory), "Given directory does not exist."
 
-        dataDirectory = os.path.join(dataDirectoryDirectory,"nucPeriod_data")
+        dataDirectory = os.path.join(dataDirectoryDirectory,"nucperiod_data")
         checkDirs(dataDirectory)
         with open(dataDirectoryTextFilePath, 'w') as dataDirectoryTextFile:
             dataDirectoryTextFile.write(dataDirectory + '\n')
