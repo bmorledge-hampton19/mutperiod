@@ -179,6 +179,9 @@ docs/
 # Data files
 nucperiod_data/
 
+# Archived (usually deprecated) files
+archived_stuff/
+
 # VSC workspace files
 *.code-workspace
 
