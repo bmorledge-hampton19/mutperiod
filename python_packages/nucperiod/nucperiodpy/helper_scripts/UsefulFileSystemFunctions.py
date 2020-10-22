@@ -26,8 +26,9 @@ def getDataDirectory():
 
         # Create a simple dialog to select a new data directory location.
         from nucperiodpy.Tkinter_scripts.TkinterDialog import TkinterDialog, Selections
-        dialog = TkinterDialog(workingDirectory=dataDirectory)
-        dialog.createFileSelector("Location to create new data directory:",0,("Fasta Files",".fa"))
+        dialog = TkinterDialog(workingDirectory=os.path.dirname(os.path.dirname((os.path.abspath(__file__)))))
+        dialog.createFileSelector("Location to create new data directory:",0,("Fasta Files",".fa"), directory = True)
+        dialog.createExitButtons(1,0)
 
         # Run the UI
         dialog.mainloop()
