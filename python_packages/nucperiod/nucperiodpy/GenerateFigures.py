@@ -3,7 +3,7 @@
 
 import os, subprocess
 from nucperiodpy.Tkinter_scripts.TkinterDialog import TkinterDialog
-from nucperiodpy.helper_scripts.UsefulFileSystemFunctions import dataDirectory, RPackagesDirectory
+from nucperiodpy.helper_scripts.UsefulFileSystemFunctions import getDataDirectory, rScriptsDirectory
 
 
 def generateFigures(tsvFilePaths, rdaFilePaths, exportPath, omitOutliers):
@@ -17,8 +17,7 @@ def generateFigures(tsvFilePaths, rdaFilePaths, exportPath, omitOutliers):
         exportFileName = os.path.basename(exportPath)
 
     # Create the temporary inputs file to pass to the R script
-    rScriptDirectory = os.path.join(RPackagesDirectory,"RunNucPeriod")
-    inputsFilePath = os.path.join(rScriptDirectory,"inputs.txt")
+    inputsFilePath = os.path.join(rScriptsDirectory,"inputs.txt")
 
     # Write the inputs
     with open(inputsFilePath, 'w') as inputsFile:
@@ -29,14 +28,14 @@ def generateFigures(tsvFilePaths, rdaFilePaths, exportPath, omitOutliers):
 
     # Call the R script to generate the figures.
     print("Calling R script...")
-    subprocess.run(" ".join(("Rscript",os.path.join(rScriptDirectory,"GenerateFigures.R"),inputsFilePath, str(omitOutliers))),
+    subprocess.run(" ".join(("Rscript",os.path.join(rScriptsDirectory,"GenerateFigures.R"),inputsFilePath, str(omitOutliers))),
                    shell = True, check = True)
 
 
 def main():
 
     #Create the Tkinter UI
-    dialog = TkinterDialog(workingDirectory=dataDirectory)
+    dialog = TkinterDialog(workingDirectory=getDataDirectory())
     dialog.createMultipleFileSelector("Nucleosome Counts Files:",0,
                                       "nucleosome_mutation_counts.tsv",("tsv files",".tsv"))
     dialog.createMultipleFileSelector("R Nucleosome Mutation Analysis Files:",1,

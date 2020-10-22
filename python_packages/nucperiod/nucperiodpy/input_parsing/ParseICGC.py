@@ -4,8 +4,8 @@
 import os, gzip, subprocess
 from typing import IO, List
 from nucperiodpy.Tkinter_scripts.TkinterDialog import TkinterDialog, Selections
-from nucperiodpy.helper_scripts.UsefulFileSystemFunctions import (DataTypeStr, generateFilePath, dataDirectory, checkDirs,
-                                                                  generateMetadata, getIsolatedParentDir, RPackagesDirectory, InputFormat)
+from nucperiodpy.helper_scripts.UsefulFileSystemFunctions import (DataTypeStr, generateFilePath, getDataDirectory, checkDirs,
+                                                                  generateMetadata, getIsolatedParentDir, InputFormat)
 from nucperiodpy.helper_scripts.UsefulBioinformaticsFunctions import reverseCompliment, isPurine, baseChromosomes
 from nucperiodpy.input_parsing.ParseCustomBed import parseCustomBed
 
@@ -152,7 +152,7 @@ def parseICGC(ICGCFilePaths, genomeFilePath, nucPosFilePath, separateDonors,
 def main():
 
     #Create the Tkinter UI
-    dialog = TkinterDialog(workingDirectory=dataDirectory)
+    dialog = TkinterDialog(workingDirectory=getDataDirectory())
     dialog.createMultipleFileSelector("ICGC Mutation Files:",0,".tsv.gz",("gzip files",".gz"))
     dialog.createFileSelector("Genome Fasta File:",1,("Fasta Files",".fa"))
     dialog.createFileSelector("Strongly Positioned Nucleosome File:",2,("Bed Files",".bed"))

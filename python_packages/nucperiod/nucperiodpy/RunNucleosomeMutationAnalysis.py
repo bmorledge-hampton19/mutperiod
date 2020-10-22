@@ -3,7 +3,7 @@
 
 import os, subprocess
 from typing import List
-from nucperiodpy.helper_scripts.UsefulFileSystemFunctions import DataTypeStr, dataDirectory, RPackagesDirectory
+from nucperiodpy.helper_scripts.UsefulFileSystemFunctions import DataTypeStr, getDataDirectory, rScriptsDirectory
 from nucperiodpy.Tkinter_scripts.TkinterDialog import TkinterDialog, Selections
 
 
@@ -21,8 +21,7 @@ def runNucleosomeMutationAnalysis(normalizedNucleosomeMutationCountsFilePaths: L
     if not outputFilePath.endswith(".rda"): raise ValueError("Output file should end with \".rda\".")
 
     # Write the inputs to a temporary file to be read by the R script
-    rScriptDirectory = os.path.join(RPackagesDirectory,"RunNucPeriod")
-    inputsFilePath = os.path.join(rScriptDirectory,"inputs.txt")
+    inputsFilePath = os.path.join(rScriptsDirectory,"inputs.txt")
 
     with open(inputsFilePath, 'w') as inputsFile:
         if (len(MSIFilePaths) == 0 and len(MSSFilePaths) == 0):
@@ -36,7 +35,7 @@ def runNucleosomeMutationAnalysis(normalizedNucleosomeMutationCountsFilePaths: L
 
     # Call the R script
     print("Calling R script...")
-    subprocess.run(" ".join(("Rscript",os.path.join(rScriptDirectory,"RunNucleosomeMutationAnalysis.R"),inputsFilePath)),
+    subprocess.run(" ".join(("Rscript",os.path.join(rScriptsDirectory,"RunNucleosomeMutationAnalysis.R"),inputsFilePath)),
                    shell = True, check = True)
 
     print("Results can be found at",outputFilePath)
@@ -45,15 +44,17 @@ def runNucleosomeMutationAnalysis(normalizedNucleosomeMutationCountsFilePaths: L
 def main():
 
     #Create the Tkinter UI
-    dialog = TkinterDialog(workingDirectory=dataDirectory)
+    dialog = TkinterDialog(workingDirectory=getDataDirectory())
     dialog.createMultipleFileSelector("Normalized Nucleosome Mutation Counts files:",0,
                                       DataTypeStr.normNucCounts + ".tsv",("Tab Seperated Values Files",".tsv"))
     dialog.createFileSelector("Output File", 1, ("R Data File", ".rda"), newFile = True)
-    dialog.createMultipleFileSelector("MSI files (optional):",2,
-                                      DataTypeStr.normNucCounts + ".tsv",("Tab Seperated Values Files",".tsv"))
-    dialog.createMultipleFileSelector("MSS files (optional):",3,
-                                      DataTypeStr.normNucCounts + ".tsv",("Tab Seperated Values Files",".tsv"))                                  
-    dialog.createExitButtons(4,0)
+
+    periodicityComparison = dialog.createDynamicSelector(3, 0)
+    periodicityComparison.initCheckboxController("Compare periodicities")
+    periodicityGroups = periodicityComparison.initDisplay("periodicityGroups",True)
+    periodicityGroups.createLabel("Group 1:")
+
+    dialog.createExitButtons(3,0)
 
     # Run the UI
     dialog.mainloop()
