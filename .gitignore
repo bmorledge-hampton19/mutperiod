@@ -201,3 +201,4 @@ python_packages/*source.ppa.upload
 
 # Misc.
 python_packages/nucperiod/nucperiodpy/helper_scripts/data_dir.txt
+python_packages/nucperiod/nucperiodpy/run_nucperiodR/inputs.txt
