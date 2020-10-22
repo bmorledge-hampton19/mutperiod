@@ -1,2 +1,0 @@
-/mnt/f/Bioinformatics_Projects/Mutation_Assymetry_Analysis/data/tXR-seq/BPDE-dG_TXR-seq_SR_to_bed_combined/BPDE-dG_TXR-seq_SR_to_bed_combined_trinuc_normalized_nucleosome_mutation_counts.tsv$/mnt/f/Bioinformatics_Projects/Mutation_Assymetry_Analysis/data/tXR-seq/BPDE-dG_TXR-seq_SR_to_bed_combined/BPDE-dG_TXR-seq_SR_to_bed_combined_trinuc_nuc-group_normalized_nucleosome_mutation_counts.tsv
-/mnt/f/Bioinformatics_Projects/Mutation_Assymetry_Analysis/data/tXR-seq/BPDE-dG_TXR-seq_SR_to_bed_combined/translational_vs_rotational_Hybrid.rda
