@@ -91,3 +91,17 @@ captureOutput = sapply(minorOutPositions, colorInRange, color = "light green", d
 # Color translational positioning
 captureOutput = sapply(linkerPositions, colorInRange, color = "blue", dataCol = dataCol)
 captureOutput = sapply(nucleosomePositions, colorInRange, color = "light green", dataCol = dataCol)
+
+
+
+# Create grouped comparison box plot
+
+group1DataSetNames = sapply(strsplit(basename(nucPeriodData$group1Inputs),"_nucleosome"), function(x) x[1])
+group2DataSetNames = sapply(strsplit(basename(nucPeriodData$group2Inputs),"_nucleosome"), function(x) x[1])
+
+group1SNR = nucPeriodData$periodicityResults[Data_Set %in% group1DataSetNames, SNR]
+group2SNR = nucPeriodData$periodicityResults[Data_Set %in% group2DataSetNames, SNR]
+
+boxplot(group1SNR, group2SNR, main = "Individual SNR values for grouped nucleosome mutation data",
+        names = c("Group 1", "Group 2"), ylab = "Signal to Noise Ratio (SNR)",
+        cex.lab = 2, cex.axis = 1.5, cex.main = 1.25)
