@@ -1,6 +1,7 @@
 # A modular dialog window used to select relevant files and options for a script.
 
 import tkinter as tk
+import tkinter.font as tkFont
 import os
 from tkinter import filedialog
 from typing import List, Dict
@@ -62,9 +63,12 @@ class TkinterDialog(tk.Frame):
         self.createQuitButton(2,2,2)
 
 
-    def createLabel(self, text, row, column, columnSpan = 1, sticky = True):
+    def createLabel(self, text, row, column, columnSpan = 1, sticky = True, header = False):
         "Create a simple text label"
-        label = tk.Label(self, text = text)
+        myFont = tkFont.nametofont("TkDefaultFont").copy()
+        
+        if header: myFont.config(size = "12", weight = "bold")
+        label = tk.Label(self, text = text, font = myFont)
         label.grid(row = row, column = column, columnspan = columnSpan)
         if sticky: label.grid(sticky = tk.W)
 
