@@ -63,6 +63,18 @@ class TkinterDialog(tk.Frame):
         self.createQuitButton(2,2,2)
 
 
+    def createSubDialog(self, row, column = 0, selectionsID = None, columnSpan = 1, workingDirectory = None):
+        "Creates and returns another TkinterDialog within the parent dialog."
+
+        # Create the dialog object.
+        if workingDirectory is None: workingDirectory = self.workingDirectory
+        tkinterDialog = TkinterDialog(master = self, title = None, ID = selectionsID, 
+                                      workingDirectory = workingDirectory) 
+        tkinterDialog.grid(row = row, column = column, columnspan = columnSpan, sticky = tk.W)
+
+        return tkinterDialog
+
+
     def createLabel(self, text, row, column, columnSpan = 1, sticky = True, header = False):
         "Create a simple text label"
         myFont = tkFont.nametofont("TkDefaultFont").copy()
