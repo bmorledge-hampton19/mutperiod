@@ -81,7 +81,7 @@ class DynamicSelector(tk.Frame):
     def initDisplay(self, displayKey, selectionsID = None, row = 1, column = 0, columnSpan = 1, workingDirectory = None):
         "Creates and returns a display corresponding to the given display key, which is a controller variable state."
 
-        from mutperiodpy.Tkinter_scripts.TkinterDialog import TkinterDialog
+        from nucperiodpy.Tkinter_scripts.TkinterDialog import TkinterDialog
 
         # Make sure there is no display under this identifier already.
         if displayKey in self.dynamicDisplays:
