@@ -1,4 +1,4 @@
-library(NucPeriod)
+library(nucperiodR)
 library(data.table)
 
 selectInputAndRun = function(){
