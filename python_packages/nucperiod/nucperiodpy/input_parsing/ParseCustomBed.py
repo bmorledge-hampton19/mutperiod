@@ -269,7 +269,7 @@ def parseCustomBed(bedInputFilePaths, genomeFilePath, nucPosFilePath, stratifyBy
             generateMetadata(os.path.basename(dataDirectory), getIsolatedParentDir(genomeFilePath), getIsolatedParentDir(nucPosFilePath), 
                              os.path.basename(bedInputFilePath), InputFormat.customBed,  os.path.dirname(bedInputFilePath))
 
-        metadata = Metadata(getDataDirectory())
+        metadata = Metadata(dataDirectory)
         intermediateFilesDir = os.path.join(dataDirectory,"intermediate_files")
         checkDirs(intermediateFilesDir)
         autoAcquiredFilePath = os.path.join(intermediateFilesDir,"auto_acquire.fa")
