@@ -45,7 +45,8 @@ class TkinterDialog(tk.Frame):
         self.dropdownVars = list() # A list of stringVars associated with dropdowns
         self.checkboxVars = list() # A list of intVars associated with checkboxes
         self.multipleFileSelectors = list() # A list of MultipleFileSelectors, which contain a list of filePaths.
-        self.dynamicSelectors: List[DynamicSelector] = list() # A list of DynamicSelector objects, which contian TkDialogs of their own.
+        self.dynamicSelectors: List[DynamicSelector] = list() # A list of DynamicSelector objects, which contian TkinterDialog objects of their own.
+        self.subDialogs: List[TkinterDialog] = list() # A list of TkinterDialog objects designated "sub-dialogs"
         self.selections: Selections = None # A selections object to be populated at the end of the dialog
         
 
@@ -72,6 +73,7 @@ class TkinterDialog(tk.Frame):
                                       workingDirectory = workingDirectory) 
         tkinterDialog.grid(row = row, column = column, columnspan = columnSpan, sticky = tk.W)
 
+        self.subDialogs.append(tkinterDialog)
         return tkinterDialog
 
 
@@ -267,7 +269,13 @@ class TkinterDialog(tk.Frame):
         for dynamicSelector in self.dynamicSelectors:
             if dynamicSelector.getCurrentDisplay().ID is not None:
                 dynamicSelector.getCurrentDisplay().generateSelections()
-                self.selections.addSelections(dynamicSelector.getCurrentDisplay().selections)         
+                self.selections.addSelections(dynamicSelector.getCurrentDisplay().selections)      
+
+        # Add any Selections objects from sub-dialogs
+        for subDialog in self.subDialogs:
+            if subDialog.ID is not None:
+                subDialog.generateSelections()
+                self.selections.addSelections(subDialog.selections)
 
         # Destroy the dialog if this is the top level.
         if self.ID == "Toplevel": self.master.destroy()
