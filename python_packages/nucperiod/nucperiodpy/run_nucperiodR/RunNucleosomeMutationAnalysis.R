@@ -37,7 +37,7 @@ if (length(args) == 1) {
   } else if (length(inputs) == 4) {
     
     # Two inputs should mean that the input file contains the counts file paths and the output file path
-    # along with MSI and MSS designations (in that order).
+    # along with 2 file path groups for comparison (in that order).
     generateNucPeriodData(unlist(strsplit(inputs[1],'$',fixed = TRUE)),inputs[2],
                           unlist(strsplit(inputs[3],'$',fixed = TRUE)),
                           unlist(strsplit(inputs[4],'$',fixed = TRUE)),
@@ -45,7 +45,7 @@ if (length(args) == 1) {
     
   } else {
     stop("Invalid number of arguments in input file.  Expected 2 argument for mutation counts and output path, or
-          4 arguments for mutation counts, output path, and MSI/MSS designations.")
+          4 arguments for mutation counts, output path, and 2 file path groups for comparison.")
   }
   
 } else if (length(args) == 0) {

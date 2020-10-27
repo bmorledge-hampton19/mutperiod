@@ -1,6 +1,6 @@
 #' @export
 generateNucPeriodData = function(mutationCountsFilePaths, outputFilePath,
-                                 MSIFilePaths = '', MSSFilePaths = '',
+                                 filePathGroup1 = '', filePathGroup2 = '',
                                  nucleosomeDyadPosCutoff = 60,
                                  nucleosomeMutationCutoff = 5000,
                                  enforceInputNamingConventions = FALSE,
@@ -42,11 +42,11 @@ generateNucPeriodData = function(mutationCountsFilePaths, outputFilePath,
   rawNucleosomeCountsTables = lapply(validRawFilePaths, function(x) data.table::fread(file = x))
   names(rawNucleosomeCountsTables) = getDataSetNames(validRawFilePaths, enforceInputNamingConventions)
 
-  # Prep for MSI vs MSS analysis if the respective file path lists were given.
-  compareMS = (MSIFilePaths != '' && MSSFilePaths != '')
-  if (compareMS) {
-    MSIDataSetNames = sapply(strsplit(basename(MSIFilePaths),"_nucleosome"), function(x) x[1])
-    MSSDataSetNames = sapply(strsplit(basename(MSSFilePaths),"_nucleosome"), function(x) x[1])
+  # Prep for group comparison if the respective file path lists were given.
+  compareGroups = (filePathGroup1 != '' && filePathGroup2 != '')
+  if (compareGroups) {
+    group1DataSetNames = sapply(strsplit(basename(filePathGroup1),"_nucleosome"), function(x) x[1])
+    group2DataSetNames = sapply(strsplit(basename(filePathGroup2),"_nucleosome"), function(x) x[1])
   }
 
   normalizedNucleosomeCountsTables = vector("list",length(validFilePaths))
@@ -110,34 +110,33 @@ generateNucPeriodData = function(mutationCountsFilePaths, outputFilePath,
                                               PValue=periodicityPValues,SNR=periodicitySNRs)
 
   # Run the SNR wilcoxin's test if necessary.
-  if (compareMS) {
+  if (compareGroups) {
 
-    print("Comparing periodicity results based on microsatellite stability.")
+    print("Comparing periodicity results between given groups.")
 
-    MSS_SNR = periodicityResults[Data_Set %in% MSSDataSetNames, SNR]
-    MSI_SNR = periodicityResults[Data_Set %in% MSIDataSetNames, SNR]
+    group1SNR = periodicityResults[Data_Set %in% group1DataSetNames, SNR]
+    group2SNR = periodicityResults[Data_Set %in% group2DataSetNames, SNR]
 
-    if ( length(MSS_SNR) + length(MSI_SNR) > nrow(periodicityResults)) {
-      warning("The sum of the MSS and MSI Data is greater than the total number of SNR values")
-    } else if ( length(MSS_SNR) + length(MSI_SNR) < nrow(periodicityResults)) {
-      warning("The sum of the MSS and MSI Data is less than the total number of SNR values")
+    if ( length(group1SNR) + length(group2SNR) > nrow(periodicityResults)) {
+      warning("The number of the group1 and group2 combined SNR values is greater than the total number of SNR values")
+    } else if ( length(group1SNR) + length(group2SNR) < nrow(periodicityResults)) {
+      warning("The number of the group1 and group2 combined SNR values is less than the total number of SNR values")
     }
 
-    wilcoxinResult = wilcox.test(MSS_SNR, MSI_SNR)
+    wilcoxinResult = wilcox.test(group1SNR, group2SNR)
     print(paste("wilcoxin test p-value:", wilcoxinResult$p.value))
 
   }
 
   # Create the data object to return
-  nucPeriodData = list(dyadPosCutoff = dyadPosCutoff,
-                       normalizedNucleosomeCountsTables = normalizedNucleosomeCountsTables,
+  nucPeriodData = list(normalizedNucleosomeCountsTables = normalizedNucleosomeCountsTables,
                        rawNucleosomeCountsTables = rawNucleosomeCountsTables,
                        periodicityResults = periodicityResults)
 
-  # Add the MS results if requested.
-  if (compareMS) {
-    nucPeriodData = append(nucPeriodData, list(MSIInputs = MSIDataSetNames,
-                                               MSSInputs = MSSDataSetNames,
+  # Add the group comparison results if requested.
+  if (compareGroups) {
+    nucPeriodData = append(nucPeriodData, list(group1Inputs = group1DataSetNames,
+                                               group2Inputs = group2DataSetNames,
                                                wilcoxinResult = wilcoxinResult))
   }
 

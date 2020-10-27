@@ -3,35 +3,73 @@
 
 import os, subprocess
 from typing import List
-from nucperiodpy.helper_scripts.UsefulFileSystemFunctions import DataTypeStr, getDataDirectory, rScriptsDirectory
+from nucperiodpy.helper_scripts.UsefulFileSystemFunctions import (DataTypeStr, getDataDirectory, Metadata,
+                                                                  rScriptsDirectory, getContext, checkForNucGroup)
 from nucperiodpy.Tkinter_scripts.TkinterDialog import TkinterDialog, Selections
 
 
-def runNucleosomeMutationAnalysis(normalizedNucleosomeMutationCountsFilePaths: List[str], outputFilePath: str, 
-                                  MSIFilePaths: List[str], MSSFilePaths: List[str]):
+# Given a list of file paths pointing to nucleosome mutation data, returns the paths that fit the given specifications
+# normalizationMethods: A list of integers designating which normalization methods are allowed.
+#   0: Raw, 1: Singlenuc, 3: trinuc, 5: pentanuc
+# singleNuc and nucGroup: Boolean values specifying whether the relevant nucleosome radii are allowed.
+# MSS and MSI: Boolean values specifying whether the relevant microsatellite staibility status is allowed.
+def getFilePathGroup(potentialFilePaths, normalizationMethods: List[int], singleNuc, nucGroup, MSS, MSI):
+    
+    filePathGroup = list() # The file paths to be returned.
 
-    # Check for potential value errors.
-    if len(MSIFilePaths) * len(MSSFilePaths) == 0 and len(MSIFilePaths) + len(MSSFilePaths) != 0:
-        raise ValueError("Either MSI or MSS files were given, but the other group was not.\n" +
-                         "Both or neither should be present.")
+    for potentialFilePath in potentialFilePaths:
 
-    if len(normalizedNucleosomeMutationCountsFilePaths) == 0:
-        raise ValueError("No normalized counts files given.")
+        potentialFileName = os.path.basename(potentialFilePath)
 
-    if not outputFilePath.endswith(".rda"): raise ValueError("Output file should end with \".rda\".")
+        # Does it satisfy the normalization methods qualification? 
+        # (Also ensure that we have nucleosome counts, whether raw or normalized.)
+        if DataTypeStr.rawNucCounts in potentialFileName and 0 in normalizationMethods:
+            passed = True
+        elif DataTypeStr.normNucCounts in potentialFileName and getContext(potentialFilePath, True) in normalizationMethods:
+            passed = True
+        else: continue
+
+        # Does it satisfy the nucleosome radius qualification?
+        if checkForNucGroup(potentialFilePath) and nucGroup:
+            passed = True
+        elif not checkForNucGroup(potentialFilePath) and singleNuc:
+            passed = True
+        else: continue
+
+        # Does it satisfy the microsatellite stability qualifications?
+        cohortDesignations = Metadata(potentialFilePath).cohorts
+        if "MSI" in cohortDesignations and not MSI: continue
+        elif "MSS" in cohortDesignations and not MSS: continue
+
+        # If we've made it this far, add the file path to the return group!
+        filePathGroup.append(potentialFilePath)        
+        
+    return filePathGroup
+
+
+def runNucleosomeMutationAnalysis(nucleosomeMutationCountsFilePaths: List[str], outputFilePath: str, 
+                                  filePathGroup1: List[str] = list(), filePathGroup2: List[str] = list()):
+
+    # Check for valid input.
+    assert (len(filePathGroup1) == 0) == (len(filePathGroup2) == 0), (
+        "One file path group contains file paths, but the other is empty.")
+    assert len(nucleosomeMutationCountsFilePaths) > 0, (
+        "No normalized counts files given.")
+    assert outputFilePath.endswith(".rda"), (
+        "Output file should end with \".rda\".")
 
     # Write the inputs to a temporary file to be read by the R script
     inputsFilePath = os.path.join(rScriptsDirectory,"inputs.txt")
 
     with open(inputsFilePath, 'w') as inputsFile:
-        if (len(MSIFilePaths) == 0 and len(MSSFilePaths) == 0):
-            print("Generating inputs to run analysis without microsatellite designation...")
-            inputsFile.write('\n'.join(('$'.join(normalizedNucleosomeMutationCountsFilePaths), outputFilePath)) + '\n')
+        if (len(filePathGroup1) == 0 and len(filePathGroup2) == 0):
+            print("Generating inputs to run analysis without grouped comparison...")
+            inputsFile.write('\n'.join(('$'.join(nucleosomeMutationCountsFilePaths), outputFilePath)) + '\n')
             
         else:
-            print("Generating inputs to run analysis with microsatellite designation...")
-            inputsFile.write('\n'.join(('$'.join(normalizedNucleosomeMutationCountsFilePaths), outputFilePath,
-                                        '$'.join(MSIFilePaths), '$'.join(MSSFilePaths))) + '\n')
+            print("Generating inputs to run analysis with grouped comparison...")
+            inputsFile.write('\n'.join(('$'.join(nucleosomeMutationCountsFilePaths), outputFilePath,
+                                        '$'.join(filePathGroup1), '$'.join(filePathGroup2))) + '\n')
 
     # Call the R script
     print("Calling R script...")
@@ -50,11 +88,47 @@ def main():
     dialog.createFileSelector("Output File", 1, ("R Data File", ".rda"), newFile = True)
 
     periodicityComparison = dialog.createDynamicSelector(3, 0)
-    periodicityComparison.initCheckboxController("Compare periodicities")
-    periodicityGroups = periodicityComparison.initDisplay("periodicityGroups",True)
-    periodicityGroups.createLabel("Group 1:")
+    periodicityComparison.initCheckboxController("Compare periodicities between two groups")
+    periodicityGroups = periodicityComparison.initDisplay(True,"periodicityGroups")
+    periodicityGroups.createLabel("",0,0)
 
-    dialog.createExitButtons(3,0)
+    # Create two "sub-dialogs" for each of the groups, allowing the user to specify the make-up of that group.
+    for i, dialogID in enumerate(("Group1", "Group2")):
+        group = periodicityGroups.createSubDialog(i+1, selectionsID = dialogID)
+        row = 0
+        group.createLabel(dialogID, row, 0, 4, header = True)
+        row += 1
+
+        group.createLabel("Normalization method:", row, 0, 4)
+        row += 1
+        group.createCheckbox("Raw", row, 0, )
+        group.createCheckbox("Singlenuc", row, 1)
+        group.createCheckbox("Trinuc", row, 2)
+        group.createCheckbox("Pentanuc", row, 3)
+        row += 1
+        group.createLabel("",row,0)
+        row += 1
+
+        group.createLabel("Nucleosome Radius:", row, 0, 4)
+        row += 1
+        group.createCheckbox("Single Nucleosome", row, 0, 2)
+        group.createCheckbox("Nucleosome Group", row, 2, 2)
+        row += 1
+        group.createLabel("",row,0)
+        row += 1
+
+        group.createLabel("Cohort Designations:", row, 0, 4)
+        row += 1
+        group.createDropdown("Microsatellite Status:", row, 0, ("Any", "MSS", "MSI"), 2)
+        group.createDropdown("Mutation Signature:", row, 2, ("Not", "Yet", "Implemented"), 2)
+        row += 1
+        group.createFileSelector("Custom Cohort Designations (Not Implemented yet):", row, ("Any","*.*"), columnSpan = 4)
+        group.createLabel("",row,0)
+        row += 1
+
+    periodicityComparison.initDisplayState()
+
+    dialog.createExitButtons(4,0)
 
     # Run the UI
     dialog.mainloop()
@@ -64,12 +138,44 @@ def main():
 
     # Get the user's input from the dialog.
     selections: Selections = dialog.selections
-    normalizedNucleosomeMutationCountsFilePaths = list(selections.getFilePathGroups())[0]
+    nucleosomeMutationCountsFilePaths = list(selections.getFilePathGroups())[0]
     outputFilePath = list(selections.getIndividualFilePaths())[0]
-    MSIFilePaths = list(selections.getFilePathGroups())[1]
-    MSSFilePaths = list(selections.getFilePathGroups())[2]
+    
+    # If group comparisons were requested, get the respective groups.
+    filePathGroups = list()
+    filePathGroups.append(list())
+    filePathGroups.append(list())
 
-    runNucleosomeMutationAnalysis(normalizedNucleosomeMutationCountsFilePaths, outputFilePath,
-                                  MSIFilePaths, MSSFilePaths)
+    if periodicityComparison.getControllerVar():
+        for i, dialogID in enumerate(("Group1", "Group2")):
+
+            # Determine what normalization methods were requested
+            normalizationMethods = list()
+            normalizationSelections = selections.getToggleStates(dialogID)[:4]
+            if normalizationSelections[0]: normalizationMethods.append(0)
+            if normalizationSelections[1]: normalizationMethods.append(1)
+            if normalizationSelections[2]: normalizationMethods.append(3)
+            if normalizationSelections[3]: normalizationMethods.append(5)
+
+            # Ensure valid input was given
+            assert len(normalizationMethods) > 0, (
+                "No normalization method chosen for " + dialogID)
+            assert selections.getToggleStates(dialogID)[4] or selections.getToggleStates(dialogID)[5], (
+                "No nucleosome radius given for " + dialogID)
+
+            # Determine what microsatellite stability states were requested.
+            MSSelection = selections.getDropdownSelections(dialogID)[0]
+            MSS = True
+            MSI = True
+            if MSSelection == "MSS": MSI = False
+            elif MSSelection == "MSI": MSS = False
+
+            # Get the file paths associated with the given parameters.
+            filePathGroups[i] += getFilePathGroup(nucleosomeMutationCountsFilePaths, normalizationMethods, 
+                                                  selections.getToggleStates(dialogID)[4], selections.getToggleStates(dialogID)[5],
+                                                  MSS, MSI)
+
+    runNucleosomeMutationAnalysis(nucleosomeMutationCountsFilePaths, outputFilePath,
+                                  filePathGroups[0], filePathGroups[1])
 
 if __name__ == "__main__": main()
