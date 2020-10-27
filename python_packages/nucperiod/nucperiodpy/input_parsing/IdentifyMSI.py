@@ -26,6 +26,7 @@ class MSIIdentifier:
 
 
     # Adds an entry to the MSISeq data file.
+    # NOTE: startPos and endPos should both be 1-based.
     def addData(self, chromosome, startPos, endPos, mutType, cohortID):
 
         if mutType not in ("SNP","INS","DEL"):
