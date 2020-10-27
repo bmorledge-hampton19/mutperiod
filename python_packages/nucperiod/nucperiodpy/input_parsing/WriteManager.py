@@ -21,6 +21,7 @@ class WriteManager:
         self.rootOutputFilePath = generateFilePath(directory = self.rootDataDir, dataGroup = self.rootMetadata.dataGroupName,
                                                    context = "singlenuc", dataType = DataTypeStr.mutations, fileExtension = ".bed")
         self.rootOutputFile = open(self.rootOutputFilePath, 'w')
+        self.rootMutCounts = 0
 
         # By default, all other write options are off unless otherwise specified.
         self.stratifyByIndividualCohorts = False
@@ -70,6 +71,8 @@ class WriteManager:
                          os.path.join('..','..',self.rootMetadata.localParentDataPath), self.rootMetadata.inputFormat, aggregateMSSDirectory, "MSS")
         generateMetadata("MSI_" + self.rootMetadata.dataGroupName, self.rootMetadata.genomeName, self.rootMetadata.nucPosName,
                          os.path.join('..','..',self.rootMetadata.localParentDataPath), self.rootMetadata.inputFormat, aggregateMSIDirectory, "MSI")
+        self.aggregateMSSMutCounts = 0
+        self.aggregateMSIMutCounts = 0
 
         self.aggregateMSSFilePath = generateFilePath(directory = aggregateMSSDirectory, dataGroup = "MSS_" + self.rootMetadata.dataGroupName,
                                                      context = "singlenuc", dataType = DataTypeStr.mutations, fileExtension = ".bed")
@@ -103,6 +106,7 @@ class WriteManager:
         parentMutSigDirectory = os.path.join(self.rootMetadata.directory, "mut_sig_analysis")
         self.mutSigFilePaths = dict()
         self.mutSigFiles = dict()
+        self.mutSigMutCounts = dict()
 
         for mutSig in mutSigs:
 
@@ -116,6 +120,9 @@ class WriteManager:
             generateMetadata(thisMutSigDataGroup, self.rootMetadata.genomeName, self.rootMetadata.nucPosName,
                              os.path.join('..','..',self.rootMetadata.localParentDataPath), 
                              self.rootMetadata.inputFormat, thisMutSigDirectory, "mutSig" + mutSig)
+
+            # Mutation Counter
+            self.mutSigMutCounts[mutSig] = 0
 
             # File path
             self.mutSigFilePaths[mutSig] = generateFilePath(directory = thisMutSigDirectory, dataGroup = thisMutSigDataGroup, 
@@ -143,6 +150,7 @@ class WriteManager:
             self.currentIndividualCohortFile.close()
             subprocess.run(" ".join(("sort","-k1,1","-k2,2n",self.individualCohortFilePath,"-o",self.individualCohortFilePath)), 
                            shell = True, check = True)
+            Metadata(self.individualCohortFilePath).addMetadata(Metadata.AddableKeys.mutCounts, self.currentIndividualCohortMutCounts)
 
         # Make sure this is actually a new cohort.
         if cohortID in self.completedIndividualCohorts:
@@ -175,6 +183,7 @@ class WriteManager:
         generateMetadata(individualCohortDataGroup, self.rootMetadata.genomeName, self.rootMetadata.nucPosName,
                          os.path.join("..",self.rootMetadata.localParentDataPath),
                          self.rootMetadata.inputFormat, individualCohortDirectory, *cohortMembership)
+        self.currentIndividualCohortMutCounts = 0
 
 
     # Writes the given data to all the relevant files based on how the manager was set up.
@@ -188,6 +197,7 @@ class WriteManager:
 
         # Write data to the root output file.
         self.rootOutputFile.write(outputLine)
+        self.rootMutCounts += 1
 
         # Write to microsatellite designation if it was set up.
         if self.stratifyByMS and cohortID != '.':
@@ -203,8 +213,10 @@ class WriteManager:
 
             if cohortID in self.MSICohorts:
                 self.aggregateMSIFile.write(outputLine)
+                self.aggregateMSIMutCounts += 1
             else:
                 self.aggregateMSSFile.write(outputLine)
+                self.aggregateMSSMutCounts += 1
 
         # Write to signature designations if it was set up.
         if self.stratifyByMutSig and cohortID != '.':
@@ -229,6 +241,7 @@ class WriteManager:
                 
                 for mutSig in self.mutSigDesignations[cohortID]:
                     self.mutSigFiles[mutSig].write(outputLine)
+                    self.mutSigMutCounts[mutSig] += 1
 
 
         # Write to individual cohorts if desired.
@@ -241,6 +254,7 @@ class WriteManager:
 
             # Write to the current individual cohort.
             self.currentIndividualCohortFile.write(outputLine)
+            self.currentIndividualCohortMutCounts += 1
 
 
     # Closes open files to clean up the class after it's done being used.
@@ -249,22 +263,28 @@ class WriteManager:
         self.rootOutputFile.close()
         subprocess.run(" ".join(("sort","-k1,1","-k2,2n",self.rootOutputFilePath,"-o",self.rootOutputFilePath)),
                        shell = True, check = True)
+        Metadata(self.rootOutputFilePath).addMetadata(Metadata.AddableKeys.mutCounts, self.rootMutCounts)
+        
 
         if self.stratifyByMS:
             self.aggregateMSIFile.close()
             subprocess.run(" ".join(("sort","-k1,1","-k2,2n",self.aggregateMSIFilePath,"-o",self.aggregateMSIFilePath)), 
                            shell = True, check = True)
+            Metadata(self.aggregateMSIFilePath).addMetadata(Metadata.AddableKeys.mutCounts, self.aggregateMSIMutCounts)
             self.aggregateMSSFile.close()
             subprocess.run(" ".join(("sort","-k1,1","-k2,2n",self.aggregateMSSFilePath,"-o",self.aggregateMSSFilePath)),
                            shell = True, check = True)
+            Metadata(self.aggregateMSSFilePath).addMetadata(Metadata.AddableKeys.mutCounts, self.aggregateMSSMutCounts)
 
         if self.stratifyByMutSig:
             for mutSig in self.mutSigFiles:
                 self.mutSigFiles[mutSig].close()
                 subprocess.run(" ".join(("sort","-k1,1","-k2,2n",self.mutSigFilePaths[mutSig], "-o",self.mutSigFilePaths[mutSig])), 
                                shell = True, check = True)
+                Metadata(self.mutSigFilePaths[mutSig]).addMetadata(Metadata.AddableKeys.mutCounts, self.mutSigMutCounts[mutSig])
 
         if self.stratifyByIndividualCohorts and self.currentIndividualCohortFile is not None:
             self.currentIndividualCohortFile.close()
             subprocess.run(" ".join(("sort","-k1,1","-k2,2n",self.individualCohortFilePath,"-o",self.individualCohortFilePath)), 
                            shell = True, check = True)
+            Metadata(self.individualCohortFilePath).addMetadata(Metadata.AddableKeys.mutCounts, self.currentIndividualCohortMutCounts)
