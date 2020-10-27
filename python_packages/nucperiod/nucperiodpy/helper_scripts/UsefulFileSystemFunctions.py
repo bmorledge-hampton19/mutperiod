@@ -235,7 +235,7 @@ def generateMetadata(dataGroupName, associatedGenome, associatedNucleosomePositi
 
         if len(cohorts) > 0:
             metadataFile.write("cohorts:\t")
-            metadataFile.write(', '.join(cohorts) + '\n')
+            metadataFile.write(", ".join(cohorts) + '\n')
         else:
             metadataFile.write("cohorts:\tNone\n")
 
@@ -306,7 +306,7 @@ class Metadata:
 
         self.cohorts = list()
         if self.getMetadataByKey("cohorts") != "None":
-            self.cohorts += self.getMetadataByKey("cohorts").split('\t')
+            self.cohorts += self.getMetadataByKey("cohorts").split(", ")
         
         # Check for addable metadata.
         self.mutationCounts: int = self.getMetadataByKey(self.AddableKeys.mutCounts.value, False)
