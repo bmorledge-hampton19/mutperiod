@@ -248,13 +248,13 @@ class Metadata:
 
         # Get the path to the metadata file.
         if os.path.isdir(filePath):
-            metadataFilePath = os.path.join(filePath,".metadata")
+            self.metadataFilePath = os.path.join(filePath,".metadata")
         else:
-            metadataFilePath = os.path.join(os.path.dirname(filePath),".metadata")
+            self.metadataFilePath = os.path.join(os.path.dirname(filePath),".metadata")
 
         # Read the metadata file and put its contents into and dictionary, key-value pairs in the file.
         self.metadata = dict()
-        with open(metadataFilePath, 'r') as metadataFile:
+        with open(self.metadataFilePath, 'r') as metadataFile:
             for line in metadataFile:
 
                 choppedUpLine = str(line).strip().split(maxsplit = 1)
@@ -308,6 +308,9 @@ class Metadata:
         if self.getMetadataByKey("cohorts") != "None":
             self.cohorts += self.getMetadataByKey("cohorts").split('\t')
         
+        # Check for addable metadata.
+        self.mutationCounts: int = self.getMetadataByKey(self.AddableKeys.mutCounts.value, False)
+
         ### Get file paths for useful metadata associated files.
 
         self.genomeFilePath = os.path.join(getExternalDataDirectory(),self.genomeName,self.genomeName+".fa")
@@ -316,3 +319,22 @@ class Metadata:
                                                self.nucPosName, self.nucPosName+".bed")
 
         self.parentDataFilePath = os.path.join(self.directory, self.localParentDataPath)
+
+    class AddableKeys(Enum):
+
+        mutCounts = "mutationCounts"
+
+    # Used to add metadata that cannot be generated when other metadata is initially generated.
+    # Note:  The "key" parameter should be a member of the "addableKeys" Enum.
+    def addMetadata(self, key: Enum, value):
+
+        # Check the validity of the key, and make sure it doesn't already exist in the metadata.
+        assert key in self.AddableKeys, "Given key, \"" + key + "\" is not addable."
+        assert self.getMetadataByKey(key.value, False) is None, "Metadata already exists for key: " + key.value
+
+        # Append it to the metadata file.
+        with open(self.metadataFilePath, 'a') as metadataFile:
+            metadataFile.write(key.value + ':\t' + str(value) + '\n')
+
+        # Re-wrap metadata to include this new addition.
+        self.wrapMetadataInMembers()
