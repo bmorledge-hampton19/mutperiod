@@ -66,8 +66,10 @@ class DataTypeStr:
     mutations = "context_mutations"
     mutBackground = "mutation_background"
     nucMutBackground = "nucleosome_mutation_background"
+    customBackgroundInfo = "custom_background_info"
     rawNucCounts = "raw_nucleosome_mutation_counts"
     normNucCounts = "normalized_nucleosome_mutation_counts"
+    generalNucCounts = "nucleosome_mutation_counts"
     customInput = "custom_input"
 
 
@@ -76,6 +78,7 @@ class InputFormat(Enum):
 
     ICGC = "ICGC"
     tXRSeq = "tXR-seq"
+    UVDESeq = "UVDE-seq"
     customBed = "customBed"
 
 
