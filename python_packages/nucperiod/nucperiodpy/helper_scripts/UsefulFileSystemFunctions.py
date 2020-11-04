@@ -158,6 +158,42 @@ def getLinkerOffset(filePath: str):
     return linkerOffset
 
 
+# Returns the number of mutations that fall within nucleosomes (positions -73 to 73)
+# Input can be either a directory or the actual raw nucleosome counts file.
+# Only runs on raw nucleosome mutation counts files
+# Returns None if no such file was found. 
+# Only counts positions where the absolute value of their dyad position is less than or equal to
+# the given dyadPosCutoff.
+def getNucMutCounts(rawNucCountsPath, dyadPosCutoff = 60):
+
+    # Set default values
+    rawNucCountsFilePath = None
+    nucMutCounts = None
+
+    # If given a directory, search for raw counts file path.
+    if os.path.isdir(rawNucCountsPath):
+        for item in os.listdir(rawNucCountsPath):
+            if DataTypeStr.rawNucCounts in item:
+                rawNucCountsFilePath = os.path.join(rawNucCountsPath, item)
+                
+    
+    # Otherwise, double check that the given file is a raw counts file.
+    elif DataTypeStr.rawNucCounts in os.path.basename(rawNucCountsPath):
+        rawNucCountsFilePath = os.path.join(rawNucCountsPath, item)
+
+    # if a raw counts file was found, determine the total number of mutations in the given region from it
+    # (Within the given dyadPosCutoff range).
+    if rawNucCountsFilePath is not None:
+        nucMutCounts = 0
+        with open(rawNucCountsFilePath, 'r') as rawNucCountsFile:
+            rawNucCountsFile.readline() # Skip header line
+            for line in rawNucCountsFile:             
+                if abs(int(line.strip().split('\t')[0])) <= dyadPosCutoff:
+                    nucMutCounts += int(line.strip().split('\t')[3])
+
+    return nucMutCounts
+
+
 # Returns whether or not the given file path uses the nuc-group radius.
 def checkForNucGroup(filePath: str):
 
