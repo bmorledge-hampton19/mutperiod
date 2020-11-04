@@ -189,9 +189,9 @@ class WriteManager:
     # Writes the given data to all the relevant files based on how the manager was set up.
     def writeData(self, chromosome, startPos, endPos, mutFrom, alteration, strand, cohortID = '.'):
 
-        # Make sure we were given an SNP.  (Right now, that's the only acceptable data format for the pipeline.)
+        # Make sure we were given an SNP or OTHER single base lesion.  (Right now, these are the only acceptable data format for the pipeline.)
         # Then, format it for output.
-        if mutFrom.upper() in ('A','C','G','T') and alteration.upper() in ('A','C','G','T'):
+        if mutFrom.upper() in ('A','C','G','T') and alteration.upper() in ('A','C','G','T',"OTHER"):
             outputLine = '\t'.join((chromosome, startPos, endPos, mutFrom, mutFrom + ">" + alteration, strand)) + '\n'
         else: return
 
