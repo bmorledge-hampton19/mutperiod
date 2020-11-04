@@ -1,6 +1,6 @@
 # This script takes raw nucleosome mutation count files, and passes them an R script which normalizes the data.
 
-import os, subprocess
+import os, subprocess, datetime
 from typing import List
 from nucperiodpy.Tkinter_scripts.TkinterDialog import TkinterDialog, Selections
 from nucperiodpy.helper_scripts.UsefulFileSystemFunctions import (getLinkerOffset, getContext, getDataDirectory, Metadata, 
@@ -35,12 +35,38 @@ def getBackgroundRawPairs(backgroundCountsFilePaths):
     return backgroundRawPairs
 
 
+# Attempts to pair each raw counts file in the custom raw directory to a raw counts file in the custom background directory
+def getCustomBackgroundRawPairs(customRawCountsFilePaths, customBackgroundCountsDir):
 
-def normalizeCounts(backgroundCountsFilePaths: List[str]):
+    customBackgroundRawPairs = dict()
+    backgroundMetadata = Metadata(customBackgroundCountsDir)
+
+    # For every raw counts file in the customRawCountsDir, try to match it to a raw counts file in the customBackgroundCountsDir.
+    for customRawCountsFilePath in customRawCountsFilePaths:
+        customBackgroundCountsFilePath = generateFilePath(
+            directory = backgroundMetadata.directory, dataGroup = backgroundMetadata.dataGroupName,
+            linkerOffset = getLinkerOffset(customRawCountsFilePath), 
+            usesNucGroup = checkForNucGroup(customRawCountsFilePath),
+            dataType = DataTypeStr.rawNucCounts, fileExtension = ".tsv")
+        assert os.path.exists(customBackgroundCountsFilePath), (
+            "No counts file found to use as custom background for " + customRawCountsFilePath +
+            "\nExpected file at: " + customBackgroundCountsFilePath)
+        customBackgroundRawPairs[customBackgroundCountsFilePath] = customRawCountsFilePath
+
+    return customBackgroundRawPairs
+
+
+def normalizeCounts(backgroundCountsFilePaths: List[str], customRawCountsFilePaths: List[str] = list(), customBackgroundCountsDir = None):
 
     normalizedCountsFilePaths = list()
 
     backgroundRawPairs = getBackgroundRawPairs(backgroundCountsFilePaths)
+
+    # Get the background-raw pairs from the custom directories, if they were given.
+    if customBackgroundCountsDir is not None:
+        customBackgroundRawPairs = getCustomBackgroundRawPairs(customRawCountsFilePaths, customBackgroundCountsDir)
+        for customBackgroundCountsFilePath in customBackgroundRawPairs:
+            backgroundRawPairs[customBackgroundCountsFilePath] = customBackgroundRawPairs[customBackgroundCountsFilePath]
 
     # Iterate through each background + raw counts pair
     for backgroundCountsFilePath in backgroundRawPairs:
@@ -49,22 +75,33 @@ def normalizeCounts(backgroundCountsFilePaths: List[str]):
 
         print("\nWorking with",os.path.basename(rawCountsFilePath),"and",os.path.basename(backgroundCountsFilePath))
 
-        metadata = Metadata(backgroundCountsFilePath)
+        metadata = Metadata(rawCountsFilePath)
 
         # Generate the path to the normalized file.
+        if DataTypeStr.rawNucCounts in backgroundCountsFilePath: context = "custom_context"
+        else: context = getContext(backgroundCountsFilePath)
         normalizedCountsFilePath = generateFilePath(directory = metadata.directory, dataGroup = metadata.dataGroupName,
-                                                    context = getContext(backgroundCountsFilePath),
-                                                    linkerOffset = getLinkerOffset(backgroundCountsFilePath),
+                                                    context = context, linkerOffset = getLinkerOffset(backgroundCountsFilePath),
                                                     usesNucGroup = checkForNucGroup(backgroundCountsFilePath),
                                                     dataType = DataTypeStr.normNucCounts, fileExtension = ".tsv")
 
-        # Pass the path to the file paths to the R script to generate the normalized counts file.
+        # Pass the file paths to the R script to generate the normalized counts file.
         print("Calling R script to generate normalized counts...")
         subprocess.run(" ".join(("Rscript",os.path.join(rScriptsDirectory,"NormalizeNucleosomeMutationCounts.R"),
                                  rawCountsFilePath,backgroundCountsFilePath,normalizedCountsFilePath)), 
                        shell = True, check = True)
 
         normalizedCountsFilePaths.append(normalizedCountsFilePath)
+
+    # Document where the custom background counts came from in each relevant directory.
+    if customBackgroundCountsDir is not None:
+        for customRawCountsDir in set([os.path.dirname(customRawCountsFilePath) for customRawCountsFilePath in customRawCountsFilePaths]):
+            metadata = Metadata(customRawCountsDir)
+            customBackgroundInfoFilePath = generateFilePath(directory = metadata.directory, dataGroup = metadata.dataGroupName,
+                                                            dataType = DataTypeStr.customBackgroundInfo, fileExtension = ".txt")
+            with open(customBackgroundInfoFilePath, 'w') as customBackgroundInfoFile:
+                customBackgroundInfoFile.write("Custom background directory: " + customBackgroundCountsDir + '\n')
+                customBackgroundInfoFile.write("Last date used: " + str(datetime.datetime.now()).rsplit(':',1)[0] + '\n')
 
     return normalizedCountsFilePaths
 
@@ -75,7 +112,15 @@ def main():
     dialog = TkinterDialog(workingDirectory=getDataDirectory())
     dialog.createMultipleFileSelector("Background Nucleosome Mutation Counts Files:",0,
                                       DataTypeStr.nucMutBackground + ".tsv",("Tab Seperated Values Files",".tsv"))
-    dialog.createExitButtons(1,0)
+
+    customBackgroundSelector = dialog.createDynamicSelector(1, 0)
+    customBackgroundSelector.initCheckboxController("Use another data set as custom background.")
+    customBackgroundFileSelector = customBackgroundSelector.initDisplay(True, "customBackground")
+    customBackgroundFileSelector.createFileSelector("Data Directory for nucleosome counts to be used as raw", 0, directory = True)
+    customBackgroundFileSelector.createFileSelector("Data Directory for nucleosome counts to be used as background", 1, directory = True)
+    customBackgroundSelector.initDisplayState()
+
+    dialog.createExitButtons(2,0)
 
     # Run the UI
     dialog.mainloop()
@@ -85,8 +130,15 @@ def main():
 
     # Get the user's input from the dialog.
     selections: Selections = dialog.selections
-    backgroundCountsFilePaths = list(selections.getFilePathGroups())[0] # A list of background mutation counts file paths
+    backgroundCountsFilePaths = selections.getFilePathGroups()[0] # A list of background mutation counts file paths
 
-    normalizeCounts(backgroundCountsFilePaths)
+    if customBackgroundSelector.getControllerVar():
+        customRawCountsDir = selections.getFilePaths("customBackground")[0]
+        customBackgroundCountsDir = selections.getFilePaths("customBackground")[1]
+    else:
+        customRawCountsDir = None
+        customBackgroundCountsDir = None
+
+    normalizeCounts(backgroundCountsFilePaths, customRawCountsDir, customBackgroundCountsDir)
 
 if __name__ == "__main__": main()
