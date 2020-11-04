@@ -126,7 +126,7 @@ def checkDirs(*directoryPaths):
 def getContext(filePath: str, asInt = False):
 
     # A dictionary of contexts which matches them to their respective numbers.
-    contexts = {"singlenuc":1, "trinuc":3, "pentanuc":5}
+    contexts = {"singlenuc":1, "trinuc":3, "pentanuc":5, "custom_context":-1}
 
     # Search for each of the contexts in the filename, and return the first (hopefully only) one that is present.
     fileName = os.path.basename(filePath)
@@ -184,7 +184,7 @@ def generateFilePath(directory = None, dataGroup = None, context = None, linkerO
     if context is not None:
 
         # A dictionary of numbers which matches them to their respective contexts.
-        contexts = {1:"singlenuc", 3:"trinuc", 5:"pentanuc"}
+        contexts = {1:"singlenuc", 3:"trinuc", 5:"pentanuc", -1:"custom_context"}
 
         if isinstance(context, str): 
             if context.lower() not in contexts.values():
