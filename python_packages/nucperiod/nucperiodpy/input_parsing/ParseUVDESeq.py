@@ -2,14 +2,17 @@
 # and converts it to a format suitable for downstream analysis.
 # This is done by taking the 2 bp lesion and splitting it into 2 single base lesions.
 
-import os, subprocess
+import os
 from nucperiodpy.Tkinter_scripts.TkinterDialog import Selections, TkinterDialog
-from nucperiodpy.helper_scripts.UsefulFileSystemFunctions import (getIsolatedParentDir, generateFilePath, dataDirectory,
-                                                                    dataTypes, generateMetadata)
+from nucperiodpy.input_parsing.ParseCustomBed import parseCustomBed
+from nucperiodpy.helper_scripts.UsefulFileSystemFunctions import (getIsolatedParentDir, generateFilePath, getDataDirectory,
+                                                                  DataTypeStr, generateMetadata, InputFormat, checkDirs)
 from nucperiodpy.helper_scripts.UsefulBioinformaticsFunctions import baseChromosomes
 
 
 def parseUVDESeq(UVDESeqFilePaths, genomeFilePath, nucPosFilePath):
+
+    customBedOutputFilePaths = list() # The list of file paths to be passed to the custom bed parser.
 
     # Parse the given reads into singlenuc context.
     for UVDESeqFilePath in UVDESeqFilePaths:
@@ -20,19 +23,21 @@ def parseUVDESeq(UVDESeqFilePaths, genomeFilePath, nucPosFilePath):
 
         # Store useful paths and names.
         localRootDirectory = os.path.dirname(UVDESeqFilePath)
+        intermediateFilesDir = os.path.join(localRootDirectory,"intermediate_files")
+        checkDirs(intermediateFilesDir)
         dataGroupName = getIsolatedParentDir(UVDESeqFilePath)
 
         # Generate the output file path and metadata
-        singlenucOutputFilePath = generateFilePath(directory = localRootDirectory, dataGroup = dataGroupName,
-                                                   context = "singlenuc", dataType = dataTypes.mutations,
-                                                   fileExtension = ".bed")
-        generateMetadata(dataGroupName, getIsolatedParentDir(genomeFilePath), getIsolatedParentDir(nucPosFilePath),
-                         os.path.basename(UVDESeqFilePath), localRootDirectory)
+        customBedOutputFilePath = generateFilePath(directory = intermediateFilesDir, dataGroup = dataGroupName,
+                                                   dataType = DataTypeStr.customInput, fileExtension = ".bed")
+        customBedOutputFilePaths.append(customBedOutputFilePath)
+        generateMetadata(dataGroupName, getIsolatedParentDir(genomeFilePath), getIsolatedParentDir(nucPosFilePath), 
+                         os.path.basename(UVDESeqFilePath), InputFormat.UVDESeq, localRootDirectory)
 
         # Iterate through the 2 bp lesions, adding 2 single base lesions to the singlenuc output file for each.
         print("Converting 2-bp lesions to 2 single base lesions...")
         with open(UVDESeqFilePath, 'r') as UVDESeqFile:
-            with open(singlenucOutputFilePath, 'w') as singlenucOutputFile:
+            with open(customBedOutputFilePath, 'w') as customBedOutputFile:
 
                 for line in UVDESeqFile:
                     
@@ -50,18 +55,19 @@ def parseUVDESeq(UVDESeqFilePaths, genomeFilePath, nucPosFilePath):
                     for i in range(2):
 
                         # Write the two single base lesions from the one 2 bp lesion.
-                        singlenucOutputFile.write('\t'.join((chromosome,str(startPos+i),str(endPos+i),"None","None",plusOrMinus)) + '\n')
+                        customBedOutputFile.write('\t'.join((chromosome,str(startPos+i),str(endPos+i),".","OTHER",plusOrMinus)) + '\n')
 
-        # Sort the output.
-        print("Sorting output data...")
-        subprocess.run(" ".join(("sort","-k1,1","-k2,2n",singlenucOutputFilePath,"-o",singlenucOutputFilePath)), 
-                       shell = True, check = True)
+
+    # Pass the generated files to the custom bed parser.
+    parseCustomBed(customBedOutputFilePaths, genomeFilePath, nucPosFilePath, False, False, False)
+
+
 
 
 if __name__ == "__main__":
 
     # Create the Tkinter UI
-    dialog = TkinterDialog(workingDirectory=dataDirectory)
+    dialog = TkinterDialog(workingDirectory=getDataDirectory())
     dialog.createMultipleFileSelector("UVDE-seq data:",0,"dipy.bed",("Bed Files",".bed"),additionalFileEndings=("TA.bed",))    
     dialog.createFileSelector("Genome Fasta File:",1,("Fasta Files",".fa"))
     dialog.createFileSelector("Strongly Positioned Nucleosome File:",2,("Bed Files",".bed"))
