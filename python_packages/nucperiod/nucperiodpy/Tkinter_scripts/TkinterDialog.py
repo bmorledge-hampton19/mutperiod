@@ -208,6 +208,42 @@ class TkinterDialog(tk.Frame):
         self.entries.append(textBox)
 
 
+    def createNucMutGroupSubDialog(self, groupID, row, column = 0, columnSpan = 1):
+        "Creates a sub-dialog for selecting nucleosome mutation files of specific characteristics"
+
+        group = self.createSubDialog(row = row, column = column, columnSpan = columnSpan, selectionsID = groupID)
+        row = 0
+        group.createLabel(groupID, row, 0, 4, header = True)
+        row += 1
+
+        group.createLabel("Normalization Method:", row, 0, 4)
+        row += 1
+        group.createCheckbox("Raw", row, 0, )
+        group.createCheckbox("Singlenuc", row, 1)
+        group.createCheckbox("Trinuc", row, 2)
+        group.createCheckbox("Pentanuc", row, 3)
+        group.createCheckbox("Custom", row, 4)
+        row += 1
+        group.createLabel("",row,0)
+        row += 1
+
+        group.createLabel("Nucleosome Radius:", row, 0, 4)
+        row += 1
+        group.createCheckbox("Single Nucleosome", row, 0, 2)
+        group.createCheckbox("Nucleosome Group", row, 2, 2)
+        row += 1
+        group.createLabel("",row,0)
+        row += 1
+
+        group.createLabel("Cohort Designations:", row, 0, 4)
+        row += 1
+        group.createDropdown("Microsatellite Status:", row, 0, ("Any", "MSS", "MSI"), 2)
+        group.createDropdown("Mutation Signature:", row, 2, ("Not", "Yet", "Implemented"), 2)
+        row += 1
+        group.createFileSelector("Custom Cohort Designations (Not Implemented yet):", row, ("Any","*.*"), columnSpan = 4)
+        group.createLabel("",row,0)
+
+
     def createDynamicSelector(self, row, column, columnSpan = 1, workingDirectory = None):
         "Creates a dynamic selector object at the given location and returns it so it can be further modified."
 

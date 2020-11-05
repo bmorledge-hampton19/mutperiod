@@ -151,7 +151,7 @@ getRawCountsFilePath = function(rawOrNormalizedCountsFilePath) {
   if (grepl("raw_nucleosome",fileName)) {
     return(rawOrNormalizedCountsFilePath)
   } else {
-    dataSetName = strsplit(fileName,"singlenuc|trinuc|pentanuc")[[1]][1]
+    dataSetName = strsplit(fileName,"singlenuc|trinuc|pentanuc|custom_context")[[1]][1]
     if (grepl("nuc-group",fileName,fixed = TRUE)) {
       dyadRadius = "nuc-group_"
     }  else dyadRadius = ''

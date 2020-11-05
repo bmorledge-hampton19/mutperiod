@@ -87,6 +87,8 @@ def main():
                                       DataTypeStr.normNucCounts + ".tsv",("Tab Seperated Values Files",".tsv"))
     dialog.createFileSelector("Output File", 1, ("R Data File", ".rda"), newFile = True)
 
+    dialog.createNucMutGroupSubDialog("MainGroup", 2)
+
     periodicityComparison = dialog.createDynamicSelector(3, 0)
     periodicityComparison.initCheckboxController("Compare periodicities between two groups")
     periodicityGroups = periodicityComparison.initDisplay(True,"periodicityGroups")
@@ -94,37 +96,7 @@ def main():
 
     # Create two "sub-dialogs" for each of the groups, allowing the user to specify the make-up of that group.
     for i, dialogID in enumerate(("Group1", "Group2")):
-        group = periodicityGroups.createSubDialog(i+1, selectionsID = dialogID)
-        row = 0
-        group.createLabel(dialogID, row, 0, 4, header = True)
-        row += 1
-
-        group.createLabel("Normalization method:", row, 0, 4)
-        row += 1
-        group.createCheckbox("Raw", row, 0, )
-        group.createCheckbox("Singlenuc", row, 1)
-        group.createCheckbox("Trinuc", row, 2)
-        group.createCheckbox("Pentanuc", row, 3)
-        row += 1
-        group.createLabel("",row,0)
-        row += 1
-
-        group.createLabel("Nucleosome Radius:", row, 0, 4)
-        row += 1
-        group.createCheckbox("Single Nucleosome", row, 0, 2)
-        group.createCheckbox("Nucleosome Group", row, 2, 2)
-        row += 1
-        group.createLabel("",row,0)
-        row += 1
-
-        group.createLabel("Cohort Designations:", row, 0, 4)
-        row += 1
-        group.createDropdown("Microsatellite Status:", row, 0, ("Any", "MSS", "MSI"), 2)
-        group.createDropdown("Mutation Signature:", row, 2, ("Not", "Yet", "Implemented"), 2)
-        row += 1
-        group.createFileSelector("Custom Cohort Designations (Not Implemented yet):", row, ("Any","*.*"), columnSpan = 4)
-        group.createLabel("",row,0)
-        row += 1
+        periodicityGroups.createNucMutGroupSubDialog(dialogID, i+1)
 
     periodicityComparison.initDisplayState()
 
@@ -145,37 +117,41 @@ def main():
     filePathGroups = list()
     filePathGroups.append(list())
     filePathGroups.append(list())
+    filePathGroups.append(list())
 
-    if periodicityComparison.getControllerVar():
-        for i, dialogID in enumerate(("Group1", "Group2")):
+    groups = ["MainGroup"]
+    if periodicityComparison.getControllerVar(): groups += ("Group1", "Group2")
 
-            # Determine what normalization methods were requested
-            normalizationMethods = list()
-            normalizationSelections = selections.getToggleStates(dialogID)[:4]
-            if normalizationSelections[0]: normalizationMethods.append(0)
-            if normalizationSelections[1]: normalizationMethods.append(1)
-            if normalizationSelections[2]: normalizationMethods.append(3)
-            if normalizationSelections[3]: normalizationMethods.append(5)
+    for i, dialogID in enumerate(groups):
 
-            # Ensure valid input was given
-            assert len(normalizationMethods) > 0, (
-                "No normalization method chosen for " + dialogID)
-            assert selections.getToggleStates(dialogID)[4] or selections.getToggleStates(dialogID)[5], (
-                "No nucleosome radius given for " + dialogID)
+        # Determine what normalization methods were requested
+        normalizationMethods = list()
+        normalizationSelections = selections.getToggleStates(dialogID)[:5]
+        if normalizationSelections[0]: normalizationMethods.append(0)
+        if normalizationSelections[1]: normalizationMethods.append(1)
+        if normalizationSelections[2]: normalizationMethods.append(3)
+        if normalizationSelections[3]: normalizationMethods.append(5)
+        if normalizationSelections[4]: normalizationMethods.append(-1)
 
-            # Determine what microsatellite stability states were requested.
-            MSSelection = selections.getDropdownSelections(dialogID)[0]
-            MSS = True
-            MSI = True
-            if MSSelection == "MSS": MSI = False
-            elif MSSelection == "MSI": MSS = False
+        # Ensure valid input was given
+        assert len(normalizationMethods) > 0, (
+            "No normalization method chosen for " + dialogID)
+        assert selections.getToggleStates(dialogID)[5] or selections.getToggleStates(dialogID)[6], (
+            "No nucleosome radius given for " + dialogID)
 
-            # Get the file paths associated with the given parameters.
-            filePathGroups[i] += getFilePathGroup(nucleosomeMutationCountsFilePaths, normalizationMethods, 
-                                                  selections.getToggleStates(dialogID)[4], selections.getToggleStates(dialogID)[5],
-                                                  MSS, MSI)
+        # Determine what microsatellite stability states were requested.
+        MSSelection = selections.getDropdownSelections(dialogID)[0]
+        MSS = True
+        MSI = True
+        if MSSelection == "MSS": MSI = False
+        elif MSSelection == "MSI": MSS = False
 
-    runNucleosomeMutationAnalysis(nucleosomeMutationCountsFilePaths, outputFilePath,
-                                  filePathGroups[0], filePathGroups[1])
+        # Get the file paths associated with the given parameters.
+        filePathGroups[i] += getFilePathGroup(nucleosomeMutationCountsFilePaths, normalizationMethods, 
+                                                selections.getToggleStates(dialogID)[5], selections.getToggleStates(dialogID)[6],
+                                                MSS, MSI)
+
+    runNucleosomeMutationAnalysis(filePathGroups[0], outputFilePath,
+                                  filePathGroups[1], filePathGroups[2])
 
 if __name__ == "__main__": main()
