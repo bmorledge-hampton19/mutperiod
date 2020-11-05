@@ -133,7 +133,7 @@ def parseICGC(ICGCFilePaths, genomeFilePath, nucPosFilePath, separateDonors,
                     # Change the formatting if a deletion or insertion is given.              
                     if mutation.mutatedFrom == '-': 
                         mutation.mutatedFrom = '*'
-                        # NOTE: We are making the assumption that the given base pos is after the insertion, not before.
+                        # NOTE: We are making the assumption that the given base pos (1-based) is after the insertion, not before.
                         mutation.startPos = str(int(mutation.startPos) - 1) 
 
                     elif mutation.mutatedTo == '-': 
