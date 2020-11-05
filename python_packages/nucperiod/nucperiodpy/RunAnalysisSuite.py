@@ -45,7 +45,7 @@ def main():
     mutationFilePaths: List[str] = selections.getFilePathGroups()[0] # A list of paths to bed mutation files
     normalizationMethod = normalizationSelector.getControllerVar() # The normalization method to be used.
     if normalizationMethod == "Custom Background":
-        customBackgroundDir = selections.getFilePaths("customBackground")[0]
+        customBackgroundDir = selections.getFilePaths("customBackground")[0] # Where to find raw counts files to use as custom background
     useSingleNucRadius = selectNucleosomeDyadRadius.getControllerVar() # Whether or not to generate data with a 73 bp single nuc dyad radius
     if useSingleNucRadius: 
         includeLinker = selections.getToggleStates("singleNuc")[0] # Whether or not to include 30 bp linker DNA in nucleosome dyad positions
@@ -109,9 +109,9 @@ def main():
         nucleosomeMutationBackgroundFilePaths = generateNucleosomeMutationBackground(mutationBackgroundFilePaths, useSingleNucRadius, 
                                                                                      useNucGroupRadius, linkerOffset)
 
-    if normalizationMethodNum is not None:
         print("\nNormalizing counts with nucleosome background data...\n")
-        normalizedNucleosomeMutationCountsFilePaths = normalizeCounts(nucleosomeMutationBackgroundFilePaths)
+        normalizeCounts(nucleosomeMutationBackgroundFilePaths)
+
     elif normalizationMethod == "Custom Background":
         print("\nNormalizing counts using custom background data...\n")
         normalizeCounts(list(), nucleosomeMutationCountsFilePaths, customBackgroundDir)
