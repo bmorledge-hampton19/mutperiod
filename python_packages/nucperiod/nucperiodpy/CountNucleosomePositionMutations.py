@@ -202,12 +202,14 @@ def generateCountsFile(mutationFilePath, nucPosFilePath, nucleosomeMutationCount
         
         # Write the headers to the file.
         nucleosomeMutationCountsFile.write('\t'.join(("Dyad_Position","Plus_Strand_Counts",
-                                            "Minus_Strand_Counts","Both_Strands_Counts")) + '\n')
+                                            "Minus_Strand_Counts","Both_Strands_Counts",
+                                            "Aligned_Strands_Counts")) + '\n')
         
         # Write the data.
         for i in range(-dyadRadius - linkerOffset, dyadRadius + linkerOffset + 1):
             nucleosomeMutationCountsFile.write('\t'.join((str(i), str(plusStrandMutationCounts[i]), str(minusStrandMutationCounts[i]), 
-                                                str(plusStrandMutationCounts[i] + minusStrandMutationCounts[i]))) + '\n')
+                                                          str(plusStrandMutationCounts[i] + minusStrandMutationCounts[i]),
+                                                          str(plusStrandMutationCounts[i] + minusStrandMutationCounts[-i]))) + '\n')
 
 
 def countNucleosomePositionMutations(mutationFilePaths, countSingleNuc, countNucGroup, linkerOffset):

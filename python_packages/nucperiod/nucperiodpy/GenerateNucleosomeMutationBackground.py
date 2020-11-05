@@ -199,7 +199,8 @@ def generateNucleosomeMutationBackgroundFile(dyadPosContextCountsFilePath, mutat
 
         # Write the headers for the data.
         headers = '\t'.join(("Dyad_Position","Expected_Mutations_Plus_Strand",
-        "Expected_Mutations_Minus_Strand","Expected_Mutations_Both_Strands"))
+                             "Expected_Mutations_Minus_Strand","Expected_Mutations_Both_Strands",
+                             "Expected_Mutations_Aligned_Strands"))
 
         nucleosomeMutationBackgroundFile.write(headers + '\n')
         
@@ -208,7 +209,8 @@ def generateNucleosomeMutationBackgroundFile(dyadPosContextCountsFilePath, mutat
 
             dataRow = '\t'.join((str(dyadPos),str(plusStrandNucleosomeMutationBackground[dyadPos]),
             str(minusStrandNucleosomeMutationBackground[dyadPos]),
-            str(plusStrandNucleosomeMutationBackground[dyadPos] + minusStrandNucleosomeMutationBackground[dyadPos])))
+            str(plusStrandNucleosomeMutationBackground[dyadPos] + minusStrandNucleosomeMutationBackground[dyadPos]),
+            str(plusStrandNucleosomeMutationBackground[dyadPos] + minusStrandNucleosomeMutationBackground[-dyadPos])))
 
             nucleosomeMutationBackgroundFile.write(dataRow + '\n')
 
