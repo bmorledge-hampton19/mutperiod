@@ -17,7 +17,8 @@ normalizeNucleosomeMutationCounts = function(rawCountsFilePath, backgroundCounts
   # Check for the raw counts headers, and replace them with the expected headers if necessary.
   if (colnames(backgroundCounts)[2] == "Plus_Strand_Counts") {
     colnames(backgroundCounts) = c("Dyad_Position", "Expected_Mutations_Plus_Strand",
-                                   "Expected_Mutations_Minus_Strand", "Expected_Mutations_Both_Strands")
+                                   "Expected_Mutations_Minus_Strand", "Expected_Mutations_Both_Strands",
+                                   "Expected_Mutations_Aligned_Strands")
   }
 
   # Compute a factor to adjust normalized values based on the ratio of total
@@ -37,11 +38,9 @@ normalizeNucleosomeMutationCounts = function(rawCountsFilePath, backgroundCounts
   normalizedData[,Normalized_Both_Strands := mapply(normalize,rawCounts$Both_Strands_Counts,
                                                     backgroundCounts$Expected_Mutations_Both_Strands,
                                                     MoreArgs = list(totalCountsAdjust = totalCountsAdjust))]
-
-  # Add a column for aligned, normalized strands
-  normalizedData[,Normalized_Aligned_Strands :=
-                   mapply(function(plus,minus) mean(c(plus,minus)),
-                          Normalized_Plus_Strand, rev(Normalized_Minus_Strand))]
+  normalizedData[,Normalized_Aligned_Strands := mapply(normalize,rawCounts$Aligned_Strands_Counts,
+                                                       backgroundCounts$Expected_Mutations_Aligned_Strands,
+                                                       MoreArgs = list(totalCountsAdjust = totalCountsAdjust))]
 
   # Write the normalized data to a new file. (If desired)
   if (writeNormalizedData) {
