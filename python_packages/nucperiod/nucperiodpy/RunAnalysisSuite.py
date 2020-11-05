@@ -17,13 +17,17 @@ def main():
     # Create the Tkinter dialog.
     dialog = TkinterDialog(workingDirectory=getDataDirectory())
     dialog.createMultipleFileSelector("Bed Mutation Files:",0,DataTypeStr.mutations + ".bed",("Bed Files",".bed"))
-    dialog.createDropdown("Background Context",1,0,("Trinuc","Singlenuc", "Pentanuc"))
+
+    normalizationSelector = dialog.createDynamicSelector(1, 0)
+    normalizationSelector.initDropdownController("Normalization Method",("Trinuc", "Singlenuc", "Pentanuc", "Custom Background", "No Normalization"))
+    customBackgroundFileSelector = normalizationSelector.initDisplay("Custom Background", "customBackground")
+    customBackgroundFileSelector.createFileSelector("Custom Background Directory:", 0, ("Bed Files", ".bed"), directory = True)
+    normalizationSelector.initDisplayState()
 
     selectNucleosomeDyadRadius = dialog.createDynamicSelector(2,0)
     selectNucleosomeDyadRadius.initCheckboxController("Run analysis with a single nucleosome dyad radius (73 bp)")
     linkerSelectionDialog = selectNucleosomeDyadRadius.initDisplay(1, "singleNuc")
     linkerSelectionDialog.createCheckbox("Include 30 bp linker DNA on either side of single nucleosome dyad radius.",0,0)
-    selectNucleosomeDyadRadius.initDisplay(0)
     selectNucleosomeDyadRadius.initDisplayState()
 
     dialog.createCheckbox("Count with a nucleosome group radius (1000 bp)", 3, 0)
@@ -38,24 +42,32 @@ def main():
 
     # Get the user's input from the dialog.
     selections: Selections = dialog.selections
-    mutationFilePaths: List[str] = list(selections.getFilePathGroups())[0] # A list of paths to bed mutation files
-    backgroundContext = list(selections.getDropdownSelections())[0] # The context to be used when generating the background
+    mutationFilePaths: List[str] = selections.getFilePathGroups()[0] # A list of paths to bed mutation files
+    normalizationMethod = normalizationSelector.getControllerVar() # The normalization method to be used.
+    if normalizationMethod == "Custom Background":
+        customBackgroundDir = selections.getFilePaths("customBackground")[0]
     useSingleNucRadius = selectNucleosomeDyadRadius.getControllerVar() # Whether or not to generate data with a 73 bp single nuc dyad radius
     if useSingleNucRadius: 
-        includeLinker = list(selections.getToggleStates("singleNuc"))[0] # Whether or not to include 30 bp linker DNA in nucleosome dyad positions
+        includeLinker = selections.getToggleStates("singleNuc")[0] # Whether or not to include 30 bp linker DNA in nucleosome dyad positions
+    else: includeLinker = False
     useNucGroupRadius = selections.getToggleStates()[0] # Whether or not to generate data with a 1000 bp nuc group dyad radius
 
     # Make sure at least one radius was selected.
     if not useNucGroupRadius and not useSingleNucRadius:
         raise ValueError("Must select at least one radius.")
 
+    # Make sure at least one input file was found.
+    assert len(mutationFilePaths) > 0, "No valid input files given."
+
     # Convert background context to int
-    if backgroundContext == "Singlenuc":
-        backgroundContextNum = 1
-    elif backgroundContext == "Trinuc":
-        backgroundContextNum = 3
-    elif backgroundContext == "Pentanuc":
-        backgroundContextNum = 5
+    if normalizationMethod == "Singlenuc":
+        normalizationMethodNum = 1
+    elif normalizationMethod == "Trinuc":
+        normalizationMethodNum = 3
+    elif normalizationMethod == "Pentanuc":
+        normalizationMethodNum = 5
+    elif normalizationMethod in ("No Normalization", "Custom Background"):
+        normalizationMethodNum = None
     else: raise ValueError("Matching strings is hard.")
 
     # Set the linker offset
@@ -73,27 +85,35 @@ def main():
         else: raise ValueError("Unexpected file ending for " + os.path.basename(mutationFilePath))
 
     # create a new list of mutation file paths, replacing any with contexts that are too low.
-    print("\nExpanding file context where necessary...\n")
-    updatedMutationFilePaths = list()
-    for mutationFilePath in mutationFilePaths:
-        if determineMutationFileContext(mutationFilePath) < backgroundContextNum:
-            updatedMutationFilePaths += expandContext((mutationFilePath,),backgroundContextNum)
-        else: updatedMutationFilePaths.append(mutationFilePath)
+    if normalizationMethodNum is not None:
+        print("\nExpanding file context where necessary...\n")
+        updatedMutationFilePaths = list()
+        for mutationFilePath in mutationFilePaths:
+            if determineMutationFileContext(mutationFilePath) < normalizationMethodNum:
+                updatedMutationFilePaths += expandContext((mutationFilePath,),normalizationMethodNum)
+            else: updatedMutationFilePaths.append(mutationFilePath)
+    else: updatedMutationFilePaths = mutationFilePaths
 
     ### Run the rest of the analysis.
 
-    print("\nGenerating genome-wide mutation background...\n")
-    mutationBackgroundFilePaths = generateMutationBackground(updatedMutationFilePaths,backgroundContextNum)
-
-    print("\nGenerating nucleosome mutation background...\n")
-    nucleosomeMutationBackgroundFilePaths = generateNucleosomeMutationBackground(mutationBackgroundFilePaths, useSingleNucRadius, 
-                                                                                useNucGroupRadius, linkerOffset)
-
     print("\nCounting mutations at each dyad position...\n")                                                                             
     nucleosomeMutationCountsFilePaths = countNucleosomePositionMutations(updatedMutationFilePaths, useSingleNucRadius,
-                                                                        useNucGroupRadius, linkerOffset)
+                                                                         useNucGroupRadius, linkerOffset)
 
-    print("\nNormalizing counts with nucleosome background data...\n")
-    normalizedNucleosomeMutationCountsFilePaths = normalizeCounts(nucleosomeMutationBackgroundFilePaths)
+    if normalizationMethodNum is not None:
+
+        print("\nGenerating genome-wide mutation background...\n")
+        mutationBackgroundFilePaths = generateMutationBackground(updatedMutationFilePaths,normalizationMethodNum)
+
+        print("\nGenerating nucleosome mutation background...\n")
+        nucleosomeMutationBackgroundFilePaths = generateNucleosomeMutationBackground(mutationBackgroundFilePaths, useSingleNucRadius, 
+                                                                                     useNucGroupRadius, linkerOffset)
+
+    if normalizationMethodNum is not None:
+        print("\nNormalizing counts with nucleosome background data...\n")
+        normalizedNucleosomeMutationCountsFilePaths = normalizeCounts(nucleosomeMutationBackgroundFilePaths)
+    elif normalizationMethod == "Custom Background":
+        print("\nNormalizing counts using custom background data...\n")
+        normalizeCounts(list(), nucleosomeMutationCountsFilePaths, customBackgroundDir)
 
 if __name__ == "__main__": main()
