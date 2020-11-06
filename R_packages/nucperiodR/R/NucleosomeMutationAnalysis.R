@@ -4,6 +4,7 @@ generateNucPeriodData = function(mutationCountsFilePaths, outputFilePath,
                                  nucleosomeDyadPosCutoff = 60,
                                  nucleosomeMutationCutoff = 5000,
                                  enforceInputNamingConventions = FALSE,
+                                 alignStrands = FALSE,
                                  outputGraphs = FALSE) {
 
   # Get the raw mutation counts for each given mutation counts file.
@@ -13,6 +14,7 @@ generateNucPeriodData = function(mutationCountsFilePaths, outputFilePath,
   if (enforceInputNamingConventions) {
     rawCountsFilePaths = sapply(mutationCountsFilePaths, getRawCountsFilePath)
   } else rawCountsFilePaths = mutationCountsFilePaths
+  rawInputFilePaths = rawCountsFilePaths[rawCountsFilePaths == mutationCountsFilePaths]
 
   dataSetNames = getDataSetNames(mutationCountsFilePaths, enforceInputNamingConventions)
   rawNucleosomeMutationCounts = sapply(rawCountsFilePaths, getRawNucleosomeMutationCounts,
@@ -49,8 +51,11 @@ generateNucPeriodData = function(mutationCountsFilePaths, outputFilePath,
     group2DataSetNames = sapply(strsplit(basename(filePathGroup2),"_nucleosome"), function(x) x[1])
   }
 
-  normalizedNucleosomeCountsTables = vector("list",length(validFilePaths))
-  names(normalizedNucleosomeCountsTables) = validDataSetNames
+  # Determine which of the valid file paths are normalized and initialize the associated lists.
+  normalizedValidFilePaths = validFilePaths[!(validFilePaths %in% rawInputFilePaths)]
+  normalizedNucleosomeCountsTables = lapply(normalizedValidFilePaths,
+                                            function(x) data.table::fread(file = x))
+  names(normalizedNucleosomeCountsTables) = validDataSetNames[!(validFilePaths %in% rawInputFilePaths)]
 
   peakPeriodicities = numeric(length(validFilePaths))
   periodicityPValues = numeric(length(validFilePaths))
@@ -68,7 +73,6 @@ generateNucPeriodData = function(mutationCountsFilePaths, outputFilePath,
 
     # Read in the data.
     nucleosomeCountsData = data.table::fread(file = validFilePaths[i])
-    normalizedNucleosomeCountsTables[[i]] = nucleosomeCountsData
 
     # Adjust the dyadPosCutoff if we have translational periodicity data.
     if (grepl("nuc-group", basename(validFilePaths[i]), fixed = TRUE)) {
@@ -81,19 +85,34 @@ generateNucPeriodData = function(mutationCountsFilePaths, outputFilePath,
       lombTo = 20
     }
 
+    # Determine whether or not the current data is normalized or not, and
+    # derive the necessary counts vector from it.
+    if (validFilePaths[[i]] %in% rawInputFilePaths) {
+      if (alignStrands) {
+        counts = nucleosomeCountsData[Dyad_Position >= -dyadPosCutoff & Dyad_Position <= dyadPosCutoff,
+                                      .(Dyad_Position,Aligned_Strands_Counts)]
+      } else {
+        counts = nucleosomeCountsData[Dyad_Position >= -dyadPosCutoff & Dyad_Position <= dyadPosCutoff,
+                                      .(Dyad_Position,Both_Strands_Counts)]
+      }
+    } else {
+      if (alignStrands) {
+        counts = nucleosomeCountsData[Dyad_Position >= -dyadPosCutoff & Dyad_Position <= dyadPosCutoff,
+                                      .(Dyad_Position,Normalized_Aligned_Strands)]
+      } else {
+        counts = nucleosomeCountsData[Dyad_Position >= -dyadPosCutoff & Dyad_Position <= dyadPosCutoff,
+                                      .(Dyad_Position,Normalized_Both_Strands)]
+      }
+    }
+
     ##### Periodicity Analysis #####
 
     print("Running periodicity analysis...")
 
     # Calculate the periodicity of the data using a Lomb-Scargle periodiagram.
-    lombResult = lomb::lsp(nucleosomeCountsData[Dyad_Position >= -dyadPosCutoff & Dyad_Position <= dyadPosCutoff,
-                                                  .(Dyad_Position,Normalized_Both_Strands)],
-                     type = "period", from = lombFrom, to = lombTo, ofac = 100, plot = outputGraphs)
-    if (outputGraphs) {
-      plot(nucleosomeCountsData[Dyad_Position >= -dyadPosCutoff & Dyad_Position <= dyadPosCutoff,
-                                  .(Dyad_Position,Normalized_Both_Strands)],
-           type = 'b', main = validDataSetNames[i])
-    }
+    lombResult = lomb::lsp(counts, type = "period", from = lombFrom, to = lombTo,
+                           ofac = 100, plot = FALSE)
+
     # Store the relevant results!
     peakPeriodicities[i] = lombResult$peak.at[1]
     periodicityPValues[i] = lombResult$p.value

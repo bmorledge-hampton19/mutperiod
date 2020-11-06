@@ -84,7 +84,8 @@ def main():
     #Create the Tkinter UI
     dialog = TkinterDialog(workingDirectory=getDataDirectory())
     dialog.createMultipleFileSelector("Normalized Nucleosome Mutation Counts files:",0,
-                                      DataTypeStr.normNucCounts + ".tsv",("Tab Seperated Values Files",".tsv"))
+                                      DataTypeStr.normNucCounts + ".tsv",("Tab Seperated Values Files",".tsv"),
+                                      additionalFileEndings = (DataTypeStr.rawNucCounts + ".tsv",))
     dialog.createFileSelector("Output File", 1, ("R Data File", ".rda"), newFile = True)
 
     dialog.createNucMutGroupSubDialog("MainGroup", 2)
