@@ -1,11 +1,13 @@
 # This script reads one or more "simple somatic mutation" data file(s) from ICGC and 
 # writes information on single base substitution mutations to a new bed file or files for further analysis.
 
-import os, gzip, subprocess
+import os, gzip, subprocess, sys
 from typing import IO, List
+
 from nucperiodpy.Tkinter_scripts.TkinterDialog import TkinterDialog, Selections
 from nucperiodpy.helper_scripts.UsefulFileSystemFunctions import (DataTypeStr, generateFilePath, getDataDirectory, checkDirs,
-                                                                  generateMetadata, getIsolatedParentDir, InputFormat)
+                                                                  generateMetadata, getIsolatedParentDir, getFilesInDirectory, 
+                                                                  InputFormat)
 from nucperiodpy.helper_scripts.UsefulBioinformaticsFunctions import reverseCompliment, isPurine, baseChromosomes
 from nucperiodpy.input_parsing.ParseCustomBed import parseCustomBed
 
@@ -147,6 +149,31 @@ def parseICGC(ICGCFilePaths, genomeFilePath, nucPosFilePath, separateDonors,
     # Pass the parsed bed files to the custom bed parser for even more parsing! (Hooray for modularization!)
     print("\nPassing data to custom bed parser...")
     parseCustomBed(outputBedFilePaths, genomeFilePath, nucPosFilePath, stratifyByMS, stratifyByMutSig, separateDonors)
+
+
+def parseArgs(args):
+    
+    # If only the subcommand was given, run the UI.
+    if len(sys.argv) == 2: 
+        main(); return
+
+    
+    # Otherwise, check to make sure valid arguments were passed:
+    assert args.genome_file is not None, "No genome file was given."
+    assert args.nuc_pos_file is not None, "No nucleosome positions file was given."
+
+    # Get the ICGC files from the given paths, searching directories if necessary.
+    finalICGCPaths = list()
+    for ICGCFilePath in args.ICGCFilePaths:
+        if os.path.isdir(ICGCFilePath):
+            finalICGCPaths += getFilesInDirectory(ICGCFilePath, ".tsv.gz")
+        else: finalICGCPaths.append(ICGCFilePath)
+
+    assert len(finalICGCPaths) > 0, "No ICGC files were found to parse."
+
+    # Run the parser.
+    parseICGC(finalICGCPaths, args.genome_file, args.nuc_pos_file, args.stratify_by_donors, 
+              args.stratify_by_Microsatellite, args.stratify_by_Mut_Sigs)
 
 
 def main():

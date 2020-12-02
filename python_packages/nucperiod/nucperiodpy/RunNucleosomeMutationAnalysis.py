@@ -1,10 +1,11 @@
 # This script takes normalized nucleosome mutation counts files and passes them to an R script
 # which outputs relevant data about them such as periodicity snr, assymetry, and differences between MSI and MSS data.
 
-import os, subprocess
+import os, subprocess, sys
 from typing import List
 from nucperiodpy.helper_scripts.UsefulFileSystemFunctions import (DataTypeStr, getDataDirectory, Metadata,
-                                                                  rScriptsDirectory, getContext, checkForNucGroup)
+                                                                  rScriptsDirectory, getContext, checkForNucGroup,
+                                                                  getFilesInDirectory)
 from nucperiodpy.Tkinter_scripts.TkinterDialog import TkinterDialog, Selections
 
 
@@ -79,6 +80,35 @@ def runNucleosomeMutationAnalysis(nucleosomeMutationCountsFilePaths: List[str], 
     print("Results can be found at",outputFilePath)
 
 
+def parseArgs(args):
+    
+    # If only the subcommand was given, run the UI.
+    if len(sys.argv) == 2: 
+        main(); return
+
+    # Determine what files were passed to each argument.
+    filePathGroups = list()
+    for i in range(3): filePathGroups.append(list())
+
+    # Pulls all the relevant file paths out of the three groups that could have been passed as arguments.
+    for i,filePaths in enumerate((args.nucleosomeMutationFilePaths, args.group_1, args.group_2)):
+        if filePaths is not None:
+
+            for filePath in filePaths:
+
+                if os.path.isdir(filePath):
+                    filePathGroups[i] += getFilesInDirectory(filePath, DataTypeStr.generalNucCounts + ".tsv")
+                else: filePathGroups[i].append(filePath)
+
+    # Make sure that any file paths passed to group 1 or group 2 are present in the default group.
+    for i in range(1,3):
+        for filePath in filePathGroups[i]:
+            if filePath not in filePathGroups[0]: filePathGroups[0].append(filePath)
+
+    runNucleosomeMutationAnalysis(filePathGroups[0], args.output_file_path,
+                                  filePathGroups[1], filePathGroups[2])
+
+
 def main():
 
     #Create the Tkinter UI
@@ -116,9 +146,7 @@ def main():
     
     # If group comparisons were requested, get the respective groups.
     filePathGroups = list()
-    filePathGroups.append(list())
-    filePathGroups.append(list())
-    filePathGroups.append(list())
+    for i in range(3): filePathGroups.append(list())
 
     groups = ["MainGroup"]
     if periodicityComparison.getControllerVar(): groups += ("Group1", "Group2")

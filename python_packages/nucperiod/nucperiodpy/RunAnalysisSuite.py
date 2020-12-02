@@ -2,14 +2,40 @@
 # and produce the normalized dyad position counts, along with all the relevant intermediate files.
 
 from typing import List
-import os
+import os, sys
 from nucperiodpy.Tkinter_scripts.TkinterDialog import TkinterDialog, Selections
-from nucperiodpy.helper_scripts.UsefulFileSystemFunctions import DataTypeStr, getDataDirectory
+from nucperiodpy.helper_scripts.UsefulFileSystemFunctions import DataTypeStr, getDataDirectory, getFilesInDirectory
 from nucperiodpy.ExpandContext import expandContext
 from nucperiodpy.GenerateMutationBackground import generateMutationBackground
 from nucperiodpy.GenerateNucleosomeMutationBackground import generateNucleosomeMutationBackground
 from nucperiodpy.CountNucleosomePositionMutations import countNucleosomePositionMutations
 from nucperiodpy.NormalizeMutationCounts import normalizeCounts
+
+
+def parseArgs(args):
+    
+    # If only the subcommand was given, run the UI.
+    if len(sys.argv) == 2: 
+        main(); return
+
+    # Get the bed mutation files from the given paths, searching directories if necessary.
+    finalBedMutationPaths = list()
+    for mutationFilePath in args.mutationFilePaths:
+        if os.path.isdir(mutationFilePath):
+            finalBedMutationPaths += getFilesInDirectory(mutationFilePath, DataTypeStr.mutations + ".bed")
+        else: finalBedMutationPaths.append(mutationFilePath)
+
+    assert len(finalBedMutationPaths) > 0, "No bed mutation files were found."
+
+    # Determine what normalization method was selected.
+    normalizationMethod = "No Normalization"
+    if args.context_normalization == 1: normalizationMethod = "Singlenuc"
+    elif args.context_normalization == 3: normalizationMethod = "Trinuc"
+    elif args.context_normalization == 5: normalizationMethod = "Pentanuc"
+    elif args.background is not None: normalizationMethod = "Custom Background"
+
+    runAnalysisSuite(finalBedMutationPaths, normalizationMethod, args.background, 
+                     args.singlenuc_radius, args.add_linker, args.nuc_group_radius)
 
 
 def main():
@@ -46,11 +72,19 @@ def main():
     normalizationMethod = normalizationSelector.getControllerVar() # The normalization method to be used.
     if normalizationMethod == "Custom Background":
         customBackgroundDir = selections.getFilePaths("customBackground")[0] # Where to find raw counts files to use as custom background
+    else: customBackgroundDir = None
     useSingleNucRadius = selectNucleosomeDyadRadius.getControllerVar() # Whether or not to generate data with a 73 bp single nuc dyad radius
     if useSingleNucRadius: 
         includeLinker = selections.getToggleStates("singleNuc")[0] # Whether or not to include 30 bp linker DNA in nucleosome dyad positions
     else: includeLinker = False
     useNucGroupRadius = selections.getToggleStates()[0] # Whether or not to generate data with a 1000 bp nuc group dyad radius
+
+    runAnalysisSuite(mutationFilePaths, normalizationMethod, customBackgroundDir, useSingleNucRadius, 
+                     includeLinker, useNucGroupRadius)
+
+
+def runAnalysisSuite(mutationFilePaths: List[str], normalizationMethod, customBackgroundDir, useSingleNucRadius,
+                     includeLinker, useNucGroupRadius):
 
     # Make sure at least one radius was selected.
     if not useNucGroupRadius and not useSingleNucRadius:

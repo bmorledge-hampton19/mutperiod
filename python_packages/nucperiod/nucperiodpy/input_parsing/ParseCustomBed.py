@@ -16,11 +16,12 @@
 #          in this column can be used to avoid assigning an entry to another cohort without breaking this rule.
 # The file is then converted to a format suitable for the rest of the package's analysis scripts.
 
-import os, subprocess
+import os, subprocess, sys
 from typing import List
 from nucperiodpy.Tkinter_scripts.TkinterDialog import TkinterDialog, Selections
 from nucperiodpy.helper_scripts.UsefulFileSystemFunctions import (getDataDirectory, getIsolatedParentDir, generateMetadata,
-                                                                  generateFilePath, Metadata, checkDirs, InputFormat)
+                                                                  generateFilePath, Metadata, checkDirs, getFilesInDirectory, 
+                                                                  InputFormat)
 from nucperiodpy.helper_scripts.UsefulBioinformaticsFunctions import (bedToFasta, FastaFileIterator, baseChromosomes,
                                                                       isPurine, reverseCompliment)
 from nucperiodpy.input_parsing.WriteManager import WriteManager
@@ -313,6 +314,32 @@ def parseCustomBed(bedInputFilePaths, genomeFilePath, nucPosFilePath, stratifyBy
 
             # Go, go, go!
             convertToStandardInput(bedInputFilePath, writeManager)
+
+
+# Given a namespace resulting from an argparser object (constructed in nucperiodpy.Main),
+# use the input to run this script.
+def parseArgs(args):
+    
+    # If only the subcommand was given, run the UI.
+    if len(sys.argv) == 2: 
+        main(); return
+
+    # Otherwise, check to make sure valid arguments were passed:
+    assert args.genome_file is not None, "No genome file was given."
+    assert args.nuc_pos_file is not None, "No nucleosome positions file was given."
+
+    # Get the custom bed files from the given paths, searching directories if necessary.
+    finalCustomBedPaths = list()
+    for bedFilePath in args.bedFilePaths:
+        if os.path.isdir(bedFilePath):
+            finalCustomBedPaths += getFilesInDirectory(bedFilePath, "custom_input.bed")
+        else: finalCustomBedPaths.append(bedFilePath)
+
+    assert len(finalCustomBedPaths) > 0, "No custom bed files were found to parse."
+
+    # Run the parser.
+    parseCustomBed(finalCustomBedPaths, args.genome_file, args.nuc_pos_file, args.stratify_by_Microsatellite, 
+                   args.stratify_by_Mut_Sigs, args.stratify_by_cohorts)
 
 
 def main():
