@@ -1,0 +1,11 @@
+---
+include:
+  - https://salsa.debian.org/salsa-ci-team/pipeline/raw/master/salsa-ci.yml
+  - https://salsa.debian.org/salsa-ci-team/pipeline/raw/master/pipeline-jobs.yml
+
+# R creates .rdb files and .rds with some randomness.
+# https://tests.reproducible-builds.org/debian/issues/unstable/randomness_in_r_rdb_rds_databases_issue.html
+# Uncomment the following two lines if this package is affected.
+#variables:
+#  SALSA_CI_DISABLE_REPROTEST: 1
+
