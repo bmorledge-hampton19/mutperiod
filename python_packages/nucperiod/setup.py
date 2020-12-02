@@ -5,18 +5,17 @@ with open("readme.md", "r") as fh:
 
 setup(
     name="nucperiodpy",
-    version="0.1",
+    version="0.4.3",
     description='Analyze mutational periodicity about nucleosomes',
-    long_description=long_description,
     long_description_content_type="text/markdown",
     url='https://github.com/bmorledge-hampton19/Nucleosome-Mutation-Analysis',
     author='Ben Morledge-Hampton',
     author_email='b.morledge-hampton@wsu.edu',
     license='MIT',
-    install_requires=['tk'],
-    python_requires='>=3.6',
+    python_requires='>=3.7',
     packages=find_packages(),
-    package_data={'nucperiodpy': ["run_nucperiodR/*.r", "run_nucperiodR/*.R", "input_parsing/default_BPDE_lesion_calling.tsv"]},
+    package_data={"nucperiodpy": ["run_nucperiodR/*.r", "run_nucperiodR/*.R", "Tkinter_scripts/test_tube.png",
+                  "input_parsing/default_BPDE_lesion_calling.tsv"]},
     entry_points=dict(
         console_scripts=['nucperiod=nucperiodpy.Main:main']
     ),
