@@ -1,0 +1,9 @@
+Contact shtab developer about...
+	automatically adding a space after pressing tab when only one argument is possible
+	when autocompleting file paths, only show options for current directory, not the entire path up to this point.
+
+Package available on debian by default?
+
+Better doc strings.  (Function/argument descriptions.)
+
+One big main UI
