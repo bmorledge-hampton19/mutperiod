@@ -183,6 +183,7 @@ nucperiod_data/
 archived_stuff/
 
 # VSC workspace files
+.vscode/
 *.code-workspace
 
 # "At least" R package source files
@@ -194,9 +195,10 @@ python_packages/nucperiod/test.ipynb
 
 # Files from building debian source package
 python_packages/*.dsc
-python_packages/*source.build
-python_packages/*source.buildinfo
-python_packages/*source.changes
+python_packages/*.deb
+python_packages/*.build
+python_packages/*.buildinfo
+python_packages/*.changes
 python_packages/*source.ppa.upload
 
 # Misc.
