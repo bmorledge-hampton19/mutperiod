@@ -225,6 +225,7 @@ def generateMutationBackground(mutationFilePaths, backgroundContextNum):
     if backgroundContextNum == 1: contextText = "singlenuc"
     elif backgroundContextNum == 3: contextText = "trinuc"
     elif backgroundContextNum == 5: contextText = "pentanuc"
+    else: raise ValueError("Unexpected background context number: " + str(backgroundContextNum))
 
     for mutationFilePath in mutationFilePaths:
 

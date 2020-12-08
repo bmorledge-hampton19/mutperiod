@@ -75,6 +75,7 @@ def expandContext(inputBedFilePaths, expansionContextNum):
     # Set the name of the type of context being used.
     if expansionContextNum == 3: contextText = "trinuc"
     elif expansionContextNum == 5: contextText = "pentanuc"
+    else: raise ValueError("Unexpected expansion context number: " + str(expansionContextNum))
 
     for inputBedFilePath in inputBedFilePaths:
 
