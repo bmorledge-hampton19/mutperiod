@@ -6,8 +6,8 @@ import os
 from nucperiodpy.Tkinter_scripts.TkinterDialog import Selections, TkinterDialog
 from nucperiodpy.input_parsing.ParseCustomBed import parseCustomBed
 from nucperiodpy.helper_scripts.UsefulFileSystemFunctions import (getIsolatedParentDir, generateFilePath, getDataDirectory,
-                                                                  DataTypeStr, generateMetadata, InputFormat, checkDirs)
-from nucperiodpy.helper_scripts.UsefulBioinformaticsFunctions import baseChromosomes
+                                                                  DataTypeStr, generateMetadata, InputFormat, checkDirs,
+                                                                  getAcceptableChromosomes)
 
 
 def parseUVDESeq(UVDESeqFilePaths, genomeFilePath, nucPosFilePath):
@@ -34,6 +34,9 @@ def parseUVDESeq(UVDESeqFilePaths, genomeFilePath, nucPosFilePath):
         generateMetadata(dataGroupName, getIsolatedParentDir(genomeFilePath), getIsolatedParentDir(nucPosFilePath), 
                          os.path.basename(UVDESeqFilePath), InputFormat.UVDESeq, localRootDirectory)
 
+        # Get the list of acceptable chromosomes.
+        acceptableChromosomes = getAcceptableChromosomes(genomeFilePath)
+
         # Iterate through the 2 bp lesions, adding 2 single base lesions to the singlenuc output file for each.
         print("Converting 2-bp lesions to 2 single base lesions...")
         with open(UVDESeqFilePath, 'r') as UVDESeqFile:
@@ -44,7 +47,7 @@ def parseUVDESeq(UVDESeqFilePaths, genomeFilePath, nucPosFilePath):
                     choppedUpLine = line.strip().split("\t")
 
                     # Make sure the lesion is in a valid chromosome.  Otherwise, skip it.
-                    if not choppedUpLine[0] in baseChromosomes: continue
+                    if not choppedUpLine[0] in acceptableChromosomes: continue
 
                     # Extract the relevant data from the line.
                     chromosome = choppedUpLine[0]

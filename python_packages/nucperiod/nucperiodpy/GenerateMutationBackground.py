@@ -2,8 +2,9 @@
 # a genome fasta file.
 
 import os
-from nucperiodpy.helper_scripts.UsefulBioinformaticsFunctions import reverseCompliment, FastaFileIterator, baseChromosomes
-from nucperiodpy.helper_scripts.UsefulFileSystemFunctions import Metadata, DataTypeStr, generateFilePath, getDataDirectory
+from nucperiodpy.helper_scripts.UsefulBioinformaticsFunctions import reverseCompliment, FastaFileIterator
+from nucperiodpy.helper_scripts.UsefulFileSystemFunctions import (Metadata, DataTypeStr, generateFilePath, 
+                                                                  getDataDirectory, getAcceptableChromosomes)
 from nucperiodpy.Tkinter_scripts.TkinterDialog import TkinterDialog, Selections
 
 
@@ -104,7 +105,7 @@ def getGenomeContextCounts(genomeContextFrequencyFilePath, countPlusStrand = Tru
 
 # This function generates a file containing the frequencies of each context that appears in a given mutation file.
 def generateMutationContextFrequencyFile(mutationFilePath, mutationContextFrequencyFilePath,
-                                         contextNum, contextText):
+                                         contextNum, contextText, acceptableChromosomes):
 
     contextCounts = dict() # A dictionary of all relevant contexts and their counts.
 
@@ -140,7 +141,7 @@ def generateMutationContextFrequencyFile(mutationFilePath, mutationContextFreque
             context = surroundingBases[middleIndex-extensionLength:middleIndex+extensionLength+1]
 
             # Make sure we didn't encounter an invalid chromosome.
-            if choppedUpLine[0] not in baseChromosomes:
+            if choppedUpLine[0] not in acceptableChromosomes:
                 raise ValueError(choppedUpLine[0] + " is not a valid chromosome for the mutation file.")
 
             contextCounts.setdefault(context,0)
@@ -233,6 +234,9 @@ def generateMutationBackground(mutationFilePaths, backgroundContextNum):
         metadata = Metadata(mutationFilePath)
         intermediateFilesDirectory = os.path.join(metadata.directory,"intermediate_files")
 
+        # Get the list of acceptable chromosomes
+        acceptableChromosomes = getAcceptableChromosomes(metadata.genomeFilePath)
+
         print("\nWorking in:",os.path.split(mutationFilePath)[1])
         if not DataTypeStr.mutations in os.path.split(mutationFilePath)[1]:
             raise ValueError("Error:  Expected file with \"" + DataTypeStr.mutations + "\" in the name.")
@@ -264,7 +268,8 @@ def generateMutationBackground(mutationFilePaths, backgroundContextNum):
 
         # Create the mutation context frequency file.
         print("Generating mutation context frequency file...")
-        generateMutationContextFrequencyFile(mutationFilePath,mutationContextFrequencyFilePath, backgroundContextNum, contextText)
+        generateMutationContextFrequencyFile(mutationFilePath,mutationContextFrequencyFilePath, backgroundContextNum, 
+                                             contextText, acceptableChromosomes)
 
         # Generate the mutation background file.
         generateMutationBackgroundFile(genomeContextFrequencyFilePath,mutationContextFrequencyFilePath,mutationBackgroundFilePath, contextText)

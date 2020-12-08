@@ -7,17 +7,17 @@ import os, warnings
 from typing import IO
 from nucperiodpy.Tkinter_scripts.TkinterDialog import TkinterDialog, Selections
 from nucperiodpy.Tkinter_scripts.DynamicSelector import DynamicSelector
-from nucperiodpy.helper_scripts.UsefulBioinformaticsFunctions import baseChromosomes
 from nucperiodpy.helper_scripts.UsefulFileSystemFunctions import (Metadata, generateFilePath, getDataDirectory,
-                                                                  DataTypeStr)
+                                                                  DataTypeStr, getAcceptableChromosomes)
 
 
 # Contains data on a single mutation position obtained by reading the next available line in a given file.
 class MutationData:
 
-    def __init__(self,file: IO):
+    def __init__(self,file: IO, acceptableChromosomes):
         
         self.file = file # The file containing mutation data.
+        self.acceptableChromosomes = acceptableChromosomes
 
         # Read in the first line and check that it isn't empty.
         choppedUpLine = file.readline().strip().split()
@@ -34,7 +34,7 @@ class MutationData:
         self.strand = choppedUpLine[5] # Either '+' or '-' depending on which strand houses the mutation.
 
         # Make sure the mutation is in a valid chromosome.  Otherwise, something is wrong..
-        if not self.chromosome in baseChromosomes:
+        if not self.chromosome in self.acceptableChromosomes:
             raise ValueError(choppedUpLine[0] + " is not a valid chromosome for the mutation trinuc file.")
 
 
@@ -57,7 +57,7 @@ class MutationData:
         self.strand = choppedUpLine[5]
 
         # Make sure the mutation is in a valid chromosome.  Otherwise, something is wrong..
-        if not self.chromosome in baseChromosomes:
+        if not self.chromosome in self.acceptableChromosomes:
             raise ValueError(choppedUpLine[0] + " is not a valid chromosome for the mutation trinuc file.")
         
 
@@ -129,7 +129,7 @@ def isMutationPastRadius(mutation: MutationData, nucleosome: NucleosomeData, dya
 # NOTE:  It is VITAL that both files are sorted, first by chromosome number and then by starting coordinate.
 #        (Sorted first by chromosome (string) and then by nucleotide position (numeric))
 #        This code is pretty slick, but it will crash and burn and give you a heap of garbage as output if the inputs aren't sorted.
-def generateCountsFile(mutationFilePath, nucPosFilePath, nucleosomeMutationCountsFilePath, dyadRadius, linkerOffset):
+def generateCountsFile(mutationFilePath, nucPosFilePath, nucleosomeMutationCountsFilePath, dyadRadius, linkerOffset, acceptableChromosomes):
 
     # Dictionaries holding the number of mutations found at each dyad position from -73 to 73 for each strand.
     minusStrandMutationCounts = dict() 
@@ -161,7 +161,7 @@ def generateCountsFile(mutationFilePath, nucPosFilePath, nucleosomeMutationCount
 
             #Get data on the first mutation and nucleosome and reconcile their chromosomes if necessary to start things off.
             # If either the mutation file or nucleosome file is empty, make sure to bypass the check.
-            currentMutation = MutationData(mutationFile)            
+            currentMutation = MutationData(mutationFile, acceptableChromosomes)            
             currentNucleosome = NucleosomeData(nucPosFile) 
             if (not (currentMutation.isEmpty or currentNucleosome.isEmpty) and 
                 currentNucleosome.chromosome == currentMutation.chromosome): 
@@ -231,6 +231,9 @@ def countNucleosomePositionMutations(mutationFilePaths, countSingleNuc, countNuc
         # Get metadata and use it to generate a path to the nucleosome positions file.
         metadata = Metadata(mutationFilePath)
 
+        # Get the list of acceptable chromosomes
+        acceptableChromosomes = getAcceptableChromosomes(metadata.genomeFilePath)
+
         # Generate the counts file for a single nucleosome region if requested.
         if countSingleNuc:
 
@@ -242,7 +245,7 @@ def countNucleosomePositionMutations(mutationFilePaths, countSingleNuc, countNuc
             # Ready, set, go!
             print("Counting mutations at each nucleosome position in a 73 bp radius +", str(linkerOffset), "bp linker DNA.")
             generateCountsFile(mutationFilePath, metadata.baseNucPosFilePath, 
-                               nucleosomeMutationCountsFilePath, 73, linkerOffset)
+                               nucleosomeMutationCountsFilePath, 73, linkerOffset, acceptableChromosomes)
 
             nucleosomeMutationCountsFilePaths.append(nucleosomeMutationCountsFilePath)
 
@@ -257,7 +260,7 @@ def countNucleosomePositionMutations(mutationFilePaths, countSingleNuc, countNuc
             # Ready, set, go!
             print("Counting mutations at each nucleosome position in a 1000 bp radius.")
             generateCountsFile(mutationFilePath, metadata.baseNucPosFilePath, 
-                               nucleosomeMutationCountsFilePath, 1000, 0)
+                               nucleosomeMutationCountsFilePath, 1000, 0, acceptableChromosomes)
 
             nucleosomeMutationCountsFilePaths.append(nucleosomeMutationCountsFilePath)
 

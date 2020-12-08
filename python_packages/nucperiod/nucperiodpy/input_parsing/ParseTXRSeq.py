@@ -4,9 +4,9 @@
 from typing import List
 import os, subprocess
 from nucperiodpy.Tkinter_scripts.TkinterDialog import TkinterDialog, Selections
-from nucperiodpy.helper_scripts.UsefulBioinformaticsFunctions import bedToFasta, FastaFileIterator, baseChromosomes
+from nucperiodpy.helper_scripts.UsefulBioinformaticsFunctions import bedToFasta, FastaFileIterator
 from nucperiodpy.helper_scripts.UsefulFileSystemFunctions import (getIsolatedParentDir, generateFilePath, dataDirectory,
-                                                                  DataTypeStr, generateMetadata, InputFormat)
+                                                                  DataTypeStr, generateMetadata, InputFormat, getAcceptableChromosomes)
 
 
 # Estimates (Most likely with perfect accuracy) the minimum adjusted counts value that is then assumed to represent one count.
@@ -41,7 +41,7 @@ def getMinAdjustedCountValue(tXRSeqBedGraphReadsFilePath):
 # Also, convert normalized counts to actual counts and swap out the counts column for duplicated entries with multiple counts.
 # The input format should be a bedGraph file.
 def trimBedGraphTXRSeqData(tXRSeqBedGraphReadsFilePathPair: List[str], trimmedReadsFilePath, minAdjustedCountValue, 
-                           acceptableLengths, roundingErrorLeniency = 0.01):
+                           acceptableLengths, acceptableChromosomes, roundingErrorLeniency = 0.01):
     
    with open(trimmedReadsFilePath, 'w') as trimmedReadsFile:
 
@@ -56,7 +56,7 @@ def trimBedGraphTXRSeqData(tXRSeqBedGraphReadsFilePathPair: List[str], trimmedRe
                     choppedUpLine = line.strip().split("\t")
 
                     # Make sure the lesion is in a valid chromosome.  Otherwise, skip it.
-                    if not choppedUpLine[0] in baseChromosomes: continue
+                    if not choppedUpLine[0] in acceptableChromosomes: continue
 
                     # Make sure we have a valid read length
                     readLength = int(choppedUpLine[2]) - int(choppedUpLine[1])
@@ -79,7 +79,7 @@ def trimBedGraphTXRSeqData(tXRSeqBedGraphReadsFilePathPair: List[str], trimmedRe
 # Create a new reads file which filters out any reads with a length greater than 28 or less than 26.
 # Also, replace the columns with the read ID and score with NA.
 # The input format should be a bed file.
-def trimBedTXRSeqData(tXRSeqBedReadsFilePath: str, trimmedReadsFilePath, acceptableLengths):
+def trimBedTXRSeqData(tXRSeqBedReadsFilePath: str, trimmedReadsFilePath, acceptableLengths, acceptableChromosomes):
     
    with open(trimmedReadsFilePath, 'w') as trimmedReadsFile:
 
@@ -90,7 +90,7 @@ def trimBedTXRSeqData(tXRSeqBedReadsFilePath: str, trimmedReadsFilePath, accepta
                 choppedUpLine = line.strip().split("\t")
 
                 # Make sure the lesion is in a valid chromosome.  Otherwise, skip it.
-                if not choppedUpLine[0] in baseChromosomes: continue
+                if not choppedUpLine[0] in acceptableChromosomes: continue
 
                 # Make sure we have a valid read length
                 readLength = int(choppedUpLine[2]) - int(choppedUpLine[1])
@@ -177,6 +177,9 @@ class TXRSeqInputDataPipeline:
         self.genomeFilePath = genomeFilePath
         self.nucPosFilePath = nucPosFilePath
 
+        # Get the list of acceptable chromosomes
+        self.acceptableChromosomes = getAcceptableChromosomes(self.genomeFilePath)
+
         # Read in information from the callParams File.
         self.callParamsFilePath = callParamsFilePath
         self.expectedLocationsByLength = dict()
@@ -252,7 +255,8 @@ class TXRSeqInputDataPipeline:
         
         # If the input data is in bed format, generate the trimmed reads from that data.
         if self.bedInputFilePath is not None:
-            trimBedTXRSeqData(self.bedInputFilePath, self.trimmedReadsFilePath, self.acceptableBasesByLength.keys())
+            trimBedTXRSeqData(self.bedInputFilePath, self.trimmedReadsFilePath, 
+                              self.acceptableBasesByLength.keys(), self.acceptableChromosomes)
 
         # Otherwise, generate the trimmed reads from bedGraph data.
         else:
@@ -266,7 +270,7 @@ class TXRSeqInputDataPipeline:
             # Generate the trimmed reads.
             trimBedGraphTXRSeqData(self.bedGraphReadsFilePathPair, self.trimmedReadsFilePath, 
                                    getMinAdjustedCountValue(self.bedGraphReadsFilePathPair[0]),
-                                   self.acceptableBasesByLength.keys())
+                                   self.acceptableBasesByLength.keys(), self.acceptableChromosomes)
 
         self.readsHaveBeenTrimmed = True
 

@@ -3,9 +3,9 @@
 
 import os, subprocess
 from nucperiodpy.Tkinter_scripts.TkinterDialog import TkinterDialog, Selections
-from nucperiodpy.helper_scripts.UsefulBioinformaticsFunctions import reverseCompliment, isPurine, baseChromosomes
+from nucperiodpy.helper_scripts.UsefulBioinformaticsFunctions import reverseCompliment, isPurine
 from nucperiodpy.helper_scripts.UsefulFileSystemFunctions import (getIsolatedParentDir, generateFilePath, dataDirectory,
-                                                                  dataTypes, generateMetadata)
+                                                                  dataTypes, generateMetadata, getAcceptableChromosomes)
                                                                   
 
 def parseKucabCompendium(kucabSubstitutionsFilePaths, genomeFilePath, nucPosFilePath, includeAllPAHs):
@@ -35,6 +35,9 @@ def parseKucabCompendium(kucabSubstitutionsFilePaths, genomeFilePath, nucPosFile
                                                    context = "trinuc", dataType = dataTypes.mutations, fileExtension = ".bed")
         generateMetadata(dataGroupName, getIsolatedParentDir(genomeFilePath), getIsolatedParentDir(nucPosFilePath),
                          os.path.join("..",os.path.basename(kucabSubstitutionsFilePath)), outputDirectory)
+
+        # Get the list of acceptable chromosomes
+        acceptableChromosomes = getAcceptableChromosomes(genomeFilePath)
 
         # These are the designations for PAH mutation signatures, the ones related to tobacco smoke that we want to study.
         PAHDesignations = ("MSM0.54","MSM0.26","MSM0.92","MSM0.2","MSM0.42","MSM0.74","MSM0.103"
@@ -78,7 +81,7 @@ def parseKucabCompendium(kucabSubstitutionsFilePaths, genomeFilePath, nucPosFile
                     # Handle the weird chromsome formatting and then check for invalid chromosomes.
                     if chromosome == "chr23": chromosome = "chrX"
                     if chromosome == "chr24": chromosome = "chrY"
-                    if not chromosome in baseChromosomes: continue
+                    if not chromosome in acceptableChromosomes: continue
                     startPos1Base = choppedUpLine[5]
                     startPos0Base = str(int(startPos1Base)-1)
 

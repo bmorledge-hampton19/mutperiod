@@ -21,8 +21,8 @@ from typing import List
 from nucperiodpy.Tkinter_scripts.TkinterDialog import TkinterDialog, Selections
 from nucperiodpy.helper_scripts.UsefulFileSystemFunctions import (getDataDirectory, getIsolatedParentDir, generateMetadata,
                                                                   generateFilePath, Metadata, checkDirs, getFilesInDirectory, 
-                                                                  InputFormat)
-from nucperiodpy.helper_scripts.UsefulBioinformaticsFunctions import (bedToFasta, FastaFileIterator, baseChromosomes,
+                                                                  InputFormat, getAcceptableChromosomes)
+from nucperiodpy.helper_scripts.UsefulBioinformaticsFunctions import (bedToFasta, FastaFileIterator,
                                                                       isPurine, reverseCompliment)
 from nucperiodpy.input_parsing.WriteManager import WriteManager
 from nucperiodpy.input_parsing.IdentifyMSI import MSIIdentifier
@@ -30,13 +30,13 @@ from nucperiodpy.input_parsing.IdentifyMutSigs import MutSigIdentifier
 
 
 # Checks for common errors in a line of input.
-def checkForErrors(choppedUpLine: List[str], cohortDesignationPresent):
+def checkForErrors(choppedUpLine: List[str], cohortDesignationPresent, acceptableChromosomes):
 
     if len(choppedUpLine) < 6 or len(choppedUpLine) > 8:
         raise ValueError("Entry given with invalid number of arguments (" + str(len(choppedUpLine)) + ").  " +
                          "Each entry should contain either 6 tab separated arguments or 7 (if a cohort designation is present.")
 
-    if choppedUpLine[0] not in baseChromosomes:
+    if choppedUpLine[0] not in acceptableChromosomes:
         raise ValueError("Invalid chromosome identifier \"" + choppedUpLine[0] + "\" found.  " + 
                          "Expected chromosome in the set at: NEED TO LINK TO ACCEPTABLE CHROMOSOME FILE")
 
@@ -101,6 +101,9 @@ def autoAcquireAndQACheck(bedInputFilePath: str, genomeFilePath, autoAcquiredFil
     fastaEntry = None
     cohortDesignationPresent = None
 
+    # Get the list of acceptable chromosomes
+    acceptableChromosomes = getAcceptableChromosomes(genomeFilePath)
+
     # Create a temporary file to write the data to (potentially after auto-acquiring).  
     # Will replace original file at the end if auto-acquiring occurred.
     temporaryBedFilePath = bedInputFilePath + ".tmp"
@@ -116,7 +119,7 @@ def autoAcquireAndQACheck(bedInputFilePath: str, genomeFilePath, autoAcquiredFil
                 if cohortDesignationPresent is None: cohortDesignationPresent = len(choppedUpLine) == 7
 
                 # Check for possible error states.
-                checkForErrors(choppedUpLine, cohortDesignationPresent)
+                checkForErrors(choppedUpLine, cohortDesignationPresent, acceptableChromosomes)
 
                 # If this is the first entry requiring auto-acquiring, generate the required fasta file.
                 if not autoAcquiring and (choppedUpLine[3] == '.' or (choppedUpLine[5] == '.' and choppedUpLine[3] != '*')):

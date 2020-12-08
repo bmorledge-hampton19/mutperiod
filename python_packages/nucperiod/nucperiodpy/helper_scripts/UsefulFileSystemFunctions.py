@@ -40,11 +40,12 @@ def getDataDirectory():
         dataDirectoryDirectory = selections.getIndividualFilePaths()[0]
 
         # Make sure a valid directory was given.  Then create the new directory (if it doesn't exist already), 
-        # write it to the text file, and return it!
+        # write it to the text file, and return it!  (Also create the __external_data directory.)
         assert os.path.exists(dataDirectoryDirectory), "Given directory does not exist."
 
         dataDirectory = os.path.join(dataDirectoryDirectory,"nucperiod_data")
         checkDirs(dataDirectory)
+        checkDirs(os.path.join(dataDirectory,"__external_data"))
         with open(dataDirectoryTextFilePath, 'w') as dataDirectoryTextFile:
             dataDirectoryTextFile.write(dataDirectory + '\n')
         return dataDirectory
@@ -125,6 +126,37 @@ def checkDirs(*directoryPaths):
         if not os.path.exists(directoryPath): os.makedirs(directoryPath)
 
 
+# Given a genome fasta file, return the chromosomes present in that file.  
+def getAcceptableChromosomes(genomeFilePath: str):
+
+    # Make sure we were given a reasonable file path.
+    assert getIsolatedParentDir(genomeFilePath) in genomeFilePath and genomeFilePath.endswith(".fa"), \
+        "Given file path does not appear to be a genome file path internal to nucperiod.  Make sure to \
+         choose a .fa file within the nucperiod_data/__external_data/[genome_name] directory"
+
+    # Parse the path to the acceptable cohromosomes file from the given path.
+    acceptableChromosomesFilePath = genomeFilePath.rsplit(".fa",1)[0] + "_acceptable_chromosomes.txt"
+
+    # If the acceptable chromosomes file has not been generated, do so.
+    if not os.path.exists(acceptableChromosomesFilePath):
+        print("Acceptable chromosomes file not found at expected location.  Generating from given fasta file...")
+
+        with open(genomeFilePath, 'r') as genomeFile:
+            with open(acceptableChromosomesFilePath, 'w') as acceptableChromosomesFile:
+
+                for line in genomeFile:
+                    if line.startswith('>'):
+                        chromosomeName = line[1:].strip()
+                        print("Found chromosome:", chromosomeName)
+                        acceptableChromosomesFile.write(chromosomeName + '\n')
+        
+        print("If these chromosome designations seem incorrect, check that the genome fasta file headers are formatted correctly.")
+
+    # Create a list of acceptable chromosome strings from the acceptable chromosomes file and return it.
+    with open(acceptableChromosomesFilePath, 'r') as acceptableChromosomesFile:
+        return [line.strip() for line in acceptableChromosomesFile]
+
+
 # Returns the context associated with a given file path as lowercase text (or an int if specified), or none if there is none.
 def getContext(filePath: str, asInt = False):
 
@@ -179,7 +211,7 @@ def getNucMutCounts(rawNucCountsPath, dyadPosCutoff = 60):
     
     # Otherwise, double check that the given file is a raw counts file.
     elif DataTypeStr.rawNucCounts in os.path.basename(rawNucCountsPath):
-        rawNucCountsFilePath = os.path.join(rawNucCountsPath, item)
+        rawNucCountsFilePath = rawNucCountsPath
 
     # if a raw counts file was found, determine the total number of mutations in the given region from it
     # (Within the given dyadPosCutoff range).

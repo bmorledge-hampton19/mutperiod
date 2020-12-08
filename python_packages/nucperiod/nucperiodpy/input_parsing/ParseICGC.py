@@ -7,8 +7,8 @@ from typing import IO, List
 from nucperiodpy.Tkinter_scripts.TkinterDialog import TkinterDialog, Selections
 from nucperiodpy.helper_scripts.UsefulFileSystemFunctions import (DataTypeStr, generateFilePath, getDataDirectory, checkDirs,
                                                                   generateMetadata, getIsolatedParentDir, getFilesInDirectory, 
-                                                                  InputFormat)
-from nucperiodpy.helper_scripts.UsefulBioinformaticsFunctions import reverseCompliment, isPurine, baseChromosomes
+                                                                  InputFormat, getAcceptableChromosomes)
+from nucperiodpy.helper_scripts.UsefulBioinformaticsFunctions import reverseCompliment, isPurine
 from nucperiodpy.input_parsing.ParseCustomBed import parseCustomBed
 
 
@@ -41,9 +41,10 @@ class ICGCMutation:
 # The mutation is returned as an ICGCMutation object.
 class ICGCIterator:
 
-    def __init__(self, ICGCFile: IO):
+    def __init__(self, ICGCFile: IO, genomeFilePath):
         
         self.ICGCFile = ICGCFile # The file containing the ICGC data
+        self.acceptableChromosomes = getAcceptableChromosomes(genomeFilePath)
         self.finishedDonors = list() # A list of donors to make sure we don't encounter one more than once.
         self.currentDonor = '' # The donorID currently being read for mutation data.
         self.currentDonorMutations = dict() # A dictionary of mutations unique to the current donor, to avoid writing duplicate mutations.
@@ -77,7 +78,7 @@ class ICGCIterator:
 
             if (choppedUpLine[12] == "GRCh37" and # Is the reference genome hg19?
                 choppedUpLine[33] == "WGS" and # Was whole genome sequencing used to generate the data?
-                ("chr" + choppedUpLine[8]) in baseChromosomes): # Is the chromosome acceptable?
+                ("chr" + choppedUpLine[8]) in self.acceptableChromosomes): # Is the chromosome acceptable?
 
                 # Is this a new donor?
                 if choppedUpLine[1] != self.currentDonor:
@@ -130,7 +131,7 @@ def parseICGC(ICGCFilePaths, genomeFilePath, nucPosFilePath, separateDonors,
         print("Writing data to custom bed format.")
         with gzip.open(ICGCFilePath, 'r') as ICGCFile:
             with open(outputBedFilePath, 'w') as outputBedFile:
-                for mutation in ICGCIterator(ICGCFile):
+                for mutation in ICGCIterator(ICGCFile, genomeFilePath):
 
                     # Change the formatting if a deletion or insertion is given.              
                     if mutation.mutatedFrom == '-': 

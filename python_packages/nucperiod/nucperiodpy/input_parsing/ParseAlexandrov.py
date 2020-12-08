@@ -3,8 +3,7 @@
 import os
 from nucperiodpy.Tkinter_scripts.TkinterDialog import TkinterDialog, Selections
 from nucperiodpy.helper_scripts.UsefulFileSystemFunctions import (generateFilePath, generateMetadata, DataTypeStr, InputFormat,
-                                                                  checkDirs, getIsolatedParentDir, dataDirectory)
-from nucperiodpy.helper_scripts.UsefulBioinformaticsFunctions import baseChromosomes
+                                                                  checkDirs, getIsolatedParentDir, dataDirectory, getAcceptableChromosomes)
 from nucperiodpy.input_parsing.ParseCustomBed import parseCustomBed
 
 
@@ -24,6 +23,9 @@ def parseAlexandrov (bedInputFilePaths, genomeFilePath, nucPosFilePath):
         intermediateFilesDir = os.path.join(dataDirectory,"intermediate_files")
         checkDirs(intermediateFilesDir)
 
+        # Get the list of acceptable chromosomes
+        acceptableChromosomes = getAcceptableChromosomes(genomeFilePath)
+
         # Generate the output file.
         outputBedFilePath = generateFilePath(directory = intermediateFilesDir, dataGroup = getIsolatedParentDir(bedInputFilePath),
                                              dataType = DataTypeStr.customInput, fileExtension = ".bed")
@@ -37,7 +39,7 @@ def parseAlexandrov (bedInputFilePaths, genomeFilePath, nucPosFilePath):
                     choppedUpLine = str(line).strip().split('\t')
 
                     # Make sure we have a valid chromosome
-                    if ("chr" + choppedUpLine[2]) in baseChromosomes and not '/' in choppedUpLine[5]:
+                    if ("chr" + choppedUpLine[2]) in acceptableChromosomes and not '/' in choppedUpLine[5]:
                     
                         # Convert the line to custom bed format.
                         if choppedUpLine[5] == '-': choppedUpLine[5] = '*'
