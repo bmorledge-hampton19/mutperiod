@@ -189,9 +189,8 @@ archived_stuff/
 # "At least" R package source files
 *.tar.gz
 
-# Test scripts
-python_packages/nucperiod/test.py
-python_packages/nucperiod/test.ipynb
+# Test files
+test.*
 
 # Files from building debian source package
 python_packages/*.dsc
