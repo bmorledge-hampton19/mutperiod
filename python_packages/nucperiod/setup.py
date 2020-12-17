@@ -5,7 +5,7 @@ with open("readme.md", "r") as fh:
 
 setup(
     name="nucperiodpy",
-    version="0.4.3",
+    version="0.5",
     description='Analyze mutational periodicity about nucleosomes',
     long_description_content_type="text/markdown",
     url='https://github.com/bmorledge-hampton19/Nucleosome-Mutation-Analysis',

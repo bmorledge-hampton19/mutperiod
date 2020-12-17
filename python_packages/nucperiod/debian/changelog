@@ -1,3 +1,9 @@
+nucperiod (0.5-0ubuntu1) focal; urgency=low
+
+  * Content complete for initial beta release
+
+ -- Ben Morledge-Hampton <b.morledge-hampton@wsu.edu>  Fri, 11 Dec 2020 13:20:46 -0800
+
 nucperiod (0.4.3-0ubuntu4) focal; urgency=low
 
   * After solving issues with changing file permissions on mounted drives in WSL, ACTUALLY
