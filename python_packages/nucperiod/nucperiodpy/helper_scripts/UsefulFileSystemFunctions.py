@@ -116,6 +116,8 @@ def getIsolatedParentDir(filePath: str, isDir = False):
         if isDir: raise ValueError("Expected directory path, but received the file path: " + filePath)
         else: raise ValueError("Expected file path, but received the directory path: " + filePath)
 
+    assert os.path.sep in filePath, "Given path \"" + filePath + "\" has no parent directory.  Are you sure you passed a file path?"
+
     if isDir: return filePath.rsplit(os.path.sep,1)[-1]
     else: return filePath.rsplit(os.path.sep,2)[-2]
 
