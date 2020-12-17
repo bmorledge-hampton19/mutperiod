@@ -20,13 +20,11 @@ import os, subprocess, sys
 from typing import List
 from nucperiodpy.Tkinter_scripts.TkinterDialog import TkinterDialog, Selections
 from nucperiodpy.helper_scripts.UsefulFileSystemFunctions import (getDataDirectory, getIsolatedParentDir, generateMetadata,
-                                                                  generateFilePath, Metadata, checkDirs, getFilesInDirectory, 
+                                                                  Metadata, checkDirs, getFilesInDirectory, 
                                                                   InputFormat, getAcceptableChromosomes)
 from nucperiodpy.helper_scripts.UsefulBioinformaticsFunctions import (bedToFasta, FastaFileIterator,
                                                                       isPurine, reverseCompliment)
 from nucperiodpy.input_parsing.WriteManager import WriteManager
-from nucperiodpy.input_parsing.IdentifyMSI import MSIIdentifier
-from nucperiodpy.input_parsing.IdentifyMutSigs import MutSigIdentifier
 
 
 # Checks for common errors in a line of input.
