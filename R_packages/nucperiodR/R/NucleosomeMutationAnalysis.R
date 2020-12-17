@@ -128,7 +128,7 @@ generateNucPeriodData = function(mutationCountsFilePaths, outputFilePath,
   periodicityResults = data.table::data.table(Data_Set=validDataSetNames,Peak_Periodicity=peakPeriodicities,
                                               PValue=periodicityPValues,SNR=periodicitySNRs)
 
-  # Run the SNR wilcoxin's test if necessary.
+  # Run the SNR wilcoxon's test if necessary.
   if (compareGroups) {
 
     print("Comparing periodicity results between given groups.")
@@ -142,8 +142,8 @@ generateNucPeriodData = function(mutationCountsFilePaths, outputFilePath,
       warning("The number of the group1 and group2 combined SNR values is less than the total number of SNR values")
     }
 
-    wilcoxinResult = wilcox.test(group1SNR, group2SNR)
-    print(paste("wilcoxin test p-value:", wilcoxinResult$p.value))
+    wilcoxonResult = wilcox.test(group1SNR, group2SNR)
+    print(paste("wilcoxon test p-value:", wilcoxonResult$p.value))
 
   }
 
@@ -156,10 +156,10 @@ generateNucPeriodData = function(mutationCountsFilePaths, outputFilePath,
   if (compareGroups) {
     nucPeriodData = append(nucPeriodData, list(group1Inputs = group1DataSetNames,
                                                group2Inputs = group2DataSetNames,
-                                               wilcoxinResult = wilcoxinResult))
+                                               wilcoxonResult = wilcoxonResult))
   }
 
-  save(nucPeriodData, file = outputFilePath)
+  return(nucPeriodData)
 
 }
 

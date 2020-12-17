@@ -56,8 +56,8 @@ def runNucleosomeMutationAnalysis(nucleosomeMutationCountsFilePaths: List[str], 
         "One file path group contains file paths, but the other is empty.")
     assert len(nucleosomeMutationCountsFilePaths) > 0, (
         "No normalized counts files given.")
-    assert outputFilePath.endswith(".rda"), (
-        "Output file should end with \".rda\".")
+    assert outputFilePath.endswith(".rda") or outputFilePath.endswith(".tsv"), (
+        "Output file should end with \".rda\" or \".tsv\".")
 
     # Write the inputs to a temporary file to be read by the R script
     inputsFilePath = os.path.join(rScriptsDirectory,"inputs.txt")
@@ -113,10 +113,10 @@ def main():
 
     #Create the Tkinter UI
     dialog = TkinterDialog(workingDirectory=getDataDirectory())
-    dialog.createMultipleFileSelector("Normalized Nucleosome Mutation Counts files:",0,
+    dialog.createMultipleFileSelector("Nucleosome Mutation Counts files:",0,
                                       DataTypeStr.normNucCounts + ".tsv",("Tab Seperated Values Files",".tsv"),
                                       additionalFileEndings = (DataTypeStr.rawNucCounts + ".tsv",))
-    dialog.createFileSelector("Output File", 1, ("R Data File", ".rda"), newFile = True)
+    dialog.createFileSelector("Output File", 1, ("R Data File", ".rda"), ("Tab Separated Values File", ".tsv"), newFile = True)
 
     dialog.createNucMutGroupSubDialog("MainGroup", 2)
 
