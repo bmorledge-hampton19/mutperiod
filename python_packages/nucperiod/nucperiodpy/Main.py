@@ -1,6 +1,6 @@
 # This script will be called from the command line to execute other scripts.
 from argparse import ArgumentParser
-from nucperiodpy import (RunNucleosomeMutationAnalysis, RunAnalysisSuite)
+from nucperiodpy import (RunNucleosomeMutationAnalysis, RunAnalysisSuite, GenerateFigures)
 from nucperiodpy.input_parsing import (ParseCustomBed, ParseICGC)
 from nucperiodpy.helper_scripts.UsefulFileSystemFunctions import DataTypeStr
 import argparse, importlib.util
@@ -88,11 +88,12 @@ def formatperiodicityAnalysisParser(periodicityAnalysisParser: ArgumentParser):
                                            help = "One or more nucleosome mutation counts file paths.  These files should be \
                                                    output from the main nucperiod pipeline.  If given a directory, the directory \
                                                    will be recursively searched for files ending in \
-                                                   \"" + DataTypeStr.generalNucCounts + ".tsv\"")
+                                                   \"" + DataTypeStr.generalNucCounts + ".tsv\"").complete = fileCompletion
     periodicityAnalysisParser.add_argument("-o", "--output-file-path", 
                                            help = "The output file path for the periodicity analysis results.  \
-                                                   Should be a .rda file.  The analysis process will attempt to create \
-                                                   the file if it does not already exist.")
+                                                   Should be a .rda file for complete output or a .tsv file to only \
+                                                   output the periodicity results.  The analysis process will attempt to create \
+                                                   the file if it does not already exist.").complete = fileCompletion
 
     groupComparison = periodicityAnalysisParser.add_argument_group("Periodicity Comparison")
     groupComparison.add_argument("--group-1", nargs = '*',
@@ -100,10 +101,47 @@ def formatperiodicityAnalysisParser(periodicityAnalysisParser: ArgumentParser):
                                          The periodicities of this group are compared to the periodicities in the --group-2 \
                                          argument using a Wilcoxon rank sum test.  They are also added to the regular analysis, \
                                          so it is not necessary to duplicate the file paths passed as a part of the \
-                                         nucleosomeMutationFilePaths argument.")
+                                         nucleosomeMutationFilePaths argument.").complete = fileCompletion
     groupComparison.add_argument("--group-2", nargs = '*',
-                                       help = "The counterpart to --group-1")
+                                       help = "The counterpart to --group-1").complete = fileCompletion
 
+
+def formatGenerateFiguresParser(generateFiguresParser: ArgumentParser):
+
+    generateFiguresParser.set_defaults(func = GenerateFigures.parseArgs)
+
+    generateFiguresParser.add_argument("--rda-paths", nargs = '*',
+                                        help = "One or more paths to .rda files resulting from the periodicity analysis.").complete = fileCompletion
+    generateFiguresParser.add_argument("--tsv-paths", nargs = '*',
+                                       help = "One or more paths to .tsv nucleosome counts files.").complete = fileCompletion
+
+    outputGroup = generateFiguresParser.add_mutually_exclusive_group()
+
+    outputGroup.add_argument("--output-file",
+                                       help = "A single output file to send all generated figures to.  \
+                                               Should be a single pdf file.").complete = fileCompletion
+
+    outputGroup.add_argument("--output-directory",
+                                       help = "A directory to to send each of the generated figures to.  \
+                                               Each figure is sent to a separate pdf file.").complete = fileCompletion
+
+    generateFiguresParser.add_argument("--omit-outliers", action = "store_true",
+                                       help = "Remove any statistical outliers from the data before figure generation.")
+
+    generateFiguresParser.add_argument("-s", "--smooth-nuc-group", action = "store_true",
+                                       help = "Smooth all nuc-group (translational periodicity) data in \
+                                               a 5 base pair radius to suppress rotational periodicity.")
+
+    generateFiguresParser.add_argument("-a", "--align-strands", action = "store_true",
+                                       help = "Invert counts on the minus strand so that counts for each strand \
+                                               run 5' to 3'.")
+
+    generateFiguresParser.add_argument("-n", "--include-normalized", action = "store_true",
+                                       help = "For .rda input, use normalized counts tables to generate figures.")
+
+    generateFiguresParser.add_argument("-r", "--include-raw", action = "store_true",
+                                       help = "For .rda input, use raw counts tables to generate figures.")
+    
 
 def getMainParser():
 
@@ -140,6 +178,12 @@ def getMainParser():
                                                                                             scargle periodogram.")
     formatperiodicityAnalysisParser(periodicityAnalysisParser)
     
+
+    # For GenerateFigures...
+    generateFiguresParser = subparsers.add_parser("generateFigures", description = "Generates figures from nucleosome counts data or \
+                                                                                    the output from the periodicity analysis.")
+    formatGenerateFiguresParser(generateFiguresParser)                                                                                
+
 
     return parser
 
