@@ -112,7 +112,7 @@ class FastaFileIterator:
 
         while not line.startswith('>'):
 
-            sequence += line
+            sequence += line.upper()
 
             line = self.fastaFile.readline().strip()
 
