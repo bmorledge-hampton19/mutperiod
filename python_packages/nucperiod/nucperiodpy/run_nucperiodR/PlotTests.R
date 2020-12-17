@@ -1,5 +1,6 @@
 # Don't forget to import the data.table library!
 library(data.table)
+library(ggplot2)
 
 # Read in data.
 load(choose.files(multi = FALSE))
@@ -48,10 +49,10 @@ smoothValues = function(middlePos, dataCol, averagingRadius = 5) {
 }
 data[, (dataCol) := sapply(data$Dyad_Position, smoothValues, dataCol)]
 
-# Basic Plotting Template
-plot(data$Dyad_Position, data[[dataCol]], type = 'l', main = "tXR-seq Data on BPDE Lesion Repair (Translational)",
-     ylab = "Normalized Repair Read Counts", xlab = "Position Relative to Dyad (bp)",
-     cex.lab = 2, cex.main = 1.75, lwd = 3, col = "black")
+# Basic Plotting Template (ylim = c(min,max) to set axis bounds)
+plot(data$Dyad_Position, data[[dataCol]], type = 'l', main = "MSS Esophageal Tumor Mutations (Translational)",
+     ylab = "Normalized Mutation Counts", xlab = "Position Relative to Dyad (bp)",
+     cex.lab = 2, cex.main = 1.75, lwd = 3, col = "black", ylim = c(0.9,1.1))
 
 # Plot Plus and minus strands on the same graph (normalized).
 plot(data$Dyad_Position, data$Normalized_Plus_Strand, type = 'l', 
@@ -85,23 +86,42 @@ colorInRange = function(range, color, dataCol, includeNegative = TRUE) {
 }
 
 # Color rotational positioning
-captureOutput = sapply(minorInPositions, colorInRange, color = "blue", dataCol = dataCol)
-captureOutput = sapply(minorOutPositions, colorInRange, color = "light green", dataCol = dataCol)
+captureOutput = sapply(minorInPositions, colorInRange, color = "#7b3294", dataCol = dataCol)
+captureOutput = sapply(minorOutPositions, colorInRange, color = "#008837", dataCol = dataCol)
 
 # Color translational positioning
-captureOutput = sapply(linkerPositions, colorInRange, color = "blue", dataCol = dataCol)
-captureOutput = sapply(nucleosomePositions, colorInRange, color = "light green", dataCol = dataCol)
+captureOutput = sapply(linkerPositions, colorInRange, color = "#ca0020", dataCol = dataCol)
+captureOutput = sapply(nucleosomePositions, colorInRange, color = "#0571b0", dataCol = dataCol)
 
 
-
-# Create grouped comparison box plot
+# Create grouped comparison figure
 
 group1DataSetNames = sapply(strsplit(basename(nucPeriodData$group1Inputs),"_nucleosome"), function(x) x[1])
 group2DataSetNames = sapply(strsplit(basename(nucPeriodData$group2Inputs),"_nucleosome"), function(x) x[1])
 
-group1SNR = nucPeriodData$periodicityResults[Data_Set %in% group1DataSetNames, SNR]
-group2SNR = nucPeriodData$periodicityResults[Data_Set %in% group2DataSetNames, SNR]
+group1SNR = nucPeriodData$periodicityResults[Data_Set %in% group1DataSetNames, Peak_Periodicity]
+group2SNR = nucPeriodData$periodicityResults[Data_Set %in% group2DataSetNames, Peak_Periodicity]
 
-boxplot(group1SNR, group2SNR, main = "Individual SNR values for grouped nucleosome mutation data",
-        names = c("Group 1", "Group 2"), ylab = "Signal to Noise Ratio (SNR)",
-        cex.lab = 2, cex.axis = 1.5, cex.main = 1.25)
+groupedSNRs = data.table(group = c(rep("MSS", length(group1SNR)),rep("MSI", length(group2SNR))),
+                         SNR = c(group1SNR, group2SNR))
+
+# ggplot dotplot
+ggplot(groupedSNRs, aes(group, SNR)) + 
+  geom_dotplot(binaxis = "y", stackdir = "center", binwidth = 10, fill = NA, stroke = 2) +
+  stat_summary(fun = median, geom = "crossbar", width = 0.5, fatten = 2, colour = "red") +
+  labs(title = "Distribution of SNR Values for Rotational Periodicities",
+       x = "Microsatellite Stability") +
+  theme(title = element_text(size = 20))
+
+# ggplot jittered scatter plot
+ggplot(groupedSNRs, aes(group, SNR)) + 
+  geom_jitter(width = 0.2, shape = 1, size = 2) + 
+  stat_summary(fun = median, geom = "crossbar", width = 0.5, fatten = 2, colour = "red") +
+  labs(title = "Distribution of Peak Periodicity Values for Translational Periodicities",
+       x = "Microsatellite Stability", y = "Peak Periodicity") +
+  theme(title = element_text(size = 15))
+
+# base r boxplot
+boxplot(group1SNR, group2SNR, main = "SNR distribution for rotational mutation data",
+        names = c("MSS", "MSI"), ylab = "Signal to Noise Ratio (SNR)",
+        cex.lab = 2, cex.axis = 1.5, cex.main = 2)
