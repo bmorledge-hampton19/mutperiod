@@ -192,7 +192,7 @@ class WriteManager:
         # Make sure we were given an SNP or OTHER single base lesion.  (Right now, these are the only acceptable data format for the pipeline.)
         # Then, format it for output.
         if mutFrom.upper() in ('A','C','G','T') and alteration.upper() in ('A','C','G','T',"OTHER"):
-            outputLine = '\t'.join((chromosome, startPos, endPos, mutFrom, mutFrom + ">" + alteration, strand)) + '\n'
+            outputLine = '\t'.join((chromosome, startPos, endPos, mutFrom, alteration, strand)) + '\n'
         else: return
 
         # Write data to the root output file.
