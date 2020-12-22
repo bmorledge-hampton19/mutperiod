@@ -50,7 +50,7 @@ smoothValues = function(middlePos, dataCol, averagingRadius = 5) {
 data[, (dataCol) := sapply(data$Dyad_Position, smoothValues, dataCol)]
 
 # Basic Plotting Template (ylim = c(min,max) to set axis bounds)
-plot(data$Dyad_Position, data[[dataCol]], type = 'l', main = "MSS Esophageal Tumor Mutations (Translational)",
+plot(data$Dyad_Position, data[[dataCol]], type = 'l', main = "MSS Subset Translational Periodicity",
      ylab = "Normalized Mutation Counts", xlab = "Position Relative to Dyad (bp)",
      cex.lab = 2, cex.main = 1.75, lwd = 3, col = "black", ylim = c(0.9,1.1))
 
@@ -70,6 +70,14 @@ plot(data$Dyad_Position, data$Plus_Strand_Counts, type = 'l',
 lines(data$Dyad_Position, data$Minus_Strand_Counts, type = 'l',
       lwd = 3, col = "light green")
 
+# Plotting for paper
+plot(data$Dyad_Position, data[[dataCol]], type = 'l', main = NULL,
+     ylab = "Normalized Mutation Counts", xlab = "Position Relative to Dyad (bp)",
+     cex.lab = 1.75, cex.axis = 1.75, lwd = 3, col = "black", ylim = c(0.9,1.1))
+
+plot(data$Dyad_Position, data[[dataCol]], type = 'l', main = NULL,
+     yaxt = 'n', ylab = '', xlab = "Position Relative to Dyad (bp)",
+     cex.lab = 1.75, cex.axis = 1.75, lwd = 3, col = "black", ylim = c(0.9,1.1))
 
 colorInRange = function(range, color, dataCol, includeNegative = TRUE) {
 
@@ -86,8 +94,8 @@ colorInRange = function(range, color, dataCol, includeNegative = TRUE) {
 }
 
 # Color rotational positioning
-captureOutput = sapply(minorInPositions, colorInRange, color = "#7b3294", dataCol = dataCol)
-captureOutput = sapply(minorOutPositions, colorInRange, color = "#008837", dataCol = dataCol)
+captureOutput = sapply(minorInPositions, colorInRange, color = "#1bcc44", dataCol = dataCol)
+captureOutput = sapply(minorOutPositions, colorInRange, color = "#993299", dataCol = dataCol)
 
 # Color translational positioning
 captureOutput = sapply(linkerPositions, colorInRange, color = "#ca0020", dataCol = dataCol)
@@ -99,27 +107,30 @@ captureOutput = sapply(nucleosomePositions, colorInRange, color = "#0571b0", dat
 group1DataSetNames = sapply(strsplit(basename(nucPeriodData$group1Inputs),"_nucleosome"), function(x) x[1])
 group2DataSetNames = sapply(strsplit(basename(nucPeriodData$group2Inputs),"_nucleosome"), function(x) x[1])
 
-group1SNR = nucPeriodData$periodicityResults[Data_Set %in% group1DataSetNames, Peak_Periodicity]
-group2SNR = nucPeriodData$periodicityResults[Data_Set %in% group2DataSetNames, Peak_Periodicity]
+group1SNR = nucPeriodData$periodicityResults[Data_Set %in% group1DataSetNames, SNR]
+group2SNR = nucPeriodData$periodicityResults[Data_Set %in% group2DataSetNames, SNR]
 
 groupedSNRs = data.table(group = c(rep("MSS", length(group1SNR)),rep("MSI", length(group2SNR))),
                          SNR = c(group1SNR, group2SNR))
 
-# ggplot dotplot
+# ggplot dotplot (Not used or updated really...)
 ggplot(groupedSNRs, aes(group, SNR)) + 
   geom_dotplot(binaxis = "y", stackdir = "center", binwidth = 10, fill = NA, stroke = 2) +
   stat_summary(fun = median, geom = "crossbar", width = 0.5, fatten = 2, colour = "red") +
   labs(title = "Distribution of SNR Values for Rotational Periodicities",
        x = "Microsatellite Stability") +
+  scale_y_continuous(trans = "log10", breaks = trans_breaks("log10", function(x) 10^x)) +
   theme(title = element_text(size = 20))
 
 # ggplot jittered scatter plot
 ggplot(groupedSNRs, aes(group, SNR)) + 
   geom_jitter(width = 0.2, shape = 1, size = 2) + 
   stat_summary(fun = median, geom = "crossbar", width = 0.5, fatten = 2, colour = "red") +
-  labs(title = "Distribution of Peak Periodicity Values for Translational Periodicities",
-       x = "Microsatellite Stability", y = "Peak Periodicity") +
-  theme(title = element_text(size = 15))
+  labs(title = "Translational Periodicity SNR Values",
+       x = "Microsatellite Stability", y = "SNR") +
+  scale_y_continuous(trans = "log10", breaks = c(10,100,1000)) + annotation_logticks(sides = 'l') +
+  theme(plot.title = element_text(size = 20, hjust = 0.5), axis.title = element_text(size = 15),
+        axis.text.x = element_text(size = 15), axis.title.x = element_blank())
 
 # base r boxplot
 boxplot(group1SNR, group2SNR, main = "SNR distribution for rotational mutation data",
