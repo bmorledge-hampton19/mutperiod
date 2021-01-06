@@ -6,7 +6,6 @@
 import os, warnings
 from typing import IO
 from nucperiodpy.Tkinter_scripts.TkinterDialog import TkinterDialog, Selections
-from nucperiodpy.Tkinter_scripts.DynamicSelector import DynamicSelector
 from nucperiodpy.helper_scripts.UsefulFileSystemFunctions import (Metadata, generateFilePath, getDataDirectory,
                                                                   DataTypeStr, getAcceptableChromosomes)
 
@@ -225,8 +224,8 @@ def countNucleosomePositionMutations(mutationFilePaths, countSingleNuc, countNuc
         print("\nWorking with",os.path.split(mutationFilePath)[1])
 
         # Make sure we have the expected file type.
-        if not "context_mutations" in os.path.basename(mutationFilePath): 
-            raise ValueError("Mutation file should have \"context_mutations\" in the name.")
+        if not DataTypeStr.mutations in os.path.basename(mutationFilePath): 
+            raise ValueError("Mutation file should have \"" + DataTypeStr.mutations + "\" in the name.")
 
         # Get metadata and use it to generate a path to the nucleosome positions file.
         metadata = Metadata(mutationFilePath)
@@ -271,7 +270,7 @@ def main():
 
     #Create the Tkinter UI
     dialog = TkinterDialog(workingDirectory=getDataDirectory())
-    dialog.createMultipleFileSelector("Mutation Files:",0,"_context_mutations.bed",("Bed Files",".bed"))
+    dialog.createMultipleFileSelector("Mutation Files:",0,DataTypeStr.mutations+".bed",("Bed Files",".bed"))
     
     selectSingleNuc = dialog.createDynamicSelector(1,0)
     selectSingleNuc.initCheckboxController("Count with a single nucleosome radius (73 bp)")
