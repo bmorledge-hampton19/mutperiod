@@ -13,11 +13,9 @@ class MultipleFileSelector(tk.Frame):
 
         # Base class initialization
         super().__init__(master)
-        self.toplevel = master.toplevel
         self.grid()
 
         # Set member variables
-        self.master = master
         self.title = title
         self.workingDirectory = workingDirectory
         self.fileTypes = fileTypes
@@ -89,11 +87,6 @@ class MultipleFileSelector(tk.Frame):
             self.maxPathWidth = newPathDisplay.pathLabelWidth
             self.updatePathDisplayLengths(self.maxPathWidth)
         else: newPathDisplay.grid_columnconfigure(0, minsize = self.maxPathWidth + 5)
-
-        # Force an update on the toplevel window.
-        # RIP: The last hour and a half of my life spent finding these two lines of code
-        self.toplevel.update()
-        self.toplevel.geometry("")
 
 
     def removePathDisplay(self, pathDisplay):

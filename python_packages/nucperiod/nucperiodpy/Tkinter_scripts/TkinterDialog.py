@@ -11,44 +11,152 @@ from nucperiodpy.Tkinter_scripts.DynamicSelector import DynamicSelector
 
 
 class TkinterDialog(tk.Frame):
-    "A modular dialog window used to select relevant files and options for a script."
+    """
+    A modular dialog window used to select relevant files and options for a script.
+    """
 
     def __init__(self, master=None, workingDirectory = os.path.dirname(os.path.realpath(__file__)), 
-                 title = "tkinter dialog", ID = "Toplevel"):
+                 row = 0, column = 0, pady = 0, columnSpan = 1, title = "tkinter dialog", ID = "Root", 
+                 scrollable = False, scrollableWindowMaxHeight = 500):
         
-        # Initialize the tkinter dialogue using the parent constructor, 
-        # and set references to the working directory and master window
-        if master is None: 
-            self.master = tk.Tk()
-            self.toplevel = self.master
-        else: 
-            self.master = master
-            self.toplevel = self.master.toplevel
-        super().__init__(self.master)
+        # Store important variables.
+        self.scrollable = scrollable
         self.workingDirectory = workingDirectory
         self.ID = ID
+        self.scrollableWindowMaxHeight = scrollableWindowMaxHeight
+
+        # Initialize the tkinter dialogue based on whether or not it is the root dialogue (master is none).
+
+        if master is None: 
+
+            # If this is the root dialog, some special considerations need to be made to frame it
+            # properly in the root window.
+            self.isRoot = True
+            self.rootWindow = tk.Tk()
+            self.rootWindow.columnconfigure(column, weight=1)
+            self.rootWindow.rowconfigure(row, weight=1)
+            parentFrame = tk.Frame(self.rootWindow)
+            parentFrame.columnconfigure(column, weight=1)
+            parentFrame.rowconfigure(row, weight=1)
+            parentFrame.grid(sticky="news")
+            self.root = self
+
+            # Fix the window size if the root is scrollable.
+            if self.scrollable: self.rootWindow.geometry("1000x"+str(self.scrollableWindowMaxHeight))
+
+            # Set the title and put in a nice visual!
+            self.rootWindow.title(title)
+            img = tk.PhotoImage(file = os.path.dirname(os.path.realpath(__file__)) + "/test_tube.png")
+            self.rootWindow.iconphoto(False, img)
+
+            # Set up the list of queued scroll bars for proper scroll wheel implementation.
+            self.scrollableQueue: List[tk.Canvas] = list()
+
+        else: 
+
+            # Otherwise, just set up some basic stuff.
+            self.isRoot = False
+            parentFrame: TkinterDialog = master
+            self.root = parentFrame.root
+            self.scrollableQueue = None
+            
+
+        # Set up a parent canvas for things like the scroll bar.
+        self.parentCanvas = tk.Canvas(parentFrame, borderwidth= 0, width = 0, height = 0)
+        self.parentCanvas.grid(row = row, column = column, columnspan = columnSpan, pady = pady, sticky = "news")
+        self.parentCanvas.columnconfigure(0, weight = 1)
+        self.parentCanvas.rowconfigure(0, weight = 1)
+
+        # If this dialogue is meant to be scrollable, set it up accordingly.
+        if self.scrollable: 
+            self.mainScrollBar = tk.Scrollbar(parentFrame, orient="vertical", command=self.parentCanvas.yview)
+            self.mainScrollBar.grid(row = row, column = column + columnSpan, sticky = "ns")
+            self.parentCanvas.configure(yscrollcommand=self.mainScrollBar.set)
+
+        # If this is the root, set up the exit buttons underneath the canvas.
+        if self.isRoot:
+            exitButtonsFrame = tk.Frame(parentFrame)
+            exitButtonsFrame.grid(row = 1, columnspan = 2, pady = 5, sticky = tk.W+tk.E)
+            exitButtonsFrame.grid_columnconfigure((0,1), weight = 1)
+
+            tk.Button(exitButtonsFrame, text = "Go", command = self.generateSelections).grid(row = 0, column = 0)
+            tk.Button(exitButtonsFrame, text = "Quit", command = quit).grid(row = 0, column = 1)
+
+        # Initialize the internal frame
+        super().__init__(self.parentCanvas)
 
         # Initialize the grid used to organize UI elements
-        self.grid() 
-        
-        # If a title was provided, it is assumed to be a top-level frame and the title and graphic can be set up.
-        if title is not None:
-            # Set the title
-            self.master.title(title)
+        self.grid(sticky = "news")
 
-            # Put in a nice visual!
-            img = tk.PhotoImage(file = os.path.dirname(os.path.realpath(__file__)) + "/test_tube.png")
-            self.master.iconphoto(False, img)
+        # Fit the internal frame to the canvas
+        self.canvasWindow = self.parentCanvas.create_window((0,0), window=self, anchor=tk.NW)
 
+        # Bind configuration events to handle special resizing of the canvas and (potentially) scrolling.
+        self.bind("<Configure>", self.onSelfConfigure)
+        if self.scrollable:
+           self.parentCanvas.bind("<Enter>", self.onEnterScrollableCanvas)
+           self.parentCanvas.bind("<Leave>", self.onLeaveScrollableCanvas)
+
+        # Prepare lists for the selections object.
         self.entries = list() # A list of entry objects created by the script
         self.toggles = list() # A list of toggle objects created by the script
         self.dropdownVars = list() # A list of stringVars associated with dropdowns
         self.checkboxVars = list() # A list of intVars associated with checkboxes
         self.multipleFileSelectors = list() # A list of MultipleFileSelectors, which contain a list of filePaths.
-        self.dynamicSelectors: List[DynamicSelector] = list() # A list of DynamicSelector objects, which contian TkinterDialog objects of their own.
+        self.dynamicSelectors: List[DynamicSelector] = list() # A list of DynamicSelector objects, which contain TkinterDialog objects of their own.
         self.subDialogs: List[TkinterDialog] = list() # A list of TkinterDialog objects designated "sub-dialogs"
         self.selections: Selections = None # A selections object to be populated at the end of the dialog
-        
+
+    ### A series of functions to bind to gui events.
+    def onSelfConfigure(self, event: tk.Event):
+        "Handle events on the reconfiguration of the main frame"
+
+        # First, resize the canvas as necessary.
+        self.parentCanvas.config(width = event.width, height = event.height)
+        if self.scrollable and event.height > self.scrollableWindowMaxHeight:
+            self.parentCanvas.config(height = self.scrollableWindowMaxHeight)
+
+        # If this is the top level dialog, update the root window too.
+        if self.isRoot and not self.scrollable:
+            self.rootWindow.update()
+            self.rootWindow.geometry("")
+
+        # Now, set the scroll bar.
+        if self.scrollable:
+            self.update_idletasks()
+            self.parentCanvas.config(scrollregion=self.parentCanvas.bbox("all"))
+
+    def onEnterScrollableCanvas(self, event = None):
+        "Bind this canvas's scroll bar to the scroll wheel and add it to the queue"
+
+        # If there are no scrollable canvases in the queue, rebind the mousewheel.
+        if len(self.root.scrollableQueue) == 0:
+            self.bind_all("<Button-4>", lambda event: self.onMouseWheelScroll(-1))
+            self.bind_all("<Button-5>", lambda event: self.onMouseWheelScroll(1))
+
+        # Add this scrollable canvas to the queue.
+        self.root.scrollableQueue.append(self.parentCanvas)
+
+    def onLeaveScrollableCanvas(self, event):
+        "Handle unbinding and potential rebinding of the scroll wheel."
+
+        # Shift to the next scrollable canvas in the queue, if there is one.
+        # If there isn't, unbind the scrollwheel.
+        self.root.scrollableQueue.pop()
+        if len(self.root.scrollableQueue) == 0:
+            self.unbind_all("<Button-4>")
+            self.unbind_all("<Button-5>")
+
+    def onMouseWheelScroll(self, direction):
+        self.root.scrollableQueue[-1].yview_scroll(direction, "units")
+
+
+    def hide(self):
+        self.parentCanvas.grid_remove()
+
+    def show(self):
+        self.parentCanvas.grid()
+
 
     def createWidgets(self):
         "Mainly used as an example.  Probably don't run this function; run the functions it calls."
@@ -70,8 +178,8 @@ class TkinterDialog(tk.Frame):
         # Create the dialog object.
         if workingDirectory is None: workingDirectory = self.workingDirectory
         tkinterDialog = TkinterDialog(master = self, title = None, ID = selectionsID, 
-                                      workingDirectory = workingDirectory) 
-        tkinterDialog.grid(row = row, column = column, columnspan = columnSpan, sticky = tk.W)
+                                      row = row, column = column, columnSpan = columnSpan,
+                                      workingDirectory = workingDirectory, pady = 15)
 
         self.subDialogs.append(tkinterDialog)
         return tkinterDialog
@@ -99,7 +207,7 @@ class TkinterDialog(tk.Frame):
 
         if verbose: print ("Creating file selector: " + title)
 
-        fileSelectorFrame = tk.Frame(master = self)
+        fileSelectorFrame = tk.Frame(self)
         fileSelectorFrame.grid(row = row, column = column, columnspan = columnSpan, sticky = tk.W)
 
         #Create the title for the selector.
@@ -182,7 +290,10 @@ class TkinterDialog(tk.Frame):
 
 
     def createExitButtons(self, row, column, columnSpan = 2):
-        "Creates the quit and return buttons in a single tk.Frame that centers them within that frame."
+        """
+        DEPRECATED.  Buttons are created in constructor now.
+        Creates the quit and return buttons in a single tk.Frame that centers them within that frame.
+        """
         buttonFrame = tk.Frame(self)
         buttonFrame.grid(row = row, column = column, columnspan = columnSpan, sticky = tk.W+tk.E)
         buttonFrame.grid_columnconfigure((0,1), weight = 1)
@@ -249,7 +360,7 @@ class TkinterDialog(tk.Frame):
 
         if workingDirectory is None: workingDirectory = self.workingDirectory
         dynamicSelector = DynamicSelector(self, workingDirectory)
-        dynamicSelector.grid(row = row, column = column, columnspan = columnSpan, sticky = tk.W)
+        dynamicSelector.grid(row = row, column = column, columnspan = columnSpan, sticky = "w")
         self.dynamicSelectors.append(dynamicSelector)
         return dynamicSelector
 
@@ -313,8 +424,8 @@ class TkinterDialog(tk.Frame):
                 subDialog.generateSelections()
                 self.selections.addSelections(subDialog.selections)
 
-        # Destroy the dialog if this is the top level.
-        if self.ID == "Toplevel": self.master.destroy()
+        # Destroy the dialog if this is the root.
+        if self.isRoot: self.rootWindow.destroy()
 
 
 class Selections:
@@ -339,19 +450,19 @@ class Selections:
 
 
     # DEPRECATED: diverts to getIndividualFilePaths
-    def getFilePaths(self, ID = "Toplevel") -> list:
+    def getFilePaths(self, ID = "Root") -> list:
         return self.getIndividualFilePaths(ID)
 
-    def getIndividualFilePaths(self, ID = "Toplevel") -> list:
+    def getIndividualFilePaths(self, ID = "Root") -> list:
         return self.selectionSets[ID][0]
 
-    def getFilePathGroups(self, ID = "Toplevel") -> list:
+    def getFilePathGroups(self, ID = "Root") -> list:
         return self.selectionSets[ID][1]
 
-    def getToggleStates(self, ID = "Toplevel") -> list:
+    def getToggleStates(self, ID = "Root") -> list:
         return self.selectionSets[ID][2]
 
-    def getDropdownSelections(self, ID = "Toplevel") -> list:
+    def getDropdownSelections(self, ID = "Root") -> list:
         return self.selectionSets[ID][3]
 
 

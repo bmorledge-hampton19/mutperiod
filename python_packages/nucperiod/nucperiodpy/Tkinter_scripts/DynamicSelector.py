@@ -5,15 +5,15 @@ from tkinter import filedialog
 
 
 class DynamicSelector(tk.Frame):
-    "A Tk widget which changes based on the state of a given \"commander\" widget."
+    """
+    A Tk widget which changes based on the state of a given "commander" widget.
+    """
 
     def __init__(self, master, workingDirectory):
 
-        self.toplevel = master.toplevel
-        self.master = master
         self.workingDirectory = workingDirectory
-        super().__init__(self.master)
-        self.grid()
+        self.root = master.root
+        super().__init__(master)
 
         self.controllerSetup = False # Flag to prevent multiple controllers
         self.controllerVar = None # The variable that determines which dynamic display is shown
@@ -93,8 +93,8 @@ class DynamicSelector(tk.Frame):
         # Create the dialog object.
         if workingDirectory is None: workingDirectory = self.workingDirectory
         tkinterDialog = TkinterDialog(master = self, title = None, ID = selectionsID, 
-                                      workingDirectory = workingDirectory) 
-        tkinterDialog.grid(row = row, column = column, columnspan = columnSpan, sticky = tk.W)
+                                      row = row, column = column, columnSpan = columnSpan,
+                                      workingDirectory = workingDirectory)
 
         # Add it to the dictionary of dynamic displays and return it.
         self.dynamicDisplays[displayKey] = tkinterDialog
@@ -106,7 +106,7 @@ class DynamicSelector(tk.Frame):
         
         # Hide all created displays.
         for displayKey in self.dynamicDisplays:
-            self.dynamicDisplays[displayKey].grid_remove()
+            self.dynamicDisplays[displayKey].hide()
 
         # Set the first display
         self.checkController()
@@ -120,6 +120,6 @@ class DynamicSelector(tk.Frame):
 
             # Hide the old display and enable the currently selected one.
             if self.currentDisplayKey is not None: 
-                self.getCurrentDisplay().grid_remove()
+                self.getCurrentDisplay().hide()
             self.currentDisplayKey = self.getControllerVar()
-            self.getCurrentDisplay().grid()
+            self.getCurrentDisplay().show()
