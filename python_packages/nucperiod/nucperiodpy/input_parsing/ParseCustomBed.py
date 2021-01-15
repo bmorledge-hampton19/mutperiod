@@ -353,7 +353,6 @@ def main():
     dialog.createCheckbox("Stratify data by microsatellite stability?", 3, 0)
     dialog.createCheckbox("Stratify by mutation signature?", 3, 1)
     dialog.createCheckbox("Separate individual cohorts?", 4, 0)
-    dialog.createExitButtons(5,0)
 
     # Run the UI
     dialog.mainloop()

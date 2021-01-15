@@ -187,7 +187,6 @@ def main():
     dialog.createCheckbox("Create individual bed files for each donor.",3, 0)
     dialog.createCheckbox("Stratify results by microsatellite stability", 4, 0)
     dialog.createCheckbox("Stratify results by mutation signature", 5, 0)
-    dialog.createExitButtons(6,0)
 
     # Run the UI
     dialog.mainloop()

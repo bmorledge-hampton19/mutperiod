@@ -67,8 +67,6 @@ def main():
     # TODO: Maybe allow for different cohort selections here.  Right now, I'm assuming that we group MS data by mut sigs.
     #       This will probably work best if it communicates with the project manager to some capacity (what cohort data is available?)
 
-    dialog.createExitButtons(1,0)
-
     # Run the UI
     dialog.mainloop()
 

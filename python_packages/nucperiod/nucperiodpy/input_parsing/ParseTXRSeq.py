@@ -323,7 +323,6 @@ if __name__ == "__main__":
 
     dialog.createFileSelector("Human Genome Fasta File:",3,("Fasta Files",".fa"))
     dialog.createFileSelector("Strongly Positioned Nucleosome File:",4,("Bed Files",".bed"))
-    dialog.createExitButtons(5,0)
 
     # Run the UI
     dialog.mainloop()

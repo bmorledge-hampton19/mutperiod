@@ -74,7 +74,6 @@ if __name__ == "__main__":
     dialog.createMultipleFileSelector("UVDE-seq data:",0,"dipy.bed",("Bed Files",".bed"),additionalFileEndings=("TA.bed",))    
     dialog.createFileSelector("Genome Fasta File:",1,("Fasta Files",".fa"))
     dialog.createFileSelector("Strongly Positioned Nucleosome File:",2,("Bed Files",".bed"))
-    dialog.createExitButtons(3,0)
 
     # Run the UI
     dialog.mainloop()

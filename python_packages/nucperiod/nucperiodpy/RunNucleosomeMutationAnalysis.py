@@ -112,7 +112,7 @@ def parseArgs(args):
 def main():
 
     #Create the Tkinter UI
-    dialog = TkinterDialog(workingDirectory=getDataDirectory())
+    dialog = TkinterDialog(workingDirectory=getDataDirectory(), scrollable=True)
     dialog.createMultipleFileSelector("Nucleosome Mutation Counts files:",0,
                                       DataTypeStr.normNucCounts + ".tsv",("Tab Seperated Values Files",".tsv"),
                                       additionalFileEndings = (DataTypeStr.rawNucCounts + ".tsv",))
@@ -123,15 +123,12 @@ def main():
     periodicityComparison = dialog.createDynamicSelector(3, 0)
     periodicityComparison.initCheckboxController("Compare periodicities between two groups")
     periodicityGroups = periodicityComparison.initDisplay(True,"periodicityGroups")
-    periodicityGroups.createLabel("",0,0)
 
     # Create two "sub-dialogs" for each of the groups, allowing the user to specify the make-up of that group.
     for i, dialogID in enumerate(("Group1", "Group2")):
         periodicityGroups.createNucMutGroupSubDialog(dialogID, i+1)
 
     periodicityComparison.initDisplayState()
-
-    dialog.createExitButtons(4,0)
 
     # Run the UI
     dialog.mainloop()

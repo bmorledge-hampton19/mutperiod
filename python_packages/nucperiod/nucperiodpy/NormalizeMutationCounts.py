@@ -120,8 +120,6 @@ def main():
     customBackgroundFileSelector.createFileSelector("Data Directory for nucleosome counts to be used as background", 1, directory = True)
     customBackgroundSelector.initDisplayState()
 
-    dialog.createExitButtons(2,0)
-
     # Run the UI
     dialog.mainloop()
 

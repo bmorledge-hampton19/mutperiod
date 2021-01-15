@@ -81,7 +81,6 @@ def main():
     dialog.createCheckbox("Use normalized values from rda input", 4, 0)
     dialog.createCheckbox("Use raw values from rda input", 4, 1)
     dialog.createCheckbox("Strand align results", 5, 0)
-    dialog.createExitButtons(6,0)
 
     # Run the UI
     dialog.mainloop()

@@ -280,7 +280,6 @@ def main():
     selectSingleNuc.initDisplayState()
 
     dialog.createCheckbox("Count with a nucleosome group radius (1000 bp)", 2, 0)
-    dialog.createExitButtons(3,0)
 
     # Run the UI
     dialog.mainloop()

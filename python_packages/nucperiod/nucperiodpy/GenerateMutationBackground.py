@@ -285,7 +285,6 @@ def main():
     dialog = TkinterDialog(workingDirectory=getDataDirectory())
     dialog.createMultipleFileSelector("Bed Mutation Files:",0,DataTypeStr.mutations + ".bed",("Bed Files",".bed"))
     dialog.createDropdown("Background Context",1,0,("Trinuc","Singlenuc", "Pentanuc"))
-    dialog.createExitButtons(2,0)
 
     # Run the UI
     dialog.mainloop()

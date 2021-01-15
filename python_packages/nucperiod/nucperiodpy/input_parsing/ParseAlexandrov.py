@@ -62,7 +62,6 @@ if __name__ == "__main__":
     dialog.createMultipleFileSelector("Input Files:",0,"alexandrov.txt",("text files",".txt"))
     dialog.createFileSelector("Genome Fasta File:",1,("Fasta Files",".fa"))
     dialog.createFileSelector("Strongly Positioned Nucleosome File:",2,("Bed Files",".bed"))
-    dialog.createExitButtons(3,0)
 
     # Run the UI
     dialog.mainloop()
