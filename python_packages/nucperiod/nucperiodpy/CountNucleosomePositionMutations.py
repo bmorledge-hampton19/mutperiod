@@ -4,121 +4,40 @@
 #        (Sorted first by chromosome (string) and then by nucleotide position (numeric))
 
 import os, warnings
-from typing import IO
+from typing import List
 from nucperiodpy.Tkinter_scripts.TkinterDialog import TkinterDialog, Selections
 from nucperiodpy.helper_scripts.UsefulFileSystemFunctions import (Metadata, generateFilePath, getDataDirectory,
                                                                   DataTypeStr, getAcceptableChromosomes)
 
 
-# Contains data on a single mutation position obtained by reading the next available line in a given file.
 class MutationData:
 
-    def __init__(self,file: IO, acceptableChromosomes):
-        
-        self.file = file # The file containing mutation data.
-        self.acceptableChromosomes = acceptableChromosomes
+    def __init__(self, line, acceptableChromosomes):
 
-        # Read in the first line and check that it isn't empty.
-        choppedUpLine = file.readline().strip().split()
-        
+        # Read in the next line.
+        choppedUpLine = line.strip().split()
 
-        # Initialize class variables
-        self.isEmpty = False # This variable keeps track of when EOF is reached.
-        if len(choppedUpLine) == 0: 
-            self.isEmpty = True # This means we were passed an empty mutation file   
-            warnings.warn("Empty mutation file given.  All counts will be set to 0.")
-            return
+        # Assign variables
         self.chromosome = choppedUpLine[0] # The chromosome that houses the mutation.
         self.position = int(choppedUpLine[1]) # The position of the mutation in its chromosome. (0 base)
         self.strand = choppedUpLine[5] # Either '+' or '-' depending on which strand houses the mutation.
 
-        # Make sure the mutation is in a valid chromosome.  Otherwise, something is wrong..
-        if not self.chromosome in self.acceptableChromosomes:
-            raise ValueError(choppedUpLine[0] + " is not a valid chromosome for the mutation trinuc file.")
-
-
-    def readNextMutation(self):
-        
-        # Read in the next line.
-        choppedUpLine = self.file.readline().strip().split()
-
-        # Check if EOF has been reached.
-        if len(choppedUpLine) == 0: 
-            self.isEmpty = True
-            self.chromosome = None
-            self.position = None
-            self.strand = None
-            return
-
-        # Assign variables
-        self.chromosome = choppedUpLine[0]
-        self.position = int(choppedUpLine[1])
-        self.strand = choppedUpLine[5]
-
-        # Make sure the mutation is in a valid chromosome.  Otherwise, something is wrong..
-        if not self.chromosome in self.acceptableChromosomes:
+        # Make sure the mutation is in a valid chromosome.
+        if not self.chromosome in acceptableChromosomes:
             raise ValueError(choppedUpLine[0] + " is not a valid chromosome for the mutation trinuc file.")
         
 
 # Contains data on a single nucleosome position obtained by reading the next available line in a given file.
 class NucleosomeData:
 
-    def __init__(self,file: IO):
-        
-        self.file = file # The file containing nucleosome data.
-
-        # Read in the first line and check that it isn't empty.
-        choppedUpLine = file.readline().strip().split()
-        
-        # Initialize class variables
-        self.isEmpty = False # This variable keeps track of when EOF is reached.
-        if len(choppedUpLine) == 0: 
-            self.isEmpty = True # This means we were passed an empty file
-            warnings.warn("Empty nucleosome file given.  All counts will be set to 0.")
-            return
-        self.chromosome = choppedUpLine[0] # The chromosome that houses the nucleosome.
-        self.dyadCenter = int(choppedUpLine[1]) # The position of the base pair at the center of the dyad. (0 base)
-            
-    
-    def readNextNucleosome(self):
+    def __init__(self, line):
         
         # Read in the next line.
-        choppedUpLine = self.file.readline().strip().split()
-
-        # Check if EOF has been reached.
-        if len(choppedUpLine) == 0: 
-            self.isEmpty = True
-            self.chromosome = None
-            self.dyadCenter = None
-            return
+        choppedUpLine = line.strip().split()
 
         # Assign variables
-        self.chromosome = choppedUpLine[0]
-        self.dyadCenter = int(choppedUpLine[1])
-
-
-# Takes a mutation object and nucleosome object which have unequal chromosomes and read through data until they are equal.
-def reconcileChromosomes(mutation: MutationData, nucleosome: NucleosomeData):
-    
-    # Until the chromosomes are the same for both mutations and 
-    while not (mutation.isEmpty or nucleosome.isEmpty) and not mutation.chromosome == nucleosome.chromosome:
-        if mutation.chromosome < nucleosome.chromosome: mutation.readNextMutation()
-        else: nucleosome.readNextNucleosome()
-
-    if not (nucleosome.isEmpty or mutation.isEmpty): print("Counting in",nucleosome.chromosome)
-
-
-# Determines whether or not the given mutation is past the range of the given radius (+ linker).
-def isMutationPastRadius(mutation: MutationData, nucleosome: NucleosomeData, dyadRadius, linkerOffset):
-
-    if mutation.isEmpty:
-        return True
-    elif mutation.position-nucleosome.dyadCenter > dyadRadius + linkerOffset:
-        return True
-    elif not mutation.chromosome == nucleosome.chromosome:
-        return True
-    else: 
-        return False
+        self.chromosome = choppedUpLine[0] # The chromosome that houses the nucleosome.
+        self.dyadCenter = int(choppedUpLine[1]) # The position of the base pair at the center of the dyad. (0 base)
 
 
 # Uses the given nucleosome position file and mutation file to count the number of mutations 
@@ -128,87 +47,173 @@ def isMutationPastRadius(mutation: MutationData, nucleosome: NucleosomeData, dya
 # NOTE:  It is VITAL that both files are sorted, first by chromosome number and then by starting coordinate.
 #        (Sorted first by chromosome (string) and then by nucleotide position (numeric))
 #        This code is pretty slick, but it will crash and burn and give you a heap of garbage as output if the inputs aren't sorted.
-def generateCountsFile(mutationFilePath, nucPosFilePath, nucleosomeMutationCountsFilePath, dyadRadius, linkerOffset, acceptableChromosomes):
+class CountsFileGenerator():
 
-    # Dictionaries holding the number of mutations found at each dyad position from -73 to 73 for each strand.
-    minusStrandMutationCounts = dict() 
-    plusStrandMutationCounts = dict()
-    for i in range(-dyadRadius - linkerOffset, dyadRadius + linkerOffset + 1):
-        minusStrandMutationCounts[i] = 0
-        plusStrandMutationCounts[i] = 0
+    def __init__(self, mutationFilePath, nucPosFilePath, nucleosomeMutationCountsFilePath, 
+                 dyadRadius, linkerOffset, acceptableChromosomes):
 
-    # Keeps track of mutations in the current and previous nucleosomes to catch mutations that span overlapping nucleosomes.
-    # Each muation is a tuple containing the mutation position and the strand it is housed on.
-    mutationsInCurrentRadius = list()
-    mutationsInPreviousRadius = list()
+         # Open the mutation and nucleosome positions files to compare against one another.
+        self.mutationFile = open(mutationFilePath, 'r')
+        self.nucPosFile = open(nucPosFilePath,'r')
 
-    # A function which checks to see if a given mutation falls within the given radius (+ linker) and if it does, adds it to the given list.
+        # Store the other arguments passed to the constructor
+        self.acceptableChromosomes = acceptableChromosomes
+        self.nucleosomeMutationCountsFilePath = nucleosomeMutationCountsFilePath
+        self.dyadRadius = dyadRadius
+        self.linkerOffset = linkerOffset
+
+        # Dictionaries holding the number of mutations found at each dyad position from -73 to 73 for each strand.
+        self.minusStrandMutationCounts = dict() 
+        self.plusStrandMutationCounts = dict()
+        for i in range(-dyadRadius - linkerOffset, dyadRadius + linkerOffset + 1):
+            self.minusStrandMutationCounts[i] = 0
+            self.plusStrandMutationCounts[i] = 0
+
+        # Keeps track of mutations that matched to a nucleosome to check for overlap.
+        self.mutationsInPotentialOverlap: List[MutationData] = list()
+
+        # The mutation and nucleosome currently being investigated.
+        self.currentMutation: MutationData = None
+        self.currentNucleosome: NucleosomeData = None
+
+
+    # Reads in the next mutation from the mutation data into currentMutation
+    def readNextMutation(self) -> MutationData:
+
+        # Read in the next line.
+        nextLine = self.mutationFile.readline()
+
+        # Check if EOF has been reached.
+        if len(nextLine) == 0: 
+            self.currentMutation = None
+        # Otherwise, read in the next mutation.
+        else: self.currentMutation = MutationData(nextLine, self.acceptableChromosomes)
+
+    
+    # Reads in the next nucleosome from the nucleosome positioning file into currentNucleosome
+    def readNextNucleosome(self) -> NucleosomeData:
+
+        # Read in the next line.
+        nextLine = self.nucPosFile.readline()
+
+        # Check if EOF has been reached.
+        if len(nextLine) == 0: 
+            self.currentNucleosome = None
+        # Otherwise, read in the next mutation.
+        else: self.currentNucleosome = NucleosomeData(nextLine)
+
+        # Check for mutations in overlapping regions between this nucleosome and the last one.
+        if self.currentNucleosome is not None: self.checkMutationsInOverlap()
+
+
+    # Takes a mutation object and nucleosome object which have unequal chromosomes and read through data until they are equal.
+    def reconcileChromosomes(self):
+        
+        chromosomeChanged = False # A simple flag to determine when to inform the user that a new chromosome is being accessed
+
+        # Until the chromosomes are the same for both mutations and nucleosomes, read through the one with the earlier chromosome.
+        while (self.currentMutation is not None and self.currentNucleosome is not None and 
+               self.currentMutation.chromosome != self.currentNucleosome.chromosome):
+            chromosomeChanged = True
+            if self.currentMutation.chromosome < self.currentNucleosome.chromosome: self.readNextMutation()
+            else: self.readNextNucleosome()
+
+        if chromosomeChanged and self.currentNucleosome is not None and self.currentMutation is not None: 
+            print("Counting in",self.currentNucleosome.chromosome)
+
+
+    # Determines whether or not the given mutation is past the range of the given radius (+ linker).
+    def isMutationPastRadius(self):
+
+        if self.currentMutation is None:
+            return True
+        elif self.currentMutation.position-self.currentNucleosome.dyadCenter > self.dyadRadius + self.linkerOffset:
+            return True
+        elif not self.currentMutation.chromosome == self.currentNucleosome.chromosome:
+            return True
+        else: 
+            return False
+
+
+    # A function which checks to see if a given mutation falls within the radius (+ linker) of the current nucleosome and if it does, 
+    # adds it to the list of nucleosome mutations.  
     # (Assumes that the given mutation is not beyond the radius due to isMutationPastRadius.)
-    def addMutationIfInRadius(mutationPosition, mutationStrand, dyadCenter):
+    def addMutationIfInRadius(self, mutation: MutationData, firstPass):
 
-        if mutationPosition > dyadCenter - dyadRadius - 1 - linkerOffset:
-            if mutationStrand == '+': plusStrandMutationCounts[mutationPosition - dyadCenter] += 1
-            elif mutationStrand == '-': minusStrandMutationCounts[mutationPosition - dyadCenter] += 1
+        if mutation.position >= self.currentNucleosome.dyadCenter - self.dyadRadius - self.linkerOffset:
+            if mutation.strand == '+': 
+                self.plusStrandMutationCounts[mutation.position - self.currentNucleosome.dyadCenter] += 1
+            elif mutation.strand == '-': 
+                self.minusStrandMutationCounts[mutation.position - self.currentNucleosome.dyadCenter] += 1
             else:  raise ValueError("Error:  No strand designation found for mutation")
             
-            # Add the mutation to the list of mutations in the current nucleosome
-            mutationsInCurrentRadius.append((mutationPosition,mutationStrand))
+            # Add the mutation to the list of mutations to check for overlap if this is the first time it has been seen.
+            if firstPass: self.mutationsInPotentialOverlap.append(mutation)
 
-    # Open the mutation and nucleosome files to compare against one another.
-    with open(mutationFilePath, 'r') as mutationFile:
-        with open(nucPosFilePath,'r') as nucPosFile:
 
-            #Get data on the first mutation and nucleosome and reconcile their chromosomes if necessary to start things off.
-            # If either the mutation file or nucleosome file is empty, make sure to bypass the check.
-            currentMutation = MutationData(mutationFile, acceptableChromosomes)            
-            currentNucleosome = NucleosomeData(nucPosFile) 
-            if (not (currentMutation.isEmpty or currentNucleosome.isEmpty) and 
-                currentNucleosome.chromosome == currentMutation.chromosome): 
-                print("Counting in",currentNucleosome.chromosome)
-            else: reconcileChromosomes(currentMutation, currentNucleosome)
+    # Check to see if any previous mutations that were assigned a dyad position are present in the current nucleosome due to overlap.
+    def checkMutationsInOverlap(self):
 
-            # The core loop goes through each nucleosome one at a time and checks mutation positions against it until 
-            # one exceeds its rightmost position or is on a different chromosome.  
-            # Then, the next nucleosome is checked until either no mutations or no nucleosomes remain.
-            while not (currentNucleosome.isEmpty or currentMutation.isEmpty):
-                    
-                # Check to see if any of the mutations in the last nucleosome are present in the current nucleosome due to overlap.
-                mutationsInPreviousRadius = mutationsInCurrentRadius.copy()
-                mutationsInCurrentRadius.clear()
-                for mutation in mutationsInPreviousRadius:
-                    addMutationIfInRadius(mutation[0],mutation[1],currentNucleosome.dyadCenter)
+        # First, get rid of any mutations that fall before the beginning of the range for the current nucleosome.
+        self.mutationsInPotentialOverlap = [mutation for mutation in self.mutationsInPotentialOverlap 
+                                            if mutation.position >= self.currentNucleosome.dyadCenter - self.dyadRadius - 
+                                                                    self.linkerOffset and 
+                                               mutation.chromosome == self.currentNucleosome.chromosome]
 
-                # Read mutations until the mutation is past the range of the current nucleosome.
-                while not isMutationPastRadius(currentMutation, currentNucleosome, dyadRadius, linkerOffset):
-
-                    # Check and see if we need to add the mutation to our lists.
-                    addMutationIfInRadius(currentMutation.position,currentMutation.strand,currentNucleosome.dyadCenter)
-
-                    #Get data on the next mutation.
-                    currentMutation.readNextMutation()
-
-                # If no recnociliation is necessary at the moment, read in a new nucleosome.
-                if currentMutation.chromosome == currentNucleosome.chromosome: currentNucleosome.readNextNucleosome()
-
-                # Reconcile the mutation data and chromosome data if necessary to be sure
-                # that they are looking at the same chromosome for the next iteration
-                if not currentMutation.chromosome == currentNucleosome.chromosome:
-                    reconcileChromosomes(currentMutation, currentNucleosome)
-                    mutationsInCurrentRadius.clear() # Nucleosomes can't overlap on different chromosomes.
-
-    # Write the results to the output file.
-    with open(nucleosomeMutationCountsFilePath,'w') as nucleosomeMutationCountsFile:
+        # Next, check all remaining mutations to see if they are present in the new nucleosome region.
+        for mutation in self.mutationsInPotentialOverlap: self.addMutationIfInRadius(mutation, False)
         
-        # Write the headers to the file.
-        nucleosomeMutationCountsFile.write('\t'.join(("Dyad_Position","Plus_Strand_Counts",
-                                            "Minus_Strand_Counts","Both_Strands_Counts",
-                                            "Aligned_Strands_Counts")) + '\n')
-        
-        # Write the data.
-        for i in range(-dyadRadius - linkerOffset, dyadRadius + linkerOffset + 1):
-            nucleosomeMutationCountsFile.write('\t'.join((str(i), str(plusStrandMutationCounts[i]), str(minusStrandMutationCounts[i]), 
-                                                          str(plusStrandMutationCounts[i] + minusStrandMutationCounts[i]),
-                                                          str(plusStrandMutationCounts[i] + minusStrandMutationCounts[-i]))) + '\n')
+
+    # Count the mutations at each dyad position based on the given nucleosome range.
+    def count(self):
+        # Get data on the first mutation and nucleosome and reconcile their chromosomes if necessary to start things off.
+        # If either the mutation file or nucleosome positioning file is empty, make sure to bypass the check.
+        self.readNextMutation()          
+        self.readNextNucleosome()
+        if self.currentMutation is None or self.currentNucleosome is None:
+            warnings.warn("Empty Mutation or Nucleosome Positions file.  Output will most likely be unhelpful.")
+        elif self.currentNucleosome.chromosome == self.currentMutation.chromosome: 
+            print("Counting in",self.currentNucleosome.chromosome)
+        else: self.reconcileChromosomes()
+
+        # The core loop goes through each nucleosome one at a time and checks mutation positions against it until 
+        # one exceeds its rightmost position or is on a different chromosome (or mutations are exhausted).  
+        # Then, the next nucleosome is checked, then the next, etc. until no nucleosomes remain.
+        while self.currentNucleosome is not None:
+
+            # Read mutations until the mutation is past the range of the current nucleosome.
+            while not self.isMutationPastRadius():
+
+                # Check and see if we need to add the mutation to our lists.
+                self.addMutationIfInRadius(self.currentMutation, True)
+                #Get data on the next mutation.
+                self.readNextMutation()
+
+            # Read in a new nucleosome.
+            self.readNextNucleosome()
+
+            # Reconcile the mutation data and nucleosome data to be sure
+            # that they are looking at the same chromosome for the next iteration
+            self.reconcileChromosomes()
+
+
+    def writeResults(self):
+
+        # Write the results to the output file.
+        with open(self.nucleosomeMutationCountsFilePath,'w') as nucleosomeMutationCountsFile:
+            
+            # Write the headers to the file.
+            nucleosomeMutationCountsFile.write('\t'.join(("Dyad_Position","Plus_Strand_Counts",
+                                                "Minus_Strand_Counts","Both_Strands_Counts",
+                                                "Aligned_Strands_Counts")) + '\n')
+            
+            # Write the data.
+            for i in range(-self.dyadRadius - self.linkerOffset, self.dyadRadius + self.linkerOffset + 1):
+                nucleosomeMutationCountsFile.write('\t'.join((str(i), str(self.plusStrandMutationCounts[i]), 
+                                                              str(self.minusStrandMutationCounts[i]), 
+                                                              str(self.plusStrandMutationCounts[i] + self.minusStrandMutationCounts[i]),
+                                                              str(self.plusStrandMutationCounts[i] + self.minusStrandMutationCounts[-i]))) 
+                                                   + '\n')
 
 
 def countNucleosomePositionMutations(mutationFilePaths, countSingleNuc, countNucGroup, linkerOffset):
@@ -243,8 +248,10 @@ def countNucleosomePositionMutations(mutationFilePaths, countSingleNuc, countNuc
 
             # Ready, set, go!
             print("Counting mutations at each nucleosome position in a 73 bp radius +", str(linkerOffset), "bp linker DNA.")
-            generateCountsFile(mutationFilePath, metadata.baseNucPosFilePath, 
-                               nucleosomeMutationCountsFilePath, 73, linkerOffset, acceptableChromosomes)
+            counter = CountsFileGenerator(mutationFilePath, metadata.baseNucPosFilePath, 
+                                          nucleosomeMutationCountsFilePath, 73, linkerOffset, acceptableChromosomes)
+            counter.count()
+            counter.writeResults()
 
             nucleosomeMutationCountsFilePaths.append(nucleosomeMutationCountsFilePath)
 
@@ -258,8 +265,10 @@ def countNucleosomePositionMutations(mutationFilePaths, countSingleNuc, countNuc
 
             # Ready, set, go!
             print("Counting mutations at each nucleosome position in a 1000 bp radius.")
-            generateCountsFile(mutationFilePath, metadata.baseNucPosFilePath, 
-                               nucleosomeMutationCountsFilePath, 1000, 0, acceptableChromosomes)
+            counter = CountsFileGenerator(mutationFilePath, metadata.baseNucPosFilePath, 
+                                          nucleosomeMutationCountsFilePath, 1000, 0, acceptableChromosomes)
+            counter.count()
+            counter.writeResults()
 
             nucleosomeMutationCountsFilePaths.append(nucleosomeMutationCountsFilePath)
 
