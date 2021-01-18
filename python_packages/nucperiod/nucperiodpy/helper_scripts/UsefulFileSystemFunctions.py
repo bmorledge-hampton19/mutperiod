@@ -7,7 +7,7 @@ from enum import Enum
 def getDataDirectory():
 
     # Check for the text file which should contain the path to the data directory.
-    dataDirectoryTextFilePath = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data_dir.txt")
+    dataDirectoryTextFilePath = os.path.join(os.getenv("HOME"), ".nucperiod", "data_dir.txt")
 
     # If it exists, return the directory path within.
     if os.path.exists(dataDirectoryTextFilePath):
@@ -26,9 +26,9 @@ def getDataDirectory():
 
         # Create a simple dialog to select a new data directory location.
         from nucperiodpy.Tkinter_scripts.TkinterDialog import TkinterDialog, Selections
-        dialog = TkinterDialog(workingDirectory=os.path.dirname(os.path.dirname((os.path.abspath(__file__)))))
+        checkDirs(os.path.dirname(dataDirectoryTextFilePath))
+        dialog = TkinterDialog(workingDirectory = os.path.dirname(dataDirectoryTextFilePath))
         dialog.createFileSelector("Location to create new data directory:",0,("Fasta Files",".fa"), directory = True)
-        dialog.createExitButtons(1,0)
 
         # Run the UI
         dialog.mainloop()
