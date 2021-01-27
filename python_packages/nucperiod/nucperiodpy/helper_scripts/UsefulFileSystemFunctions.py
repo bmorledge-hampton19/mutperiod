@@ -284,8 +284,8 @@ def generateFilePath(directory = None, dataGroup = None, context = None, linkerO
 
 # Generates a .metadata file from the given information.
 def generateMetadata(dataGroupName, associatedGenome, associatedNucleosomePositions, 
-                     localParentDataPath, inputFormat, metadataDirectory, callParamsFilePath = None,
-                     *cohorts):
+                     localParentDataPath, inputFormat, metadataDirectory, *cohorts,
+                     callParamsFilePath = None):
 
     # Open up the metadata file.
     with open(os.path.join(metadataDirectory,".metadata"), 'w') as metadataFile:

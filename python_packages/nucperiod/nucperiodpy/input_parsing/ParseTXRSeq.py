@@ -247,7 +247,8 @@ class TXRSeqInputDataPipeline:
 
         # Generate metadata
         generateMetadata(dataGroupName, getIsolatedParentDir(self.genomeFilePath), getIsolatedParentDir(self.nucPosFilePath),
-                         os.path.basename(self.inputDataFilePath), InputFormat.tXRSeq, localRootDirectory, self.callParamsFilePath)
+                         os.path.basename(self.inputDataFilePath), InputFormat.tXRSeq, localRootDirectory,
+                         callParamsFilePath = self.callParamsFilePath)
 
     
     # Generates a bed file of trimmed reads, a process which is dependent on the input format given in the class's initialization.
