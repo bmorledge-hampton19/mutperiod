@@ -4,22 +4,41 @@
 ## Table of Contents
 1. [Quickstart Guide](#quickstart-guide)
 2. [Installation Guide](#installation-guide)
-2. [Input Files and Formats](#input-files-and-formats)
-3. [The Primary Data Pipeline](#the-primary-data-pipeline)
-4. [Interpreting Results](#interpreting-results)
-5. [A Representative Example](#a-representative-example)
-6. [Acknowledgements](#acknowledgements)
+3. [Input Files and Formats](#input-files-and-formats)
+4. [The Primary Data Pipeline](#the-primary-data-pipeline)
+5. [Interpreting Results](#interpreting-results)
+6. [A Representative Example](#a-representative-example)
+7. [Acknowledgements](#acknowledgements)
 ***
 ## Quickstart Guide
-some text  
-some text  
-some text  
-some text  
-some text  
-some text  
-some text  
-some text  
-some text  
+#### 1. Install nucperiod 
+Install nucperiod through apt using the following two commands (available on Ubuntu version 20.04, Focal Fossa):  
+  `sudo add-apt-repository ppa:ben-morledge-hampton/nucperiod`  
+  `sudo apt-get update`
+
+#### 2. Setup the data directory
+After installing, run the following command:  
+  `nucperiod parseICGC`  
+This should open up a dialog to choose a directory to store data files in.  Choose a directory.  
+After choosing a directory, you should quit out of the following dialog to obtain the necessary data to run your analysis  
+
+#### 3. Obtain genome and nucleosome positioning data
+From the following link, download the zipped hg19 directory:  
+<https://notAValidLinkYet.com>  
+Navigate to the directory you chose in step 2 and unzip the contents of the hg19 file into the "nucperiod_data/\_\_external_data" directory.  
+*Note:  Alternatively, you may use a different genome or nucleosome positioning file, but you must make sure the latter is formatted correctly, as detailed in [Section 3](#input-files-and-formats)*
+
+#### 4. Obtain mutation data
+Go to the [ICGC data portal](https://dcc.icgc.org/releases) to obtain mutation data for use in nucperiod.
+Download any "simple_somatic_mutation" file with whole genome sequencing data.  
+Place the gzipped file into a new directory (other than the "\_\_external_data" directory) within the "nucperiod_data" directory
+*Careful:  nucperiod only maps mutations originating from whole genome sequencing data.  Exome sequencing data will not be carried through the pipeline, potentially resulting in blank output files.*  
+
+*Note:  Alternatively, you may use any bed formatted mutation data for analysis, but you must may need to alter the data format slightly to be recognized by nucperiod as a CustomBed formatted file, as detailed in [Section 3](#input-files-and-formats)*
+
+#### 5. Parse input data
+
+
 ***
 ## Installation Guide
 some text  
