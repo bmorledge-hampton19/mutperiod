@@ -83,15 +83,55 @@ If you believe a specific linux distribution should be supported by the ppa, but
 
 ***
 ## Input Files and Formats
-some text  
-some text  
-some text  
-some text  
-some text  
-some text  
-some text  
-some text  
-some text  
+#### Directory Structure
+All data files should be stored within the nucperiod_data directory.  
+
+Genome data should be stored in the "\_\_external_data" directory under a sub-directory with the same name as the corresponding genome fasta file.  
+e.g. "hg19.fa" should be stored in the "nucperiod_data\\\_\_external_data\\hg19" directory.  
+
+Nucleosome positioning data should be stored in a sub-directory under the corresponding genome directory and should be named after the corresponding nucleosome positioning file.  
+e.g. "MNase_nuc_pos.bed" should be stored in the "nucperiod_data\\\_\_external_data\\hg19\\MNase_nuc_pos" directory.  
+
+Each individual mutation input file should be stored in its own directory under the "nucperiod_data" directory.  Nested directories are allowed.  
+nucperiod populates these directories with all other files generated during the analysis.  
+
+#### Genome Data
+All genome information should be given in standard fasta format with chromosome identifiers as headers.
+
+#### Nucleosome Positioning Data
+All nucleosome positioning data 
+
+#### Mutation Data
+nucperiod supports two primary input formats for mutation data:  
+First, data downloaded directly from the [ICGC data portal](https://dcc.icgc.org/releases) can be easily parsed using the following terminal command:  
+`nucperiod parseICGC`  
+
+Data from any other format should be converted to the specialized bed format recognized by nucperiod.  
+This format is a variation on the standardized bed format and contains 6-7 tab separated data columns (with the 7th being optional).  
+The columns should be formatted as follows:  
+##### Column 1
+Chromosome identifier.  (e.g. "chr1")  Should match the identifiers used in the corresponding genome fasta file.
+##### Column 2
+0 based mutation start position
+##### Column 3
+1 based mutation end position
+##### Column 4
+The base(s) in the reference genome at this position.  
+If set to ".", the base(s) will be auto-acquired using the genome fasta file.  
+Use the "\*" character to indicate an insertion between the two bases given in columns 2 and 3.  
+##### Column 5
+The base(s) that the position(s) were mutated to.  
+Use the "\*" character indicates a deletion of the base(s) given in columns 2 and 3  
+Use the string "OTHER" to indicate any other lesion or feature  
+##### Column 6
+The strand the mutation/alteration occurred in.  Single-base substitution mutations are flipped if necessary so that they occur in the pyrimidine-containing strand.  
+If set to ".", the strand is determined from the genome file, if possible (not an insertion).
+##### Column 7
+The chort the tumor belongs to.  e.g. a donor ID or tumor type.  
+This column is technically optional but is required for stratifying data in future steps.  
+If any cohort designations are given, ALL entries must have designations.  
+Use the "." character in this column to used to avoid assigning an entry to another cohort without breaking the above rule.
+
 ***
 ## The Primary Data Pipeline
 some text  
