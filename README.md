@@ -14,7 +14,8 @@
 #### 1. Install nucperiod 
 Install nucperiod through apt using the following two commands (available on Ubuntu version 20.04, Focal Fossa):  
   `sudo add-apt-repository ppa:ben-morledge-hampton/nucperiod`  
-  `sudo apt-get update`
+  `sudo apt update`  
+  `sudo apt install nucperiod`  
 
 #### 2. Set up the Data Directory
 After installing, run the following command:  
@@ -70,15 +71,16 @@ For more information, see the sections below.
 
 ***
 ## Installation Guide
-some text  
-some text  
-some text  
-some text  
-some text  
-some text  
-some text  
-some text  
-some text  
+Easy installation of nucperiod can occur through the ppa at <https://launchpad.net/~ben-morledge-hampton/+archive/ubuntu/nucperiod>  
+To install through this ppa, run the following commands:  
+  `sudo add-apt-repository ppa:ben-morledge-hampton/nucperiod`  
+  `sudo apt update`  
+  `sudo apt install nucperiod`  
+
+Currently, this installation method for nucperiod is only available on Ubuntu version 20.04, Focal Fossa, due to a dependency on a Python install of at least version 3.7.  
+However, installation on other linux distributions is certainly possible through manual installation of the Python and R packages provided in this repository.  
+If you believe a specific linux distribution should be supported by the ppa, but isn't, please contact me at b.morledge-hampton@wsu.edu
+
 ***
 ## Input Files and Formats
 some text  
