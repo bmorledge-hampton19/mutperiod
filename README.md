@@ -26,6 +26,7 @@ After choosing a directory, you should quit out of the following dialog to obtai
 From the following link, download the zipped hg19 directory:  
 <https://notAValidLinkYet.com>  
 Navigate to the directory you chose in step 2 and unzip the contents of the hg19 file into the "nucperiod_data/\_\_external_data" directory.  
+
 *Note:  Alternatively, you may use a different genome or nucleosome positioning file, but you must make sure the latter is formatted correctly, as detailed in [Section 3](#input-files-and-formats)*
 
 #### 4. Obtain Mutation Data
