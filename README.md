@@ -99,7 +99,9 @@ nucperiod populates these directories with all other files generated during the 
 All genome information should be given in standard fasta format with chromosome identifiers as headers.
 
 #### Nucleosome Positioning Data
-All nucleosome positioning data 
+All nucleosome positioning data should be in bed format.  
+Only the first three columns, containing the chromosome identifiers, 0-based start positions, and 1-based start positions are used.  
+Other columns may be included after these first three, but they will be ignored.
 
 #### Mutation Data
 nucperiod supports two primary input formats for mutation data:  
