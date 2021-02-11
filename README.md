@@ -106,9 +106,10 @@ Other columns may be included after these first three, but they will be ignored.
 #### Mutation Data
 nucperiod supports two primary input formats for mutation data:  
 First, data downloaded directly from the [ICGC data portal](https://dcc.icgc.org/releases) can be easily parsed using the following terminal command:  
-`nucperiod parseICGC`  
+  `nucperiod parseICGC`  
 
-Data from any other format should be converted to the specialized bed format recognized by nucperiod.  
+Data from any other format should be converted to the specialized bed format recognized by nucperiod and parsed using the command:  
+  `nucperiod parseBed`  
 This format is a variation on the standardized bed format and contains 6-7 tab separated data columns (with the 7th being optional).  
 The columns should be formatted as follows:  
 ##### Column 1
@@ -134,17 +135,29 @@ This column is technically optional but is required for stratifying data in futu
 If any cohort designations are given, ALL entries must have designations.  
 Use the "." character in this column to used to avoid assigning an entry to another cohort without breaking the above rule.
 
+#### Example Mutation Data
+\[Image of a few lines of mutation data here\]
+
 ***
 ## The Primary Data Pipeline
-some text  
-some text  
-some text  
-some text  
-some text  
-some text  
-some text  
-some text  
-some text  
+In order to prepare mutation data for nucleosome periodicity analysis, several key data processing events have to occur.  
+These events are all managed through one terminal command:  
+  `nucperiod mainPipeline`  
+
+This main pipeline incorporates up to three key data processing steps:
+#### 1. Expansion of Mutation Context
+If you choose to normalize mutation data by the surrounding DNA context, the given mutation data needs to be expanded.  
+Base positions are expanded as necessary and the genome fasta file is used to generate the surrounding trinucleotide, pentanucleotide, etc. context as requested.
+
+#### 2. Counting Mutations Relative to Dyad Centers.
+You will have to choose a dyad radius to count mutations in.  
+Typically, this is either 73 bp (for rotational periodicity within a single nucleosome) or 1000 bp (for translational periodicity across multiple nucleosomes).  
+Using a selected nucleosome positioning file, mutations are counted in each radius and their positions relative to the dyad center are recorded.  
+
+#### 3.  Normalizing mutation counts
+There are several options for normalizing mutation counts, if desired.  
+The simplest options involve using the surrounding nucleotide context to normalize data.  
+
 ***
 ## Interpreting Results
 some text  
