@@ -1,5 +1,5 @@
 # nucperiod
-##### A Hybrid Python and R toolset for characterizing nucleosome mutational periodicities.
+##### A hybrid Python and R toolset for characterizing nucleosome mutational periodicities.
 ***
 ## Table of Contents
 1. [Quickstart Guide](#quickstart-guide)
@@ -144,7 +144,7 @@ With either of the above input formats, mutations can stratified in a number of 
 For ICGC data, mutations are first stratified by the donor ID's present in the original input data.  
 For custom bed data, the 7th column, if present, contains identifiers to similarly stratify mutations into user-specified cohorts.  
 Beyond this initial stratification, nucperiod uses the MSIseq and deconstructSigs R packages to support stratification of cohorts by microsatellite stability or dominant mutation signature.  
-Both of these forms of stratification are selectable through the dialogues used to specify input data.  
+Both stratification options are selectable through the dialogues used to specify input data.  
 
 ***
 ## The Primary Data Pipeline
@@ -180,7 +180,15 @@ For data counted in a single nucleosome radius (73 bp), periodicities are examin
 For data counted in a radius encompassing several nucleosomes (1000 bp), periodicities are examined between 50 and 250.  
 In both of the above cases, an oversampling factor of 100 is used.  
 
-Once the maximum power periodicity has been found, a signal-to-noise ratio is obtained by dividng the maximum power by the median of all powers not within 0.5 units of the maximum power peak.
+Once the maximum power periodicity has been found, a signal-to-noise ratio is obtained by dividing the maximum power by the median of all powers not within 0.5 units of the maximum power peak.  
+
+If multiple files containing nucleosome mutation counts are submitted for analysis, the files can be stratified into two groups through the dialog invoked by the above terminal command.  
+This dialog (shown below) allows you to form two separate groups based on characteristics like normalization method, nucleosome radius, and cohort designations.  
+nucperiod uses a Wilcoxon Rank Sum Test to determine if the mean SNR is significantly different between the two groups.  
+\[Image of group selection dialog here\]  
+
+The results of the periodicity analysis can be stored as either a .rda or .tsv formatted file.  
+However, please note that the .rda format is preferred when generating figures using nucperiod.
 
 ***
 ## Interpreting Results
@@ -206,12 +214,7 @@ some text
 some text  
 ***
 ## Acknowledgements
-some text  
-some text  
-some text  
-some text  
-some text  
-some text  
-some text  
-some text  
-some text  
+I would like to thank the following individuals and organizations who made developing nucperiod possible:  
+The Wyrick lab at Washington State University, especially Dr. John Wyrick, who guided me through much of this process.  
+Washington State University for funding me as a graduate student while I developed nucperiod.  
+Dr. Pete Tucker who taught me to be flexible, creative, persistent, and confident as I steadily work to become a better programmer and student.  
