@@ -188,7 +188,9 @@ nucperiod uses a Wilcoxon Rank Sum Test to determine if the mean SNR is signific
 \[Image of group selection dialog here\]  
 
 The results of the periodicity analysis can be stored as either a .rda or .tsv formatted file.  
-However, please note that the .rda format is preferred when generating figures using nucperiod.
+However, please note that the .rda format is preferred when generating figures using nucperiod and that the .tsv format does not preserve the results of the Wilcoxon Rank Sum Test.  
+
+*Note:  By default, any nucleosome mutation counts file with less than 5,000 raw mutations is removed from the analysis.  Historically, data with less than 5,000 mutations mapped to nucleosomes are much less likely to contain a noticeable periodicity.*  
 
 ***
 ## Interpreting Results
