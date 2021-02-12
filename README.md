@@ -194,15 +194,22 @@ However, please note that the .rda format is preferred when generating figures u
 
 ***
 ## Interpreting Results
-some text  
-some text  
-some text  
-some text  
-some text  
-some text  
-some text  
-some text  
-some text  
+
+When inteprpreting results from nucperiod, it is best to keep a few key considerations in mind:  
+First, it is expected that pronounced single nucleosome and nucleosome group periodicities have periods of 10.2 bp and ~190 bp respectively.  These values correspond to the geometry of DNA and the average spacing of nucleosomes.  
+Second, nucperiod has the most predictive power when used to compare results across two data sets, as described above.  By themselves, the SNR values are somewhat arbitrary since they are dependent on the range and resolution of periodicities tested using the Lomb-Scargle periodogram.  
+
+For a clear visual representation of the periodicities in your data, consider using the following command:  
+  `nucperiod generateFigures`  
+As the name implies, this command generates figures showing mutation counts across the dyad radius and color-coding the regions that are expected to cause the periodicity.  
+Several options allow the fine tuning of these figures:  
+Outliers can be omitted to clean up the graphs.  
+Data spanning multiple nucleosomes can be smoothed to suppress the periodicity that may be present within individual nucleosomes.  
+The results can be "strand aligned" meaning that the dyad position for mutation counts on the minus strand of DNA are inverted, causing both strands to be aligned 5' to 3'.  
+
+An example of one of these figures is given below:  
+\[Image of nucperiod-generated figure here\]  
+
 ***
 ## A Representative Example
 some text  
