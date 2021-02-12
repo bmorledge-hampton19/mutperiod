@@ -212,15 +212,41 @@ An example of one of these figures is given below:
 
 ***
 ## A Representative Example
-some text  
-some text  
-some text  
-some text  
-some text  
-some text  
-some text  
-some text  
-some text  
+
+#### Obtaining the data
+The mutation data used in this example comes from the [ICGC data portal](https://dcc.icgc.org/releases).  
+The genome fasta file and nucleosome positioning files used can be found [here](<https://notAValidLinkYet.com>).  
+
+#### Parsing the input data
+The following nucperiod command was used to parse the data:  
+  `nucperiod parseICGC`  
+The dialog was filled out as follows to parse the data and generate individual donors, stratified by microsatellite stability:
+\[Image here\]
+
+#### Processing the data for periodicity analysis
+The following nucperiod command was used to prepare the data for periodicity analysis:  
+  `nucperiod mainPipeline`
+The dialog was filled out as follows to normalize data by trinucleotide context and count mutations within both single nucleotide and nucleotide group radii.  
+\[Image here\]
+
+#### Quantifying the periodicity
+The following nucperiod command was used to prepare the data for periodicity analysis:  
+  `nucperiod periodicityAnalysis`
+The dialog was filled out as follows to quantify the periodicities of the grouped MSS and MSI data.  
+\[Image here\]
+
+In addition, the command was run again and the dialog was filled out as follows to compare the periodicities MSS vs MSI cohorts.  
+\[Image here\]
+
+The Wilcoxon Rank Sum test produced the following results:
+\[Image here\]
+
+#### Visualizing the results
+The following nucperiod command was used to order to visualize the results:  
+  `nucperiod generateFigures`  
+The dialog was filled out as follows to view graphs of the normalized and grouped MSS and MSI data with results smoothed to suppress the individual nucleosome periodicity in the nucleosome group data.  
+\[Image here\]
+
 ***
 ## Acknowledgements
 I would like to thank the following individuals and organizations who made developing nucperiod possible:  
