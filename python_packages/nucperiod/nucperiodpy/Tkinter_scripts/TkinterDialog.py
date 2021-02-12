@@ -349,9 +349,10 @@ class TkinterDialog(tk.Frame):
         group.createLabel("Cohort Designations:", row, 0, 4)
         row += 1
         group.createDropdown("Microsatellite Status:", row, 0, ("Any", "MSS", "MSI"), 2)
-        group.createDropdown("Mutation Signature:", row, 2, ("Not", "Yet", "Implemented"), 2)
-        row += 1
-        group.createFileSelector("Custom Cohort Designations (Not Implemented yet):", row, ("Any","*.*"), columnSpan = 4)
+        ### NOTE: I should probably actually implement these at some point...
+        #group.createDropdown("Mutation Signature:", row, 2, ("Not", "Yet", "Implemented"), 2)
+        #row += 1
+        #group.createFileSelector("Custom Cohort Designations (Not Implemented yet):", row, ("Any","*.*"), columnSpan = 4)
         group.createLabel("",row,0)
 
 
