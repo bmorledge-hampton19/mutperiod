@@ -7,8 +7,9 @@
 3. [Input Files and Formats](#input-files-and-formats)
 4. [The Primary Data Pipeline](#the-primary-data-pipeline)
 5. [Interpreting Results](#interpreting-results)
-6. [A Representative Example](#a-representative-example)
-7. [Acknowledgements](#acknowledgements)
+6. [Quantifying the Periodicity](#quantifying-the-periodicity)
+7. [A Representative Example](#a-representative-example)
+8. [Acknowledgements](#acknowledgements)
 ***
 ## Quickstart Guide
 #### 1. Install nucperiod 
@@ -135,8 +136,15 @@ This column is technically optional but is required for stratifying data in futu
 If any cohort designations are given, ALL entries must have designations.  
 Use the "." character in this column to used to avoid assigning an entry to another cohort without breaking the above rule.
 
-#### Example Mutation Data
+#### Example Bed Mutation Data
 \[Image of a few lines of mutation data here\]
+
+#### Stratifying Mutation Data
+With either of the above input formats, mutations can stratified in a number of different ways.  
+For ICGC data, mutations are first stratified by the donor ID's present in the original input data.  
+For custom bed data, the 7th column, if present, contains identifiers to similarly stratify mutations into user-specified cohorts.  
+Beyond this initial stratification, nucperiod uses the MSIseq and deconstructSigs R packages to support stratification of cohorts by microsatellite stability or dominant mutation signature.  
+Both of these forms of stratification are selectable through the dialogues used to specify input data.  
 
 ***
 ## The Primary Data Pipeline
@@ -144,7 +152,7 @@ In order to prepare mutation data for nucleosome periodicity analysis, several k
 These events are all managed through one terminal command:  
   `nucperiod mainPipeline`  
 
-This main pipeline incorporates up to three key data processing steps:
+This main pipeline incorporates three key data processing steps:
 #### 1. Expansion of Mutation Context
 If you choose to normalize mutation data by the surrounding DNA context, the given mutation data needs to be expanded.  
 Base positions are expanded as necessary and the genome fasta file is used to generate the surrounding trinucleotide, pentanucleotide, etc. context as requested.
@@ -157,6 +165,22 @@ Using a selected nucleosome positioning file, mutations are counted in each radi
 #### 3.  Normalizing mutation counts
 There are several options for normalizing mutation counts, if desired.  
 The simplest options involve using the surrounding nucleotide context to normalize data.  
+The average mutation rate for each nucleotide context is calculated across the entire genome, and a background mutation rate for each dyad position is calculated by multiplying each context's mutation rate by that context's frequency at the given position and summing the results across all contexts.  
+Alternatively, background mutation rates can be supplied manually by the user or even from another nucperiod data set's nucleosome mutation counts.  
+Normalized mutation rates are calculated by dividing the observed mutation rates at each dyad position by the background mutation rates.  
+
+***
+## Quantifying the Periodicity
+Once mutation counts at each dyad position have been obtained, the data is passed to the R portion of nucperiod to quantify the periodicity.  
+This is achieved with the command:  
+  `nucperiod periodicityAnalysis`  
+  
+A Lomb-Scargle periodogram is used to find the periodicity with the highest power.  
+For data counted in a single nucleosome radius (73 bp), periodicities are examined between 7 and 20.  
+For data counted in a radius encompassing several nucleosomes (1000 bp), periodicities are examined between 50 and 250.  
+In both of the above cases, an oversampling factor of 100 is used.  
+
+Once the maximum power periodicity has been found, a signal-to-noise ratio is obtained by dividng the maximum power by the median of all powers not within 0.5 units of the maximum power peak.
 
 ***
 ## Interpreting Results
