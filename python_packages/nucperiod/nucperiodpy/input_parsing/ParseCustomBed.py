@@ -30,7 +30,7 @@ from nucperiodpy.input_parsing.WriteManager import WriteManager
 # Checks for common errors in a line of input.
 def checkForErrors(choppedUpLine: List[str], cohortDesignationPresent, acceptableChromosomes):
 
-    if len(choppedUpLine) < 6 or len(choppedUpLine) > 8:
+    if len(choppedUpLine) < 6 or len(choppedUpLine) > 7:
         raise ValueError("Entry given with invalid number of arguments (" + str(len(choppedUpLine)) + ").  " +
                          "Each entry should contain either 6 tab separated arguments or 7 (if a cohort designation is present.")
 
