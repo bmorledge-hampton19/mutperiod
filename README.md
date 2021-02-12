@@ -6,8 +6,8 @@
 2. [Installation Guide](#installation-guide)
 3. [Input Files and Formats](#input-files-and-formats)
 4. [The Primary Data Pipeline](#the-primary-data-pipeline)
-5. [Interpreting Results](#interpreting-results)
-6. [Quantifying the Periodicity](#quantifying-the-periodicity)
+5. [Quantifying the Periodicity](#quantifying-the-periodicity)
+6. [Interpreting Results](#interpreting-results)
 7. [A Representative Example](#a-representative-example)
 8. [Acknowledgements](#acknowledgements)
 ***
