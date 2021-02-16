@@ -11,10 +11,11 @@ from nucperiodpy.Tkinter_scripts.TkinterDialog import TkinterDialog, Selections
 
 # Given a list of file paths pointing to nucleosome mutation data, returns the paths that fit the given specifications
 # normalizationMethods: A list of integers designating which normalization methods are allowed.
-#   0: Raw, 1: Singlenuc, 3: trinuc, 5: pentanuc
+#   0: Raw, 1: Singlenuc, 3: trinuc, 5: pentanuc -1: custom
 # singleNuc and nucGroup: Boolean values specifying whether the relevant nucleosome radii are allowed.
 # MSS and MSI: Boolean values specifying whether the relevant microsatellite staibility status is allowed.
-def getFilePathGroup(potentialFilePaths, normalizationMethods: List[int], singleNuc, nucGroup, MSS, MSI):
+# acceptableCohorts: a list of cohorts.  The mutation group must belong to at least one of these cohorts to be accepted.
+def getFilePathGroup(potentialFilePaths, normalizationMethods: List[int], singleNuc, nucGroup, acceptableCohorts: List[str]):
     
     filePathGroup = list() # The file paths to be returned.
 
@@ -24,23 +25,30 @@ def getFilePathGroup(potentialFilePaths, normalizationMethods: List[int], single
 
         # Does it satisfy the normalization methods qualification? 
         # (Also ensure that we have nucleosome counts, whether raw or normalized.)
-        if DataTypeStr.rawNucCounts in potentialFileName and 0 in normalizationMethods:
-            passed = True
-        elif DataTypeStr.normNucCounts in potentialFileName and getContext(potentialFilePath, True) in normalizationMethods:
-            passed = True
-        else: continue
+        if len(normalizationMethods) != 0:
+            if DataTypeStr.rawNucCounts in potentialFileName and 0 in normalizationMethods:
+                passed = True
+            elif DataTypeStr.normNucCounts in potentialFileName and getContext(potentialFilePath, True) in normalizationMethods:
+                passed = True
+            else: continue
 
         # Does it satisfy the nucleosome radius qualification?
-        if checkForNucGroup(potentialFilePath) and nucGroup:
-            passed = True
-        elif not checkForNucGroup(potentialFilePath) and singleNuc:
-            passed = True
-        else: continue
+        if singleNuc or nucGroup:
+            if checkForNucGroup(potentialFilePath) and nucGroup:
+                passed = True
+            elif not checkForNucGroup(potentialFilePath) and singleNuc:
+                passed = True
+            else: continue
 
-        # Does it satisfy the microsatellite stability qualifications?
-        cohortDesignations = Metadata(potentialFilePath).cohorts
-        if "MSI" in cohortDesignations and not MSI: continue
-        elif "MSS" in cohortDesignations and not MSS: continue
+        # Does it belong to one of the acceptable cohorts?
+        if len(acceptableCohorts) != 0:
+            filePathCohortDesignations = Metadata(potentialFilePath).cohorts
+            acceptableCohortFound = False
+            for cohort in filePathCohortDesignations:
+                if cohort in acceptableCohorts:
+                    acceptableCohortFound = True
+                    continue
+            if not acceptableCohortFound: continue
 
         # If we've made it this far, add the file path to the return group!
         filePathGroup.append(potentialFilePath)        
@@ -118,7 +126,10 @@ def main():
                                       additionalFileEndings = (DataTypeStr.rawNucCounts + ".tsv",))
     dialog.createFileSelector("Output File", 1, ("R Data File", ".rda"), ("Tab Separated Values File", ".tsv"), newFile = True)
 
-    dialog.createNucMutGroupSubDialog("MainGroup", 2)
+    mainGroupSearchRefine = dialog.createDynamicSelector(2, 0)
+    mainGroupSearchRefine.initCheckboxController("Filter counts files")
+    mainGroupSearchRefine.initDisplay(True).createNucMutGroupSubDialog("MainGroup", 0)
+    mainGroupSearchRefine.initDisplayState()
 
     periodicityComparison = dialog.createDynamicSelector(3, 0)
     periodicityComparison.initCheckboxController("Compare periodicities between two groups")
@@ -150,32 +161,43 @@ def main():
 
     for i, dialogID in enumerate(groups):
 
+        # Was filtering even requested for the main group?
+        if i == 0 and not mainGroupSearchRefine.getControllerVar():
+            filePathGroups[i] = nucleosomeMutationCountsFilePaths
+            continue
+
         # Determine what normalization methods were requested
         normalizationMethods = list()
         normalizationSelections = selections.getToggleStates(dialogID)[:5]
-        if normalizationSelections[0]: normalizationMethods.append(0)
-        if normalizationSelections[1]: normalizationMethods.append(1)
-        if normalizationSelections[2]: normalizationMethods.append(3)
-        if normalizationSelections[3]: normalizationMethods.append(5)
-        if normalizationSelections[4]: normalizationMethods.append(-1)
-
-        # Ensure valid input was given
-        assert len(normalizationMethods) > 0, (
-            "No normalization method chosen for " + dialogID)
-        assert selections.getToggleStates(dialogID)[5] or selections.getToggleStates(dialogID)[6], (
-            "No nucleosome radius given for " + dialogID)
+        if normalizationSelections[0]: normalizationMethods.append(1)
+        if normalizationSelections[1]: normalizationMethods.append(3)
+        if normalizationSelections[2]: normalizationMethods.append(5)
+        if normalizationSelections[3]: normalizationMethods.append(-1)
+        if normalizationSelections[4]: normalizationMethods.append(0)
 
         # Determine what microsatellite stability states were requested.
-        MSSelection = selections.getDropdownSelections(dialogID)[0]
-        MSS = True
-        MSI = True
-        if MSSelection == "MSS": MSI = False
-        elif MSSelection == "MSI": MSS = False
+        acceptableCohorts = dict()
+        if selections.getToggleStates(dialogID)[7]:
+            MSSelection = selections.getDropdownSelections(dialogID+"MS")[0]
+            if MSSelection == "MSS": acceptableCohorts["MSS"] = None
+            elif MSSelection == "MSI": acceptableCohorts["MSI"] = None
+            else: acceptableCohorts["MSS"] = None; acceptableCohorts["MSI"] = None
+
+        # Check for custom cohort input
+        if selections.getToggleStates(dialogID)[8]:
+
+            customCohortsFilePath = selections.getIndividualFilePaths(dialogID + "CustomCohorts")[0]
+            with open(customCohortsFilePath, 'r') as customCohortsFile:
+
+                for line in customCohortsFile: acceptableCohorts[line.strip()] = None
 
         # Get the file paths associated with the given parameters.
         filePathGroups[i] += getFilePathGroup(nucleosomeMutationCountsFilePaths, normalizationMethods, 
-                                                selections.getToggleStates(dialogID)[5], selections.getToggleStates(dialogID)[6],
-                                                MSS, MSI)
+                                              selections.getToggleStates(dialogID)[5], selections.getToggleStates(dialogID)[6],
+                                              acceptableCohorts)
+
+        #If this is the first pass through the loop, set the file paths list to the newly filtered list.
+        if i == 0: nucleosomeMutationCountsFilePaths = filePathGroups[0]
 
     runNucleosomeMutationAnalysis(filePathGroups[0], outputFilePath,
                                   filePathGroups[1], filePathGroups[2])

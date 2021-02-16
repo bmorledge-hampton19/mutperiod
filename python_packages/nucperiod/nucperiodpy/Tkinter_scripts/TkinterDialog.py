@@ -323,36 +323,50 @@ class TkinterDialog(tk.Frame):
         "Creates a sub-dialog for selecting nucleosome mutation files of specific characteristics"
 
         group = self.createSubDialog(row = row, column = column, columnSpan = columnSpan, selectionsID = groupID)
+        group.columnconfigure(0, minsize = 200)
+        group.columnconfigure(1, minsize = 200)
         row = 0
-        group.createLabel(groupID, row, 0, 4, header = True)
+        group.createLabel(groupID, row, 0, 3, header = True)
         row += 1
 
-        group.createLabel("Normalization Method:", row, 0, 4)
+        group.createLabel("Normalization Method:", row, 0, 3)
         row += 1
-        group.createCheckbox("Raw", row, 0, )
-        group.createCheckbox("Singlenuc", row, 1)
-        group.createCheckbox("Trinuc", row, 2)
-        group.createCheckbox("Pentanuc", row, 3)
-        group.createCheckbox("Custom", row, 4)
+        group.createCheckbox("Singlenuc", row, 0, )
+        group.createCheckbox("Trinuc", row, 1)
+        group.createCheckbox("Pentanuc", row, 2)
+        row += 1
+        group.createCheckbox("Custom", row, 0)
+        group.createCheckbox("Raw", row, 1)
         row += 1
         group.createLabel("",row,0)
         row += 1
 
-        group.createLabel("Nucleosome Radius:", row, 0, 4)
+        group.createLabel("Nucleosome Radius:", row, 0, 3)
         row += 1
         group.createCheckbox("Single Nucleosome", row, 0, 2)
-        group.createCheckbox("Nucleosome Group", row, 2, 2)
+        group.createCheckbox("Nucleosome Group", row, 2)
         row += 1
         group.createLabel("",row,0)
         row += 1
 
-        group.createLabel("Cohort Designations:", row, 0, 4)
+        group.createLabel("Cohort Designations:", row, 0, 3)
         row += 1
-        group.createDropdown("Microsatellite Status:", row, 0, ("Any", "MSS", "MSI"), 2)
-        ### NOTE: I should probably actually implement these at some point...
+        MSDynamicSelector = group.createDynamicSelector(row, 0, 4)
+        MSDynamicSelector.initCheckboxController("Stratify by microsatellite status")
+        group.checkboxVars.append(MSDynamicSelector.controllerVar)
+        MSDynamicSelector.initDisplay(True, groupID + "MS").createDropdown("Microsatellite Status:", 0, 0, ("Any", "MSS", "MSI"))
+        MSDynamicSelector.initDisplayState()
+        row += 1
+        ### NOTE: I should probably actually implement this at some point...
         #group.createDropdown("Mutation Signature:", row, 2, ("Not", "Yet", "Implemented"), 2)
         #row += 1
-        #group.createFileSelector("Custom Cohort Designations (Not Implemented yet):", row, ("Any","*.*"), columnSpan = 4)
+        customDynamicSelector = group.createDynamicSelector(row, 0, 4)
+        customDynamicSelector.initCheckboxController("Designate Custom Cohorts")
+        group.checkboxVars.append(customDynamicSelector.controllerVar)
+        customCohortSelector = customDynamicSelector.initDisplay(True, selectionsID = groupID + "CustomCohorts")
+        customCohortSelector.createFileSelector("Custom Cohort Designations:", 0, ("Text File",".txt"))
+        customDynamicSelector.initDisplayState()
+        row += 1
         group.createLabel("",row,0)
 
 
@@ -398,32 +412,34 @@ class TkinterDialog(tk.Frame):
         dropdownSelections = list() # A list of the selections from dropdown menus
 
         # Get all the different Selections-relevant variables from this dialog object
-        for entry in self.entries:
-            individualFilePaths.append(entry.get())
+        if self.ID is not None:
+            for entry in self.entries:
+                individualFilePaths.append(entry.get())
 
-        for multipleFileSelector in self.multipleFileSelectors:
-            filePathGroups.append(multipleFileSelector.getFilePaths())
+            for multipleFileSelector in self.multipleFileSelectors:
+                filePathGroups.append(multipleFileSelector.getFilePaths())
 
-        for checkboxVar in self.checkboxVars:
-            toggleStates.append(checkboxVar.get())
+            for checkboxVar in self.checkboxVars:
+                toggleStates.append(checkboxVar.get())
 
-        for stringVar in self.dropdownVars:
-            dropdownSelections.append(stringVar.get())
+            for stringVar in self.dropdownVars:
+                dropdownSelections.append(stringVar.get())
 
-        # Generate the Selections object from the above variables.
-        self.selections = Selections(self.ID,individualFilePaths,filePathGroups,toggleStates,dropdownSelections)
+            # Generate the Selections object from the above variables.
+            self.selections = Selections(self.ID,individualFilePaths,filePathGroups,toggleStates,dropdownSelections)
+        
+        # Generate a blank selections object if the ID is NoneType,
+        else: self.selections = Selections(None)
 
         # Add any Selections objects from any dialogs included in dynamic displays
         for dynamicSelector in self.dynamicSelectors:
-            if dynamicSelector.getCurrentDisplay().ID is not None:
-                dynamicSelector.getCurrentDisplay().generateSelections()
-                self.selections.addSelections(dynamicSelector.getCurrentDisplay().selections)      
+            dynamicSelector.getCurrentDisplay().generateSelections()
+            self.selections.addSelections(dynamicSelector.getCurrentDisplay().selections)      
 
         # Add any Selections objects from sub-dialogs
         for subDialog in self.subDialogs:
-            if subDialog.ID is not None:
-                subDialog.generateSelections()
-                self.selections.addSelections(subDialog.selections)
+            subDialog.generateSelections()
+            self.selections.addSelections(subDialog.selections)
 
         # Destroy the dialog if this is the root.
         if self.isRoot: self.rootWindow.destroy()
@@ -444,10 +460,11 @@ class Selections:
         # 1: file path groups
         # 2: toggle states
         # 3: dropdown selections
-        self.selectionSets[ID].append(individualFilePaths)
-        self.selectionSets[ID].append(filePathGroups)
-        self.selectionSets[ID].append(toggleStates)
-        self.selectionSets[ID].append(dropdownSelections)
+        if ID is not None:
+            self.selectionSets[ID].append(individualFilePaths)
+            self.selectionSets[ID].append(filePathGroups)
+            self.selectionSets[ID].append(toggleStates)
+            self.selectionSets[ID].append(dropdownSelections)
 
 
     # DEPRECATED: diverts to getIndividualFilePaths
@@ -472,6 +489,6 @@ class Selections:
 
         newSelections: Selections
         for ID in newSelections.selectionSets:
-            assert ID not in self.selectionSets, (
-                   "ID: " + ID + " is already present in the selection sets.")
-            self.selectionSets[ID] = newSelections.selectionSets[ID]
+            if ID is not None:
+                assert ID not in self.selectionSets, "ID: " + ID + " is already present in the selection sets."
+                self.selectionSets[ID] = newSelections.selectionSets[ID]
