@@ -156,6 +156,7 @@ A Lomb-Scargle periodogram is used to find the periodicity with the highest powe
 - For data counted in a single nucleosome radius (73 bp), periodicities are examined between 7 and 20.
 - For data counted in a radius encompassing several nucleosomes (1000 bp), periodicities are examined between 50 and 250.  
 - In both of the above cases, an oversampling factor of 100 is used.  
+
 Once the maximum power periodicity has been found, a signal-to-noise ratio is obtained by dividing the maximum power by the median of all powers not within 0.5 units of the maximum power peak.  
 
 If multiple files containing nucleosome mutation counts are submitted for analysis, the files can be stratified into two groups to determine if the mean SNR is significantly different between them.  This comparison occurs using a Wilcoxon Rank Sum Test.  The dialog created by invoking the above command (shown below) allows you to form two separate groups by filtering on characteristics like normalization method, nucleosome radius, and cohort designations.  In addition, the main group can be filtered as well for convenience.  Filtering of the two groups for comparison occurs *after* the main group is filtered, so filtering options from the main group do not need to be used in the comparison groups.  Leaving any group of filter options empty (e.g. all normalization methods) causes filtering to not be applied for that option.  If custom cohorts need to be designated, this should be done using a plain text file with each cohort designation given on a separate line of the file.  
