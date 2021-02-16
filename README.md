@@ -199,13 +199,13 @@ The dialog was filled out as follows to parse the data and generate individual d
 
 #### Processing the data for periodicity analysis
 The following nucperiod command was used to prepare the data for periodicity analysis:  
-  `nucperiod mainPipeline`
+  `nucperiod mainPipeline`  
 The dialog was filled out as follows to normalize data by trinucleotide context and count mutations within both single nucleotide and nucleotide group radii.  
 \[Image here\]
 
 #### Quantifying the periodicity
 The following nucperiod command was used to prepare the data for periodicity analysis:  
-  `nucperiod periodicityAnalysis`
+  `nucperiod periodicityAnalysis`  
 The dialog was filled out as follows to quantify the periodicities of the grouped MSS and MSI data.  
 \[Image here\]
 
