@@ -21,11 +21,11 @@ data = data[Dyad_Position >= -nucPosCutoff & Dyad_Position <= nucPosCutoff]
 minorInPositions = list(3:7, 13:17, 24:28, 34:38, 44:48, 55:59, 65:69)
 minorOutPositions = list(-2:2, 8:12, 19:23, 29:33, 39:43, 49:54, 60:64)
 
-# Directly from Cui and Zhurkin
+# Directly from Cui and Zhurkin 2010
 minorInPositions = list(5:8-74, 15:18-74, 26:29-74, 37:40-74, 47:50-74, 57:60-74, 67:70-74)
 minorOutPositions = list(10:14-74, 21:23-74, 32:34-74, 42:45-74 ,52:55-74, 62:65-74)
 
-# From Cui and Zhurkin, with 1 added to each side.
+# From Cui and Zhurkin, 2010 with 1 added to each side.
 minorInPositions = list(4:9-74, 14:19-74, 25:30-74, 36:41-74, 46:51-74, 56:61-74, 66:71-74)
 minorOutPositions = list(9:14-74, 20:24-74, 31:35-74, 41:46-74 ,51:56-74, 61:66-74)
 
@@ -107,8 +107,8 @@ captureOutput = sapply(nucleosomePositions, colorInRange, color = "#0571b0", dat
 group1DataSetNames = sapply(strsplit(basename(nucPeriodData$group1Inputs),"_nucleosome"), function(x) x[1])
 group2DataSetNames = sapply(strsplit(basename(nucPeriodData$group2Inputs),"_nucleosome"), function(x) x[1])
 
-group1SNR = nucPeriodData$periodicityResults[Data_Set %in% group1DataSetNames, SNR]
-group2SNR = nucPeriodData$periodicityResults[Data_Set %in% group2DataSetNames, SNR]
+group1SNR = nucPeriodData$periodicityResults[Data_Set %in% group1DataSetNames, Peak_Periodicity]
+group2SNR = nucPeriodData$periodicityResults[Data_Set %in% group2DataSetNames, Peak_Periodicity]
 
 groupedSNRs = data.table(group = c(rep("MSS", length(group1SNR)),rep("MSI", length(group2SNR))),
                          SNR = c(group1SNR, group2SNR))
@@ -122,13 +122,22 @@ ggplot(groupedSNRs, aes(group, SNR)) +
   scale_y_continuous(trans = "log10", breaks = trans_breaks("log10", function(x) 10^x)) +
   theme(title = element_text(size = 20))
 
-# ggplot jittered scatter plot
+# ggplot jittered scatter plot (Log scale)
 ggplot(groupedSNRs, aes(group, SNR)) + 
   geom_jitter(width = 0.2, shape = 1, size = 2) + 
   stat_summary(fun = median, geom = "crossbar", width = 0.5, fatten = 2, colour = "red") +
   labs(title = "Translational Periodicity SNR Values",
        x = "Microsatellite Stability", y = "SNR") +
   scale_y_continuous(trans = "log10", breaks = c(10,100,1000)) + annotation_logticks(sides = 'l') +
+  theme(plot.title = element_text(size = 20, hjust = 0.5), axis.title = element_text(size = 15),
+        axis.text.x = element_text(size = 15), axis.title.x = element_blank())
+
+# ggplot jittered scatter plot (Linear scale)
+ggplot(groupedSNRs, aes(group, SNR)) + 
+  geom_jitter(width = 0.2, shape = 1, size = 2) + 
+  stat_summary(fun = median, geom = "crossbar", width = 0.5, fatten = 2, colour = "red") +
+  labs(title = "Peak Translational Periodicity Values",
+       x = "Microsatellite Stability", y = "Peak Periodicity") +
   theme(plot.title = element_text(size = 20, hjust = 0.5), axis.title = element_text(size = 15),
         axis.text.x = element_text(size = 15), axis.title.x = element_blank())
 
