@@ -1,13 +1,13 @@
 # nucperiod
-##### A Hybrid Python and R toolset for characterizing nucleosome mutational periodicities.
+##### A hybrid Python and R toolset for characterizing nucleosome mutational periodicities.
 ***
 ## Table of Contents
 1. [Quickstart Guide](#quickstart-guide)
 2. [Installation Guide](#installation-guide)
 3. [Input Files and Formats](#input-files-and-formats)
 4. [The Primary Data Pipeline](#the-primary-data-pipeline)
-5. [Interpreting Results](#interpreting-results)
-6. [Quantifying the Periodicity](#quantifying-the-periodicity)
+5. [Quantifying the Periodicity](#quantifying-the-periodicity)
+6. [Interpreting Results](#interpreting-results)
 7. [A Representative Example](#a-representative-example)
 8. [Acknowledgements](#acknowledgements)
 ***
@@ -144,7 +144,7 @@ With either of the above input formats, mutations can stratified in a number of 
 For ICGC data, mutations are first stratified by the donor ID's present in the original input data.  
 For custom bed data, the 7th column, if present, contains identifiers to similarly stratify mutations into user-specified cohorts.  
 Beyond this initial stratification, nucperiod uses the MSIseq and deconstructSigs R packages to support stratification of cohorts by microsatellite stability or dominant mutation signature.  
-Both of these forms of stratification are selectable through the dialogues used to specify input data.  
+Both stratification options are selectable through the dialogues used to specify input data.  
 
 ***
 ## The Primary Data Pipeline
@@ -180,38 +180,76 @@ For data counted in a single nucleosome radius (73 bp), periodicities are examin
 For data counted in a radius encompassing several nucleosomes (1000 bp), periodicities are examined between 50 and 250.  
 In both of the above cases, an oversampling factor of 100 is used.  
 
-Once the maximum power periodicity has been found, a signal-to-noise ratio is obtained by dividng the maximum power by the median of all powers not within 0.5 units of the maximum power peak.
+Once the maximum power periodicity has been found, a signal-to-noise ratio is obtained by dividing the maximum power by the median of all powers not within 0.5 units of the maximum power peak.  
+
+If multiple files containing nucleosome mutation counts are submitted for analysis, the files can be stratified into two groups through the dialog invoked by the above terminal command.  
+This dialog (shown below) allows you to form two separate groups based on characteristics like normalization method, nucleosome radius, and cohort designations.  
+nucperiod uses a Wilcoxon Rank Sum Test to determine if the mean SNR is significantly different between the two groups.  
+\[Image of group selection dialog here\]  
+
+The results of the periodicity analysis can be stored as either a .rda or .tsv formatted file.  
+However, please note that the .rda format is preferred when generating figures using nucperiod and that the .tsv format does not preserve the results of the Wilcoxon Rank Sum Test.  
+
+*Note:  By default, any nucleosome mutation counts file with less than 5,000 raw mutations is removed from the analysis.  Historically, data with less than 5,000 mutations mapped to nucleosomes are much less likely to contain a noticeable periodicity.*  
 
 ***
 ## Interpreting Results
-some text  
-some text  
-some text  
-some text  
-some text  
-some text  
-some text  
-some text  
-some text  
+
+When inteprpreting results from nucperiod, it is best to keep a few key considerations in mind:  
+First, it is expected that pronounced single nucleosome and nucleosome group periodicities have periods of 10.2 bp and ~190 bp respectively.  These values correspond to the geometry of DNA and the average spacing of nucleosomes.  
+Second, nucperiod has the most predictive power when used to compare results across two data sets, as described above.  By themselves, the SNR values are somewhat arbitrary since they are dependent on the range and resolution of periodicities tested using the Lomb-Scargle periodogram.  
+
+For a clear visual representation of the periodicities in your data, consider using the following command:  
+  `nucperiod generateFigures`  
+As the name implies, this command generates figures showing mutation counts across the dyad radius and color-coding the regions that are expected to cause the periodicity.  
+Several options allow the fine tuning of these figures:  
+Outliers can be omitted to clean up the graphs.  
+Data spanning multiple nucleosomes can be smoothed to suppress the periodicity that may be present within individual nucleosomes.  
+The results can be "strand aligned" meaning that the dyad position for mutation counts on the minus strand of DNA are inverted, causing both strands to be aligned 5' to 3'.  
+
+An example of one of these figures is given below:  
+\[Image of nucperiod-generated figure here\]  
+
 ***
 ## A Representative Example
-some text  
-some text  
-some text  
-some text  
-some text  
-some text  
-some text  
-some text  
-some text  
+
+#### Obtaining the data
+The mutation data used in this example comes from the [ICGC data portal](https://dcc.icgc.org/releases).  
+The genome fasta file and nucleosome positioning files used can be found [here](<https://notAValidLinkYet.com>).  
+
+#### Parsing the input data
+The following nucperiod command was used to parse the data:  
+  `nucperiod parseICGC`  
+The dialog was filled out as follows to parse the data and generate individual donors, stratified by microsatellite stability:
+\[Image here\]
+
+#### Processing the data for periodicity analysis
+The following nucperiod command was used to prepare the data for periodicity analysis:  
+  `nucperiod mainPipeline`
+The dialog was filled out as follows to normalize data by trinucleotide context and count mutations within both single nucleotide and nucleotide group radii.  
+\[Image here\]
+
+#### Quantifying the periodicity
+The following nucperiod command was used to prepare the data for periodicity analysis:  
+  `nucperiod periodicityAnalysis`
+The dialog was filled out as follows to quantify the periodicities of the grouped MSS and MSI data.  
+\[Image here\]
+
+In addition, the command was run again and the dialog was filled out as follows to compare the periodicities MSS vs MSI cohorts.  
+\[Image here\]
+
+The Wilcoxon Rank Sum test produced the following results:
+\[Image here\]
+
+#### Visualizing the results
+The following nucperiod command was used to order to visualize the results:  
+  `nucperiod generateFigures`  
+The dialog was filled out as follows to view graphs of the normalized and grouped MSS and MSI data with results smoothed to suppress the individual nucleosome periodicity in the nucleosome group data.  
+\[Image here\]
+
 ***
 ## Acknowledgements
-some text  
-some text  
-some text  
-some text  
-some text  
-some text  
-some text  
-some text  
-some text  
+I would like to thank the following individuals and organizations who made developing nucperiod possible:  
+The Wyrick lab at Washington State University, especially Dr. John Wyrick, who guided me through much of this process.  
+Washington State University for funding me as a graduate student while I developed nucperiod.  
+Dr. Pete Tucker who taught me to be flexible, creative, persistent, and confident as I steadily work to become a better programmer and student.  
