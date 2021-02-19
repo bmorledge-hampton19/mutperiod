@@ -1,11 +1,11 @@
-Package: nucperiodR
+Package: mutperiodR
 Type: Package
-Title: The R portion of the larger "nucperiod" package
-Version: 0.5.0
+Title: The R portion of the larger "mutperiod" package
+Version: 0.6.1
 Author: Ben Morledge-Hampton
 Authors@R: person("Ben", "Morledge-Hampton", email = "b.morledge-hampton@wsu.edu",
     role = c("aut", "cre"))
-Description: The R portion of the larger "nucperiod" package which characterizes
+Description: The R portion of the larger "mutperiod" package which characterizes
     mutational periodicities about nucleosomes.  Specifically, the R scripts
     contained within stratify data by microsatellite stability and mutation
     signature during initial data import and run statistical analysis and

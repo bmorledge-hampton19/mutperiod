@@ -177,7 +177,7 @@ docs/
 
 ##### My Ignores #####
 # Data files
-nucperiod_data/
+mutperiod_data/
 
 # Archived (usually deprecated) files
 archived_stuff/
@@ -201,5 +201,5 @@ python_packages/*.changes
 python_packages/*source.ppa.upload
 
 # Misc.
-python_packages/nucperiod/nucperiodpy/helper_scripts/data_dir.txt
-python_packages/nucperiod/nucperiodpy/run_nucperiodR/inputs.txt
+python_packages/mutperiod/mutperiodpy/helper_scripts/data_dir.txt
+python_packages/mutperiod/mutperiodpy/run_mutperiodR/inputs.txt

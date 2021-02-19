@@ -1,0 +1,100 @@
+nucperiod (0.6-0ubuntu1) focal; urgency=low
+
+  * Lots of little fixes and features added.
+  * Now it's actually ready for initial release (probably)
+  * Realistically, there's probably still some bugs in here, but it's got more features that I think are important!
+
+ -- Ben Morledge-Hampton <b.morledge-hampton@wsu.edu>  Tue, 16 Feb 2021 12:20:21 -0800
+
+nucperiod (0.5-0ubuntu1) focal; urgency=low
+
+  * Content complete for initial beta release
+
+ -- Ben Morledge-Hampton <b.morledge-hampton@wsu.edu>  Fri, 11 Dec 2020 13:20:46 -0800
+
+nucperiod (0.4.3-0ubuntu4) focal; urgency=low
+
+  * After solving issues with changing file permissions on mounted drives in WSL, ACTUALLY
+    set nucperiod.bash-completion to be not an executable.
+
+ -- Ben Morledge-Hampton <b.morledge-hampton@wsu.edu>  Wed, 25 Nov 2020 15:54:36 -0800
+
+nucperiod (0.4.3-0ubuntu3) focal; urgency=low
+
+  * Turns out, dh-bash-completion is not the buggy mess, I am.  Set nucperiod.bash-completion to be
+    not an executable.
+
+ -- Ben Morledge-Hampton <b.morledge-hampton@wsu.edu>  Wed, 25 Nov 2020 11:21:06 -0800
+
+nucperiod (0.4.3-0ubuntu2) focal; urgency=low
+
+  * Switching back to using setup.py to install completions because dh-bash-completion is a buggy mess, 
+    and I don't understand it.
+
+ -- Ben Morledge-Hampton <b.morledge-hampton@wsu.edu>  Tue, 24 Nov 2020 15:46:39 -0800
+
+nucperiod (0.4.3-0ubuntu1) focal; urgency=low
+
+  * Changes to package data and completions file installation
+
+ -- Ben Morledge-Hampton <b.morledge-hampton@wsu.edu>  Tue, 24 Nov 2020 14:34:19 -0800
+
+nucperiod (0.4.2-0ubuntu1) focal; urgency=low
+
+  * Why are tk and tkinter not the same thing!?!?
+
+ -- Ben Morledge-Hampton <b.morledge-hampton@wsu.edu>  Tue, 24 Nov 2020 11:59:33 -0800
+
+nucperiod (0.4.1-0ubuntu1) focal; urgency=low
+
+  * Trying to make sure tk is installed properly...
+
+ -- Ben Morledge-Hampton <b.morledge-hampton@wsu.edu>  Tue, 24 Nov 2020 11:31:55 -0800
+
+nucperiod (0.4.0) focal; urgency=low
+
+  * I'm hopeful about this one!  Python stuff works now.  I just hope the R side of things cooperates...
+
+ -- Ben Morledge-Hampton <b.morledge-hampton@wsu.edu>  Mon, 23 Nov 2020 21:58:47 -0800
+
+nucperiod (0.3.5) bionic; urgency=low
+
+  * I'm seriously about to give up and just revert to python 3.6
+
+ -- Ben Morledge-Hampton <b.morledge-hampton@wsu.edu>  Wed, 11 Nov 2020 14:51:11 -0800
+
+nucperiod (0.2.4) bionic; urgency=low
+
+  * More tweaks (pretty please work?)
+
+ -- Ben Morledge-Hampton <b.morledge-hampton@wsu.edu>  Tue, 10 Nov 2020 11:58:22 -0800
+
+nucperiod (0.2.3) bionic; urgency=low
+
+  * More tweaks (maybe this time?)
+
+ -- Ben Morledge-Hampton <b.morledge-hampton@wsu.edu>  Mon, 09 Nov 2020 19:11:48 -0800
+
+nucperiod (0.2.2) bionic; urgency=low
+
+  * More tweaks (please work)
+
+ -- Ben Morledge-Hampton <b.morledge-hampton@wsu.edu>  Mon, 09 Nov 2020 18:58:06 -0800
+
+nucperiod (0.2.1) bionic; urgency=low
+
+  * Small tweaks to test release 2
+
+ -- Ben Morledge-Hampton <b.morledge-hampton@wsu.edu>  Mon, 09 Nov 2020 18:29:57 -0800
+
+nucperiod (0.2) bionic; urgency=low
+
+  * Test release 2
+
+ -- Ben Morledge-Hampton <b.morledge-hampton@wsu.edu>  Mon, 09 Nov 2020 17:31:25 -0800
+
+nucperiod (0.1) bionic; urgency=low
+
+  * Test release
+
+ -- Ben Morledge-Hampton <b.morledge-hampton@wsu.edu>  Wed, 30 Sep 2020 14:23:56 -0700
