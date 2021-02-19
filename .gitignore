@@ -200,6 +200,13 @@ python_packages/*.buildinfo
 python_packages/*.changes
 python_packages/*source.ppa.upload
 
+R_packages/*.dsc
+R_packages/*.deb
+R_packages/*.build
+R_packages/*.buildinfo
+R_packages/*.changes
+R_packages/*source.ppa.upload
+
 # Misc.
 python_packages/mutperiod/mutperiodpy/helper_scripts/data_dir.txt
 python_packages/mutperiod/mutperiodpy/run_mutperiodR/inputs.txt
