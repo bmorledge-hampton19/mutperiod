@@ -1,3 +1,9 @@
+mutperiod (0.6.2-0ubuntu1) focal; urgency=low
+
+  * Small fix pertaining to the write locations of intermediate R input files.
+
+ -- Ben Morledge-Hampton <b.morledge-hampton@wsu.edu>  Fri, 19 Feb 2021 12:53:16 -0800
+
 mutperiod (0.6.1-0ubuntu2) focal; urgency=low
 
   * Alternative method for packaging completion script
