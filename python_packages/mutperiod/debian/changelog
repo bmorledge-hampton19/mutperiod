@@ -1,3 +1,9 @@
+mutperiod (0.6.1-0ubuntu2) focal; urgency=low
+
+  * Alternative method for packaging completion script
+
+ -- Ben Morledge-Hampton <b.morledge-hampton@wsu.edu>  Fri, 19 Feb 2021 11:28:17 -0800
+
 mutperiod (0.6.1-0ubuntu1) focal; urgency=low
 
   * Name change
