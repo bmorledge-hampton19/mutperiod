@@ -1,3 +1,9 @@
+mutperiod (0.6.3-0ubuntu1) focal; urgency=low
+
+  * Small fix involving generateMutperiodData being mistakenly named generatemutperiodData (Capitalization)
+
+ -- Ben Morledge-Hampton <b.morledge-hampton@wsu.edu>  Fri, 19 Feb 2021 13:51:57 -0800
+
 mutperiod (0.6.2-0ubuntu1) focal; urgency=low
 
   * Small fix pertaining to the write locations of intermediate R input files.
