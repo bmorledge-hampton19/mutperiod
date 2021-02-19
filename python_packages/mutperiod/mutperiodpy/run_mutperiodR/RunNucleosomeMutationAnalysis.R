@@ -20,7 +20,7 @@ selectInputAndRun = function(){
                                 filters = c(c("Tab Separated Files (*.tsv)","Any files"),
                                             c("*.tsv","*.*")), index = 1)
   
-  mutperiodData = generatemutperiodData(inputDataPaths, outputFilePath = "nucMutationAnalysis.RData",
+  mutperiodData = generateMutperiodData(inputDataPaths, outputFilePath = "nucMutationAnalysis.RData",
                                         enforceInputNamingConventions = TRUE)
   
   save(mutperiodData, file = "nucMutationAnalysis.rda")
@@ -30,7 +30,7 @@ selectInputAndRun = function(){
 }
 
 
-# Gets a file path from command line which contains inputs for the generatemutperiodData function.
+# Gets a file path from command line which contains inputs for the generateMutperiodData function.
 # If there are no command line arguments, the above function is run instead.
 args = commandArgs(trailingOnly = T)
 
@@ -46,14 +46,14 @@ if (length(args) == 1) {
     
     # Two inputs should mean that the input file contains a string of mutation counts file paths separated by '$'
     # followed by the path to the output file.
-    mutperiodData = generatemutperiodData(unlist(strsplit(inputs[1],'$',fixed = TRUE)), inputs[2], 
+    mutperiodData = generateMutperiodData(unlist(strsplit(inputs[1],'$',fixed = TRUE)), inputs[2], 
                                           enforceInputNamingConventions = TRUE)
     
   } else if (length(inputs) == 4) {
     
     # Two inputs should mean that the input file contains the counts file paths and the output file path
     # along with 2 file path groups for comparison (in that order).
-    mutperiodData = generatemutperiodData(unlist(strsplit(inputs[1],'$',fixed = TRUE)),inputs[2],
+    mutperiodData = generateMutperiodData(unlist(strsplit(inputs[1],'$',fixed = TRUE)),inputs[2],
                                           unlist(strsplit(inputs[3],'$',fixed = TRUE)),
                                           unlist(strsplit(inputs[4],'$',fixed = TRUE)),
                                           enforceInputNamingConventions = TRUE)
