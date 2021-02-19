@@ -24,7 +24,7 @@ def generateFigures(tsvFilePaths, rdaFilePaths, exportPath, omitOutliers, smooth
         exportFileName = os.path.basename(exportPath)
 
     # Create the temporary inputs file to pass to the R script
-    inputsFilePath = os.path.join(rScriptsDirectory,"inputs.txt")
+    inputsFilePath = os.path.join(os.getenv("HOME"), ".mutperiod","R_inputs.txt")
 
     # Write the inputs
     with open(inputsFilePath, 'w') as inputsFile:

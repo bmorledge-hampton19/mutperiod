@@ -68,7 +68,7 @@ def runNucleosomeMutationAnalysis(nucleosomeMutationCountsFilePaths: List[str], 
         "Output file should end with \".rda\" or \".tsv\".")
 
     # Write the inputs to a temporary file to be read by the R script
-    inputsFilePath = os.path.join(rScriptsDirectory,"inputs.txt")
+    inputsFilePath = os.path.join(os.getenv("HOME"), ".mutperiod","R_inputs.txt")
 
     with open(inputsFilePath, 'w') as inputsFile:
         if (len(filePathGroup1) == 0 and len(filePathGroup2) == 0):
