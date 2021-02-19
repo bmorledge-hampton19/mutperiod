@@ -1,5 +1,5 @@
 #' @export
-generateNucPeriodData = function(mutationCountsFilePaths, outputFilePath,
+generateMutperiodData = function(mutationCountsFilePaths, outputFilePath,
                                  filePathGroup1 = '', filePathGroup2 = '',
                                  nucleosomeDyadPosCutoff = 60,
                                  nucleosomeMutationCutoff = 5000,
@@ -148,18 +148,18 @@ generateNucPeriodData = function(mutationCountsFilePaths, outputFilePath,
   }
 
   # Create the data object to return
-  nucPeriodData = list(normalizedNucleosomeCountsTables = normalizedNucleosomeCountsTables,
+  mutperiodData = list(normalizedNucleosomeCountsTables = normalizedNucleosomeCountsTables,
                        rawNucleosomeCountsTables = rawNucleosomeCountsTables,
                        periodicityResults = periodicityResults)
 
   # Add the group comparison results if requested.
   if (compareGroups) {
-    nucPeriodData = append(nucPeriodData, list(group1Inputs = group1DataSetNames,
+    mutperiodData = append(mutperiodData, list(group1Inputs = group1DataSetNames,
                                                group2Inputs = group2DataSetNames,
                                                wilcoxonResult = wilcoxonResult))
   }
 
-  return(nucPeriodData)
+  return(mutperiodData)
 
 }
 
