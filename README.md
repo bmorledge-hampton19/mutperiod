@@ -159,7 +159,7 @@ A Lomb-Scargle periodogram is used to find the periodicity with the highest powe
 
 Once the maximum power periodicity has been found, a signal-to-noise ratio is obtained by dividing the maximum power by the median of all powers not within 0.5 units of the maximum power peak.  
 
-If multiple files containing nucleosome mutation counts are submitted for analysis, the files can be stratified into two groups to determine if the mean SNR is significantly different between them.  This comparison occurs using a Wilcoxon Rank Sum Test.  The dialog created by invoking the above command (shown below) allows you to form two separate groups by filtering on characteristics like normalization method, nucleosome radius, and cohort designations.  In addition, the main group can be filtered as well for convenience.  Filtering of the two groups for comparison occurs *after* the main group is filtered, so filtering options from the main group do not need to be used in the comparison groups.  Leaving any group of filter options empty (e.g. all normalization methods) causes filtering to not be applied for that option.  If custom cohorts need to be designated, this should be done using a plain text file with each cohort designation given on a separate line of the file.  An example of this dialog is given in the image below:
+If multiple files containing nucleosome mutation counts are submitted for analysis, the files can be stratified into two groups to determine if the mean SNR is significantly different between them.  This comparison occurs using a Wilcoxon Rank Sum Test.  The dialog created by invoking the above command (shown below) allows you to form two separate groups by filtering on characteristics like normalization method, nucleosome radius, and cohort designations.  In addition, the main group can be filtered as well for convenience.  Filtering of the two groups for comparison occurs *after* the main group is filtered, so filtering options from the main group do not need to be used in the comparison groups.  Leaving any group of filter options empty (e.g. all normalization methods) causes filtering to not be applied for that option.  If custom cohorts need to be designated, this should be done using a plain text file with each cohort designation given on a separate line of the file.  An example of this dialog is given in the image below:  
 ![Group Selection Dialgo](readme_images/group_selection_dialog.png)
 
 The results of the periodicity analysis can be stored as either a .rda or .tsv formatted file.  However, please note that the .rda format is preferred when generating figures using mutperiod and that the .tsv format does not preserve the results of the Wilcoxon Rank Sum Test.  
@@ -193,7 +193,7 @@ The genome fasta file and nucleosome positioning files used can be found [here](
 #### Parsing the input data
 The following mutperiod command was used to parse the data:  
   `mutperiod parseICGC`  
-The dialog was filled out as follows to parse the data and generate individual donors, stratified by microsatellite stability:
+The dialog was filled out as follows to parse the data and generate individual donors, stratified by microsatellite stability:  
 ![mutperiod parseICGC Dialog](readme_images/parseICGC.png)
 
 #### Processing the data for periodicity analysis
@@ -209,7 +209,7 @@ The dialog was filled out as follows to quantify the periodicities of the groupe
 ![mutperiod grouped periodicityAnalysis Dialog](readme_images/grouped_microsatellite_analysis.png)
 
 In addition, the command was run again and the dialog was filled out as follows to compare the translational periodicities of MSS vs MSI cohorts.  
-![mutperiod individual periodicityAnalysis Dialog1](readme_images/microsatellite_translational_periodicity_analysis_1.png)
+![mutperiod individual periodicityAnalysis Dialog1](readme_images/microsatellite_translational_periodicity_analysis_1.png)  
 ![mutperiod individual periodicityAnalysis Dialog2](readme_images/microsatellite_translational_periodicity_analysis_2.png)
 
 The Wilcoxon Rank Sum test produced the following results:  
