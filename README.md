@@ -123,7 +123,7 @@ This format is a variation on the standardized bed format and contains 6-7 tab s
 - Use the "." character in this column to used to avoid assigning an entry to another cohort without breaking the above rule.
 
 #### Example Bed Mutation Data
-\[Image of a few lines of mutation data here\]
+![Bed Mutation Data](readme_images/custom_bed_mutations.png)
 
 #### Stratifying Mutation Data
 With either of the above input formats, mutations can stratified in a number of different ways:   
