@@ -159,9 +159,8 @@ A Lomb-Scargle periodogram is used to find the periodicity with the highest powe
 
 Once the maximum power periodicity has been found, a signal-to-noise ratio is obtained by dividing the maximum power by the median of all powers not within 0.5 units of the maximum power peak.  
 
-If multiple files containing nucleosome mutation counts are submitted for analysis, the files can be stratified into two groups to determine if the mean SNR is significantly different between them.  This comparison occurs using a Wilcoxon Rank Sum Test.  The dialog created by invoking the above command (shown below) allows you to form two separate groups by filtering on characteristics like normalization method, nucleosome radius, and cohort designations.  In addition, the main group can be filtered as well for convenience.  Filtering of the two groups for comparison occurs *after* the main group is filtered, so filtering options from the main group do not need to be used in the comparison groups.  Leaving any group of filter options empty (e.g. all normalization methods) causes filtering to not be applied for that option.  If custom cohorts need to be designated, this should be done using a plain text file with each cohort designation given on a separate line of the file.  
-\[Image of group selection dialog here\]  
-
+If multiple files containing nucleosome mutation counts are submitted for analysis, the files can be stratified into two groups to determine if the mean SNR is significantly different between them.  This comparison occurs using a Wilcoxon Rank Sum Test.  The dialog created by invoking the above command (shown below) allows you to form two separate groups by filtering on characteristics like normalization method, nucleosome radius, and cohort designations.  In addition, the main group can be filtered as well for convenience.  Filtering of the two groups for comparison occurs *after* the main group is filtered, so filtering options from the main group do not need to be used in the comparison groups.  Leaving any group of filter options empty (e.g. all normalization methods) causes filtering to not be applied for that option.  If custom cohorts need to be designated, this should be done using a plain text file with each cohort designation given on a separate line of the file.  An example of this dialog is given in the image below:
+![Group Selection Dialgo](readme_images/group_selection_dialog.png)
 
 The results of the periodicity analysis can be stored as either a .rda or .tsv formatted file.  However, please note that the .rda format is preferred when generating figures using mutperiod and that the .tsv format does not preserve the results of the Wilcoxon Rank Sum Test.  
 
@@ -181,8 +180,8 @@ As the name implies, this command generates figures showing mutation counts acro
 - Data spanning multiple nucleosomes can be smoothed to suppress the periodicity that may be present within individual nucleosomes.  
 - The results can be "strand aligned" meaning that the dyad position for mutation counts on the minus strand of DNA are inverted, causing both strands to be aligned 5' to 3'.  
 
-An example of one of these figures is given below:  
-\[Image of mutperiod-generated figure here\]  
+An example of one of these figures is given here:  
+![mutperiod Figure](readme_images/figure_output.png)
 
 ***
 ## A Representative Example
@@ -195,31 +194,35 @@ The genome fasta file and nucleosome positioning files used can be found [here](
 The following mutperiod command was used to parse the data:  
   `mutperiod parseICGC`  
 The dialog was filled out as follows to parse the data and generate individual donors, stratified by microsatellite stability:
-\[Image here\]
+![mutperiod parseICGC Dialog](readme_images/parseICGC.png)
 
 #### Processing the data for periodicity analysis
 The following mutperiod command was used to prepare the data for periodicity analysis:  
   `mutperiod mainPipeline`  
 The dialog was filled out as follows to normalize data by trinucleotide context and count mutations within both single nucleotide and nucleotide group radii.  
-\[Image here\]
+![mutperiod mainPipeline Dialog](readme_images/mainPipeline.png)
 
 #### Quantifying the periodicity
 The following mutperiod command was used to prepare the data for periodicity analysis:  
   `mutperiod periodicityAnalysis`  
 The dialog was filled out as follows to quantify the periodicities of the grouped MSS and MSI data.  
-\[Image here\]
+![mutperiod grouped periodicityAnalysis Dialog](readme_images/grouped_microsatellite_analysis.png)
 
-In addition, the command was run again and the dialog was filled out as follows to compare the periodicities MSS vs MSI cohorts.  
-\[Image here\]
+In addition, the command was run again and the dialog was filled out as follows to compare the translational periodicities of MSS vs MSI cohorts.  
+![mutperiod individual periodicityAnalysis Dialog1](readme_images/microsatellite_translational_periodicity_analysis_1.png)
+![mutperiod individual periodicityAnalysis Dialog2](readme_images/microsatellite_translational_periodicity_analysis_2.png)
 
-The Wilcoxon Rank Sum test produced the following results:
-\[Image here\]
+The Wilcoxon Rank Sum test produced the following results:  
+![mutperiod periodicityAnalysis Result](readme_images/microsatellite_translational_periodicity_result.png)
 
 #### Visualizing the results
 The following mutperiod command was used to order to visualize the results:  
   `mutperiod generateFigures`  
 The dialog was filled out as follows to view graphs of the normalized and grouped MSS and MSI data with results smoothed to suppress the individual nucleosome periodicity in the nucleosome group data.  
-\[Image here\]
+![mutperiod generateFigures Dialog](readme_images/generateFigures.png)
+
+Here is an example of one of the resulting figures:  
+![Figure Example](readme_images/figure_output.png)
 
 ***
 ## Acknowledgements
