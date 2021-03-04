@@ -1,7 +1,7 @@
 # This script reads one or more "simple somatic mutation" data file(s) from ICGC and 
 # writes information on single base substitution mutations to a new bed file or files for further analysis.
 
-import os, gzip, subprocess, sys
+import os, gzip, sys
 from typing import IO, List
 
 from mutperiodpy.Tkinter_scripts.TkinterDialog import TkinterDialog, Selections

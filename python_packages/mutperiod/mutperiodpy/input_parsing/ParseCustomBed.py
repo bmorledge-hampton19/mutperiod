@@ -301,8 +301,8 @@ def parseCustomBed(bedInputFilePaths, genomeFilePath, nucPosFilePath, stratifyBy
                     raise ValueError("Separation by individual cohorts requested, but no cohort designation given.")
 
             # Sort the input data (should also ensure that the output data is sorted)
-            subprocess.run(" ".join(("sort",) + optionalArgument + 
-                                    ("-k1,1","-k2,2n",bedInputFilePath,"-o",bedInputFilePath)), shell = True, check = True)
+            subprocess.run(("sort",) + optionalArgument + 
+                            ("-k1,1","-k2,2n",bedInputFilePath,"-o",bedInputFilePath), check = True)
 
             # If requested, also prepare for stratification by microsatellite stability.
             if stratifyByMS:             

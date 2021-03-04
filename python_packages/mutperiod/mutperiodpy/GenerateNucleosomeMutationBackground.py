@@ -1,7 +1,7 @@
 # This script, when given a mutation background file, a genome file, and a file of strongly positioned nucleosome coordinates,
 # generates a background file with the expected mutations at each dyad position from -73 to 73 (inclusive).
 
-import os, subprocess
+import os
 from typing import Dict
 from mutperiodpy.Tkinter_scripts.TkinterDialog import TkinterDialog, Selections
 from mutperiodpy.helper_scripts.UsefulBioinformaticsFunctions import bedToFasta, reverseCompliment, FastaFileIterator

@@ -265,8 +265,8 @@ class TXRSeqInputDataPipeline:
             # If we were given bigWig input data, convert it to bedGraph format first.
             if self.bigWigReadsFilePathPair is not None:
                 for i in range(2):
-                    subprocess.run(" ".join(("bigWigToBedGraph",self.bigWigReadsFilePathPair[i],
-                                            self.bedGraphReadsFilePathPair[i])), shell = True, check = True)
+                    subprocess.run(("bigWigToBedGraph",self.bigWigReadsFilePathPair[i],
+                                    self.bedGraphReadsFilePathPair[i]), check = True)
 
             # Generate the trimmed reads.
             trimBedGraphTXRSeqData(self.bedGraphReadsFilePathPair, self.trimmedReadsFilePath, 
@@ -289,8 +289,7 @@ class TXRSeqInputDataPipeline:
                      self.expectedLocationsByLength, self.acceptableBasesByLength)
 
         # Sort the output file.
-        subprocess.run(" ".join(("sort","-k1,1","-k2,2n", self.lesionsBedFilePath,"-o", self.lesionsBedFilePath)), 
-                       shell = True, check = True)    
+        subprocess.run(("sort","-k1,1","-k2,2n", self.lesionsBedFilePath,"-o", self.lesionsBedFilePath), check = True)    
 
 
 def parseTXRSeq(inputDataFilePaths, callParamsFilePath, genomeFilePath, nucPosFilePath):

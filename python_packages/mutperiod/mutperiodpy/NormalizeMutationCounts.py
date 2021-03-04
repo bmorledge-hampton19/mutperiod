@@ -87,9 +87,8 @@ def normalizeCounts(backgroundCountsFilePaths: List[str], customRawCountsFilePat
 
         # Pass the file paths to the R script to generate the normalized counts file.
         print("Calling R script to generate normalized counts...")
-        subprocess.run(" ".join(("Rscript",os.path.join(rScriptsDirectory,"NormalizeNucleosomeMutationCounts.R"),
-                                 rawCountsFilePath,backgroundCountsFilePath,normalizedCountsFilePath)), 
-                       shell = True, check = True)
+        subprocess.run(("Rscript",os.path.join(rScriptsDirectory,"NormalizeNucleosomeMutationCounts.R"),
+                        rawCountsFilePath,backgroundCountsFilePath,normalizedCountsFilePath), check = True)
 
         normalizedCountsFilePaths.append(normalizedCountsFilePath)
 

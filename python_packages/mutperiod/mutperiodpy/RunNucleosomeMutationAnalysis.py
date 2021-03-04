@@ -82,8 +82,7 @@ def runNucleosomeMutationAnalysis(nucleosomeMutationCountsFilePaths: List[str], 
 
     # Call the R script
     print("Calling R script...")
-    subprocess.run(" ".join(("Rscript",os.path.join(rScriptsDirectory,"RunNucleosomeMutationAnalysis.R"),inputsFilePath)),
-                   shell = True, check = True)
+    subprocess.run(("Rscript",os.path.join(rScriptsDirectory,"RunNucleosomeMutationAnalysis.R"),inputsFilePath), check = True)
 
     print("Results can be found at",outputFilePath)
 

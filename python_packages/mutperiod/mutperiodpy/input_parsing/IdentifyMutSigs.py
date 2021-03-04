@@ -47,8 +47,8 @@ class MutSigIdentifier:
             self.deconstructSigsInputDataFile.close()
 
         if verbose: print("Calling deconstructSigs to identify mutation signatures")
-        subprocess.run(" ".join(("Rscript",os.path.join(rScriptsDirectory,"GetMutSigs.R"),
-                                self.deconstructSigsInputDataFilePath, self.deconstructSigsOutputFilePath)), shell = True, check = True)
+        subprocess.run(("Rscript",os.path.join(rScriptsDirectory,"GetMutSigs.R"),
+                        self.deconstructSigsInputDataFilePath, self.deconstructSigsOutputFilePath), check = True)
 
         self.mutSigsIdentified = True
     

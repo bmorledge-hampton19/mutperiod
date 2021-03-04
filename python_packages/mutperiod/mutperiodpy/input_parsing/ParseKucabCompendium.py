@@ -104,8 +104,7 @@ def parseKucabCompendium(kucabSubstitutionsFilePaths, genomeFilePath, nucPosFile
 
         # Sort the output file.
         print("Sorting output file...")
-        subprocess.run(" ".join(("sort","-k1,1","-k2,2n",outputTrinucBedFilePath,"-o",outputTrinucBedFilePath)),
-                           shell = True, check = True)
+        subprocess.run(("sort","-k1,1","-k2,2n",outputTrinucBedFilePath,"-o",outputTrinucBedFilePath), check = True)
 
 
 if __name__ == "__main__":

@@ -47,8 +47,8 @@ class MSIIdentifier:
             self.MSISeqInputDataFile.close()
 
         if verbose: print("Calling MSIseq to generate MSI donor list...")
-        subprocess.run(" ".join(("Rscript",os.path.join(rScriptsDirectory,"FindMSIDonors.R"),
-                                self.MSISeqInputDataFilePath, self.MSICohortsFilePath)), shell = True, check = True)
+        subprocess.run(("Rscript",os.path.join(rScriptsDirectory,"FindMSIDonors.R"),
+                        self.MSISeqInputDataFilePath, self.MSICohortsFilePath), check = True)
 
         self.MSICohortsIdentified = True
     

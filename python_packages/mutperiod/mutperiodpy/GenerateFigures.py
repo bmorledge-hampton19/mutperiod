@@ -35,9 +35,8 @@ def generateFigures(tsvFilePaths, rdaFilePaths, exportPath, omitOutliers, smooth
 
     # Call the R script to generate the figures.
     print("Calling R script...")
-    subprocess.run(" ".join(("Rscript",os.path.join(rScriptsDirectory,"GenerateFigures.R"),inputsFilePath, str(omitOutliers),
-                             str(smoothNucGroup), str(includeNorm), str(includeRaw), str(strandAlign))),
-                   shell = True, check = True)
+    subprocess.run(("Rscript",os.path.join(rScriptsDirectory,"GenerateFigures.R"),inputsFilePath, str(omitOutliers),
+                    str(smoothNucGroup), str(includeNorm), str(includeRaw), str(strandAlign)), check = True)
 
 
 def parseArgs(args):
