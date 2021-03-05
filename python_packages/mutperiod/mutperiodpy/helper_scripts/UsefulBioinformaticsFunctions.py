@@ -152,4 +152,4 @@ def bedToFasta(bedFilePath, genomeFilePath, fastaOutputFilePath,
     if incorporateBedName: optionalParameters.append("-name")
 
     subprocess.run(("bedtools","getfasta") + tuple(optionalParameters) + ("-fi",genomeFilePath,
-                    "-bed",bedFilePath,">",fastaOutputFilePath), check = True)
+                    "-bed",bedFilePath,"-fo",fastaOutputFilePath), check = True)
