@@ -1,7 +1,7 @@
 # This script takes raw nucleosome mutation count files, and passes them an R script which normalizes the data.
 
 import os, subprocess, datetime
-from typing import List
+from typing import List, Dict
 from mutperiodpy.Tkinter_scripts.TkinterDialog import TkinterDialog, Selections
 from mutperiodpy.helper_scripts.UsefulFileSystemFunctions import (getLinkerOffset, getContext, getDataDirectory, Metadata, 
                                                                   generateFilePath, DataTypeStr, rScriptsDirectory, checkForNucGroup)
@@ -12,7 +12,7 @@ from mutperiodpy.helper_scripts.UsefulFileSystemFunctions import (getLinkerOffse
 def getBackgroundRawPairs(backgroundCountsFilePaths):
 
     # Match each background file path to its respective raw counts file path.
-    backgroundRawPairs = dict()
+    backgroundRawPairs: Dict[str, List[str]] = dict()
     for backgroundCountsFilePath in backgroundCountsFilePaths:
 
         if not DataTypeStr.nucMutBackground in os.path.basename(backgroundCountsFilePath): 
@@ -30,7 +30,9 @@ def getBackgroundRawPairs(backgroundCountsFilePaths):
             raise ValueError("No raw counts file found to pair with " + backgroundCountsFilePath +
                              "\nExpected file with path: " + rawCountsFilePath)
 
-        backgroundRawPairs[backgroundCountsFilePath] = rawCountsFilePath
+        if backgroundCountsFilePath not in backgroundRawPairs:
+            backgroundRawPairs[backgroundCountsFilePath] = list()
+        backgroundRawPairs[backgroundCountsFilePath].append(rawCountsFilePath)
 
     return backgroundRawPairs
 
@@ -38,7 +40,7 @@ def getBackgroundRawPairs(backgroundCountsFilePaths):
 # Attempts to pair each raw counts file in the custom raw directory to a raw counts file in the custom background directory
 def getCustomBackgroundRawPairs(customRawCountsFilePaths, customBackgroundCountsDir):
 
-    customBackgroundRawPairs = dict()
+    customBackgroundRawPairs: Dict[str, List[str]] = dict()
     backgroundMetadata = Metadata(customBackgroundCountsDir)
 
     # For every raw counts file in the customRawCountsDir, try to match it to a raw counts file in the customBackgroundCountsDir.
@@ -51,7 +53,9 @@ def getCustomBackgroundRawPairs(customRawCountsFilePaths, customBackgroundCounts
         assert os.path.exists(customBackgroundCountsFilePath), (
             "No counts file found to use as custom background for " + customRawCountsFilePath +
             "\nExpected file at: " + customBackgroundCountsFilePath)
-        customBackgroundRawPairs[customBackgroundCountsFilePath] = customRawCountsFilePath
+        if customBackgroundCountsFilePath not in customBackgroundRawPairs:
+            customBackgroundRawPairs[customBackgroundCountsFilePath] = list()
+        customBackgroundRawPairs[customBackgroundCountsFilePath].append(customRawCountsFilePath)
 
     return customBackgroundRawPairs
 
@@ -66,31 +70,31 @@ def normalizeCounts(backgroundCountsFilePaths: List[str], customRawCountsFilePat
     if customBackgroundCountsDir is not None:
         customBackgroundRawPairs = getCustomBackgroundRawPairs(customRawCountsFilePaths, customBackgroundCountsDir)
         for customBackgroundCountsFilePath in customBackgroundRawPairs:
+            assert customBackgroundCountsFilePath not in backgroundRawPairs, "Unexpected intersection!"
             backgroundRawPairs[customBackgroundCountsFilePath] = customBackgroundRawPairs[customBackgroundCountsFilePath]
 
     # Iterate through each background + raw counts pair
     for backgroundCountsFilePath in backgroundRawPairs:
+        for rawCountsFilePath in backgroundRawPairs[backgroundCountsFilePath]:
 
-        rawCountsFilePath = backgroundRawPairs[backgroundCountsFilePath]
+            print("\nWorking with",os.path.basename(rawCountsFilePath),"and",os.path.basename(backgroundCountsFilePath))
 
-        print("\nWorking with",os.path.basename(rawCountsFilePath),"and",os.path.basename(backgroundCountsFilePath))
+            metadata = Metadata(rawCountsFilePath)
 
-        metadata = Metadata(rawCountsFilePath)
+            # Generate the path to the normalized file.
+            if DataTypeStr.rawNucCounts in backgroundCountsFilePath: context = "custom_context"
+            else: context = getContext(backgroundCountsFilePath)
+            normalizedCountsFilePath = generateFilePath(directory = metadata.directory, dataGroup = metadata.dataGroupName,
+                                                        context = context, linkerOffset = getLinkerOffset(backgroundCountsFilePath),
+                                                        usesNucGroup = checkForNucGroup(backgroundCountsFilePath),
+                                                        dataType = DataTypeStr.normNucCounts, fileExtension = ".tsv")
 
-        # Generate the path to the normalized file.
-        if DataTypeStr.rawNucCounts in backgroundCountsFilePath: context = "custom_context"
-        else: context = getContext(backgroundCountsFilePath)
-        normalizedCountsFilePath = generateFilePath(directory = metadata.directory, dataGroup = metadata.dataGroupName,
-                                                    context = context, linkerOffset = getLinkerOffset(backgroundCountsFilePath),
-                                                    usesNucGroup = checkForNucGroup(backgroundCountsFilePath),
-                                                    dataType = DataTypeStr.normNucCounts, fileExtension = ".tsv")
+            # Pass the file paths to the R script to generate the normalized counts file.
+            print("Calling R script to generate normalized counts...")
+            subprocess.run(("Rscript",os.path.join(rScriptsDirectory,"NormalizeNucleosomeMutationCounts.R"),
+                            rawCountsFilePath,backgroundCountsFilePath,normalizedCountsFilePath), check = True)
 
-        # Pass the file paths to the R script to generate the normalized counts file.
-        print("Calling R script to generate normalized counts...")
-        subprocess.run(("Rscript",os.path.join(rScriptsDirectory,"NormalizeNucleosomeMutationCounts.R"),
-                        rawCountsFilePath,backgroundCountsFilePath,normalizedCountsFilePath), check = True)
-
-        normalizedCountsFilePaths.append(normalizedCountsFilePath)
+            normalizedCountsFilePaths.append(normalizedCountsFilePath)
 
     # Document where the custom background counts came from in each relevant directory.
     if customBackgroundCountsDir is not None:
