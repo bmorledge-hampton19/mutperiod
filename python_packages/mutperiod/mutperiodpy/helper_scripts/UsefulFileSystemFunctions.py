@@ -83,30 +83,35 @@ class InputFormat(Enum):
     customBed = "customBed"
 
 
-# Recursively searches the given directory for files with the specified ending. Returns a list of the resulting file paths.
-def getFilesInDirectory(directory,validEnding, *additionalValidEndings):
+# By default, recursively searches the given directory for files with the specified ending. Returns a list of the resulting file paths.
+# If searchRecursively is set to false, only searches the given directory and returns the first match (or None if none are found).
+def getFilesInDirectory(directory,validEnding, *additionalValidEndings, searchRecursively = True):
     """Recursively searches the given directory(ies) for files of the specified type."""
 
-    filePaths = list()
+    if searchRecursively: filePaths = list()
 
     # Iterate through the given directory
     for item in os.listdir(directory):
         path = os.path.join(directory,item)
 
         # Recursively search any directories
-        if os.path.isdir(path):
+        if os.path.isdir(path) and searchRecursively:
             filePaths += getFilesInDirectory(path,validEnding, *additionalValidEndings)
 
         # Check files for the valid ending(s)
         else:
-            if path.endswith(validEnding): filePaths.append(path)
+            if path.endswith(validEnding): 
+                if not searchRecursively: return path
+                else: filePaths.append(path)
             else:
                 for additionalValidEnding in additionalValidEndings:
                     if path.endswith(additionalValidEnding): 
-                        filePaths.append(path)
+                        if not searchRecursively: return path
+                        else: filePaths.append(path)
                         break
 
-    return filePaths
+    if not searchRecursively: return None
+    else: return filePaths
 
 
 # Returns just the name of the first directory above a given path. (e.g. test/file/path.txt would return "file")
