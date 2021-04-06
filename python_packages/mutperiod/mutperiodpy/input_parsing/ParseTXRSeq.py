@@ -5,7 +5,7 @@ from typing import List
 import os, subprocess
 from mutperiodpy.Tkinter_scripts.TkinterDialog import TkinterDialog, Selections
 from mutperiodpy.helper_scripts.UsefulBioinformaticsFunctions import bedToFasta, FastaFileIterator
-from mutperiodpy.helper_scripts.UsefulFileSystemFunctions import (getIsolatedParentDir, generateFilePath, dataDirectory,
+from mutperiodpy.helper_scripts.UsefulFileSystemFunctions import (getIsolatedParentDir, generateFilePath, getDataDirectory,
                                                                   DataTypeStr, generateMetadata, InputFormat, getAcceptableChromosomes)
 
 
@@ -188,7 +188,7 @@ class TXRSeqInputDataPipeline:
         with open(self.callParamsFilePath, 'r') as callParamsFile:
             for line in callParamsFile:
 
-                choppedUpLine: List[str] = line.strip().split('\t')
+                choppedUpLine: List[str] = line.split()
 
                 sequenceLength = int(choppedUpLine[0])
                 assert sequenceLength not in self.expectedLocationsByLength
@@ -241,7 +241,7 @@ class TXRSeqInputDataPipeline:
 
         # Generate the trimmed reads output, the fasta output, and bed output file paths.
         self.trimmedReadsFilePath = os.path.join(intermediateFilesDirectory,dataGroupName+"_trimmed_reads.bed")
-        self.fastaReadsFilePath = os.path.join(intermediateFilesDirectory,dataGroupName+"_fasta_reads.fa")
+        self.fastaReadsFilePath = os.path.join(intermediateFilesDirectory,dataGroupName+"_trimmed_reads.fa")
         self.lesionsBedFilePath = generateFilePath(directory = localRootDirectory, dataGroup = dataGroupName,
                                                       context = "singlenuc", dataType = DataTypeStr.mutations, fileExtension = ".bed") 
 
@@ -310,18 +310,15 @@ def parseTXRSeq(inputDataFilePaths, callParamsFilePath, genomeFilePath, nucPosFi
 if __name__ == "__main__":
 
     # Create the Tkinter UI
-    dialog = TkinterDialog(workingDirectory=dataDirectory)
+    dialog = TkinterDialog(workingDirectory=getDataDirectory())
     dialog.createMultipleFileSelector("tXR-seq bigwig data (plus strand):",0,
                                       "+.bigWig",("BigWig Files",".bigWig"))
     dialog.createMultipleFileSelector("tXR-seq bed data (alternative to bigwig):",1,
                                       "aligned_reads.bed",("Bed Files",".bed"))
 
-    callParamsSelector = dialog.createDynamicSelector(2,0)      
-    callParamsSelector.initCheckboxController("Use Default Lesion Call Parameters", 1)
-    callParamsSelector.initDisplay(0, "Non-Default").createFileSelector("Lesion Call Parameter File:", 0, ("Tab Seperated Values",".tsv"))
-    callParamsSelector.initDisplayState()
+    dialog.createFileSelector("Lesion Call Parameter File:", 2, ("Tab Seperated Values",".tsv"))
 
-    dialog.createFileSelector("Human Genome Fasta File:",3,("Fasta Files",".fa"))
+    dialog.createFileSelector("Genome Fasta File:",3,("Fasta Files",".fa"))
     dialog.createFileSelector("Strongly Positioned Nucleosome File:",4,("Bed Files",".bed"))
 
     # Run the UI
@@ -334,10 +331,8 @@ if __name__ == "__main__":
     selections: Selections = dialog.selections
     tXRSeqBigWigPlusReadsFilePaths: List[str] = list(selections.getFilePathGroups())[0]
     tXRSeqBedReadsFilePaths: List[str] = list(selections.getFilePathGroups())[1]
-    genomeFilePath = list(selections.getIndividualFilePaths())[0]
-    nucPosFilePath = list(selections.getIndividualFilePaths())[1]
-
-    if callParamsSelector.getControllerVar(): callParamsFilePath = os.path.join(os.path.dirname(os.path.abspath(__file__)),"default_BPDE_lesion_calling.tsv")
-    else: callParamsFilePath = selections.getIndividualFilePaths("Non-Default")[0]
+    callParamsFilePath = selections.getIndividualFilePaths()[0]
+    genomeFilePath = selections.getIndividualFilePaths()[1]
+    nucPosFilePath = selections.getIndividualFilePaths()[2]
 
     parseTXRSeq(tXRSeqBigWigPlusReadsFilePaths + tXRSeqBedReadsFilePaths, callParamsFilePath, genomeFilePath, nucPosFilePath)
