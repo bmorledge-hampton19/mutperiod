@@ -52,7 +52,7 @@ data[, (dataCol) := sapply(data$Dyad_Position, smoothValues, dataCol)]
 # Basic Plotting Template (ylim = c(min,max) to set axis bounds)
 plot(data$Dyad_Position, data[[dataCol]], type = 'l', main = "MSS Subset Translational Periodicity",
      ylab = "Normalized Mutation Counts", xlab = "Position Relative to Dyad (bp)",
-     cex.lab = 2, cex.main = 1.75, lwd = 3, col = "black", ylim = c(0.9,1.1))
+     cex.lab = 2, cex.main = 1.75, cex.axis = 1.5, lwd = 3, col = "black", ylim = c(0.9,1.1))
 
 # Plot Plus and minus strands on the same graph (normalized).
 plot(data$Dyad_Position, data$Normalized_Plus_Strand, type = 'l', 
