@@ -311,9 +311,9 @@ if __name__ == "__main__":
 
     # Create the Tkinter UI
     dialog = TkinterDialog(workingDirectory=getDataDirectory())
-    dialog.createMultipleFileSelector("tXR-seq bigwig data (plus strand):",0,
+    dialog.createMultipleFileSelector("XR-seq bigwig data (plus strand):",0,
                                       "+.bigWig",("BigWig Files",".bigWig"))
-    dialog.createMultipleFileSelector("tXR-seq bed data (alternative to bigwig):",1,
+    dialog.createMultipleFileSelector("XR-seq bed data (alternative to bigwig):",1,
                                       "aligned_reads.bed",("Bed Files",".bed"))
 
     dialog.createFileSelector("Lesion Call Parameter File:", 2, ("Tab Seperated Values",".tsv"))
