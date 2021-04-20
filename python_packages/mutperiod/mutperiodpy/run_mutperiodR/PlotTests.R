@@ -12,6 +12,7 @@ dataCol = "Normalized_Aligned_Strands"
 
 # ...for raw
 dataCol = "Both_Strands_Counts"
+dataCol = "Aligned_Strands_Counts"
 
 # Trim to the desired region
 nucPosCutoff = 60
