@@ -15,8 +15,9 @@ from mutperiodpy.Tkinter_scripts.TkinterDialog import TkinterDialog, Selections
 # singleNuc and nucGroup: Boolean values specifying whether the relevant nucleosome radii are allowed.
 # MSS and MSI: Boolean values specifying whether the relevant microsatellite staibility status is allowed.
 # acceptableCohorts: a list of cohorts.  The mutation group must belong to at least one of these cohorts to be accepted.
-def getFilePathGroup(potentialFilePaths, normalizationMethods: List[int], singleNuc, nucGroup, acceptableCohorts: List[str]):
-    
+def getFilePathGroup(potentialFilePaths, normalizationMethods: List[int], singleNuc, nucGroup,
+                     acceptableMSCohorts: List[str], acceptableMutSigCohorts: List[str], acceptableCustomCohorts: List[str]):
+
     filePathGroup = list() # The file paths to be returned.
 
     for potentialFilePath in potentialFilePaths:
@@ -40,15 +41,24 @@ def getFilePathGroup(potentialFilePaths, normalizationMethods: List[int], single
                 passed = True
             else: continue
 
-        # Does it belong to one of the acceptable cohorts?
-        if len(acceptableCohorts) != 0:
-            filePathCohortDesignations = Metadata(potentialFilePath).cohorts
-            acceptableCohortFound = False
-            for cohort in filePathCohortDesignations:
-                if cohort in acceptableCohorts:
-                    acceptableCohortFound = True
+        # Does it belong to one of the acceptable cohorts in each category?
+        invalidCohortGroup = False
+        for acceptableCohortsGroup in (acceptableMSCohorts, acceptableMutSigCohorts, acceptableCustomCohorts):
+
+            if len(acceptableCohortsGroup) != 0:
+
+                filePathCohortDesignations = Metadata(potentialFilePath).cohorts
+                acceptableCohortFound = False
+                for cohort in filePathCohortDesignations:
+                    if cohort in acceptableCohortsGroup:
+                        acceptableCohortFound = True
+                        continue
+
+                if not acceptableCohortFound: 
+                    invalidCohortGroup = True
                     continue
-            if not acceptableCohortFound: continue
+
+        if invalidCohortGroup: continue
 
         # If we've made it this far, add the file path to the return group!
         filePathGroup.append(potentialFilePath)        
@@ -132,12 +142,28 @@ def main():
 
     periodicityComparison = dialog.createDynamicSelector(3, 0)
     periodicityComparison.initCheckboxController("Compare periodicities between two groups")
-    periodicityGroups = periodicityComparison.initDisplay(True,"periodicityGroups")
+    periodicityGroupType = periodicityComparison.initDisplay(True,"periodicityGroupType")
 
-    # Create two "sub-dialogs" for each of the groups, allowing the user to specify the make-up of that group.
-    for i, dialogID in enumerate(("Group1", "Group2")):
-        periodicityGroups.createNucMutGroupSubDialog(dialogID, i+1)
+    periodicityGroupTypeSelector = periodicityGroupType.createDynamicSelector(0,0)
+    periodicityGroupTypeSelector.initDropdownController("Compare periodicities...", ("Within original selection", "Against a newly selected group"))
+    periodicityGroupsWithin = periodicityGroupTypeSelector.initDisplay("Within original selection", "withinGroup")
+    secondaryPeriodicityGroup = periodicityGroupTypeSelector.initDisplay("Against a newly selected group", "secondaryGroupFilePaths")
 
+    # Create two "sub-dialogs" for each of the groups, allowing the user to specify the make-up of that group for the "withinGroup" dialog.
+    for i, dialogID in enumerate(("Sub-Group 1", "Sub-Group 2")):
+        periodicityGroupsWithin.createNucMutGroupSubDialog(dialogID, i+1)
+
+    # Create one multiple file selector and one sub-dialog for the "secondaryGroup" dialog
+    secondaryPeriodicityGroup.createMultipleFileSelector("Nucleosome Mutation Counts files:",0,
+                                                        DataTypeStr.normNucCounts + ".tsv",("Tab Seperated Values Files",".tsv"),
+                                                        additionalFileEndings = (DataTypeStr.rawNucCounts + ".tsv",))
+
+    secondaryPeriodicityGroupSearchRefine = secondaryPeriodicityGroup.createDynamicSelector(2, 0)
+    secondaryPeriodicityGroupSearchRefine.initCheckboxController("Filter counts files")
+    secondaryPeriodicityGroupSearchRefine.initDisplay(True).createNucMutGroupSubDialog("Secondary Group", 0)
+    secondaryPeriodicityGroupSearchRefine.initDisplayState()
+
+    periodicityGroupTypeSelector.initDisplayState()
     periodicityComparison.initDisplayState()
 
     # Run the UI
@@ -148,21 +174,30 @@ def main():
 
     # Get the user's input from the dialog.
     selections: Selections = dialog.selections
-    nucleosomeMutationCountsFilePaths = list(selections.getFilePathGroups())[0]
+    nucleosomeMutationCountsFilePaths = selections.getFilePathGroups()[0]
+    if periodicityGroupTypeSelector.getControllerVar() == "Against a newly selected group":
+        secondaryNucMutCountsFilePaths = selections.getFilePathGroups("secondaryGroupFilePaths")[0]
     outputFilePath = list(selections.getIndividualFilePaths())[0]
-    
+
     # If group comparisons were requested, get the respective groups.
-    filePathGroups = list()
+    filePathGroups:List[list] = list()
     for i in range(3): filePathGroups.append(list())
 
     groups = ["MainGroup"]
-    if periodicityComparison.getControllerVar(): groups += ("Group1", "Group2")
+    if periodicityComparison.getControllerVar(): 
+        if periodicityGroupTypeSelector.getControllerVar() == "Within original selection": groups += ("Sub-Group 1", "Sub-Group 2")
+        else: groups.append("Secondary Group")
 
     for i, dialogID in enumerate(groups):
 
         # Was filtering even requested for the main group?
         if i == 0 and not mainGroupSearchRefine.getControllerVar():
             filePathGroups[i] = nucleosomeMutationCountsFilePaths
+            continue
+
+        # If we are examining the secondary group, check to see if filtering was even requested.
+        if dialogID == "Secondary Group" and not secondaryPeriodicityGroupSearchRefine.getControllerVar():
+            filePathGroups[i] = secondaryNucMutCountsFilePaths
             continue
 
         # Determine what normalization methods were requested
@@ -175,25 +210,39 @@ def main():
         if normalizationSelections[4]: normalizationMethods.append(0)
 
         # Determine what microsatellite stability states were requested.
-        acceptableCohorts = dict()
+        acceptableMSCohorts = dict()
         if selections.getToggleStates(dialogID)[7]:
             MSSelection = selections.getDropdownSelections(dialogID+"MS")[0]
-            if MSSelection == "MSS": acceptableCohorts["MSS"] = None
-            elif MSSelection == "MSI": acceptableCohorts["MSI"] = None
-            else: acceptableCohorts["MSS"] = None; acceptableCohorts["MSI"] = None
+            if MSSelection == "MSS": acceptableMSCohorts["MSS"] = None
+            elif MSSelection == "MSI": acceptableMSCohorts["MSI"] = None
+            else: acceptableMSCohorts["MSS"] = None; acceptableMSCohorts["MSI"] = None
+
+        # Determine what mutation signature states were requested.
+        acceptableMutSigCohorts = dict()
+        if selections.getToggleStates(dialogID)[8]:
+            with open(selections.getIndividualFilePaths(dialogID+"MutSig")[0], 'r') as mutSigsFile:
+                for line in mutSigsFile: acceptableMutSigCohorts["mut_sig_" + line.strip()] = None
 
         # Check for custom cohort input
-        if selections.getToggleStates(dialogID)[8]:
+        acceptableCustomCohorts = dict()
+        if selections.getToggleStates(dialogID)[9]:
 
             customCohortsFilePath = selections.getIndividualFilePaths(dialogID + "CustomCohorts")[0]
             with open(customCohortsFilePath, 'r') as customCohortsFile:
 
-                for line in customCohortsFile: acceptableCohorts[line.strip()] = None
+                for line in customCohortsFile: acceptableCustomCohorts[line.strip()] = None
 
         # Get the file paths associated with the given parameters.
-        filePathGroups[i] += getFilePathGroup(nucleosomeMutationCountsFilePaths, normalizationMethods, 
-                                              selections.getToggleStates(dialogID)[5], selections.getToggleStates(dialogID)[6],
-                                              acceptableCohorts)
+        if dialogID != "Secondary Group":
+            filePathGroups[i] += getFilePathGroup(nucleosomeMutationCountsFilePaths, normalizationMethods, 
+                                                  selections.getToggleStates(dialogID)[5], selections.getToggleStates(dialogID)[6],
+                                                  acceptableMSCohorts, acceptableMutSigCohorts, acceptableCustomCohorts)
+        else: 
+            filePathGroups[i] += getFilePathGroup(secondaryNucMutCountsFilePaths, normalizationMethods, 
+                                                  selections.getToggleStates(dialogID)[5], selections.getToggleStates(dialogID)[6],
+                                                  acceptableMSCohorts, acceptableMutSigCohorts, acceptableCustomCohorts)
+            filePathGroups[2] = filePathGroups[0].copy()
+            filePathGroups[0] += filePathGroups[1]
 
         #If this is the first pass through the loop, set the file paths list to the newly filtered list.
         if i == 0: nucleosomeMutationCountsFilePaths = filePathGroups[0]

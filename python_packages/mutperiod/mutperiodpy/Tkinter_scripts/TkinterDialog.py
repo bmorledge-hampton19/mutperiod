@@ -357,14 +357,16 @@ class TkinterDialog(tk.Frame):
         MSDynamicSelector.initDisplay(True, groupID + "MS").createDropdown("Microsatellite Status:", 0, 0, ("Any", "MSS", "MSI"))
         MSDynamicSelector.initDisplayState()
         row += 1
-        ### NOTE: I should probably actually implement this at some point...
-        #group.createDropdown("Mutation Signature:", row, 2, ("Not", "Yet", "Implemented"), 2)
-        #row += 1
+        mutSigDynamicSelector = group.createDynamicSelector(row, 0, 4)
+        mutSigDynamicSelector.initCheckboxController("Startify by mutation signature")
+        group.checkboxVars.append(mutSigDynamicSelector.controllerVar)
+        mutSigDynamicSelector.initDisplay(True, groupID + "MutSig").createFileSelector("Signatures File:", 0, ("Text File", ".txt"))
+        mutSigDynamicSelector.initDisplayState()
+        row += 1
         customDynamicSelector = group.createDynamicSelector(row, 0, 4)
         customDynamicSelector.initCheckboxController("Designate Custom Cohorts")
         group.checkboxVars.append(customDynamicSelector.controllerVar)
-        customCohortSelector = customDynamicSelector.initDisplay(True, selectionsID = groupID + "CustomCohorts")
-        customCohortSelector.createFileSelector("Custom Cohort Designations:", 0, ("Text File",".txt"))
+        customDynamicSelector.initDisplay(True, groupID + "CustomCohorts").createFileSelector("Custom Cohort Designations:", 0, ("Text File",".txt"))
         customDynamicSelector.initDisplayState()
         row += 1
         group.createLabel("",row,0)
