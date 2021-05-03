@@ -1,6 +1,5 @@
 # This script takes the data obtained from mapping lesions cleaved by UVDE
 # and converts it to a format suitable for downstream analysis.
-# This is done by taking the 2 bp lesion and splitting it into 2 single base lesions.
 
 import os
 from mutperiodpy.Tkinter_scripts.TkinterDialog import Selections, TkinterDialog
@@ -37,8 +36,8 @@ def parseUVDESeq(UVDESeqFilePaths, genomeFilePath, nucPosFilePath):
         # Get the list of acceptable chromosomes.
         acceptableChromosomes = getAcceptableChromosomes(genomeFilePath)
 
-        # Iterate through the 2 bp lesions, adding 2 single base lesions to the singlenuc output file for each.
-        print("Converting 2-bp lesions to 2 single base lesions...")
+        # Iterate through the 2 bp lesions preparing them for custom-bed input.
+        print("Converting entries for custom bed input...")
         with open(UVDESeqFilePath, 'r') as UVDESeqFile:
             with open(customBedOutputFilePath, 'w') as customBedOutputFile:
 
@@ -49,20 +48,14 @@ def parseUVDESeq(UVDESeqFilePaths, genomeFilePath, nucPosFilePath):
                     # Make sure the lesion is in a valid chromosome.  Otherwise, skip it.
                     if not choppedUpLine[0] in acceptableChromosomes: continue
 
-                    # Extract the relevant data from the line.
-                    chromosome = choppedUpLine[0]
-                    startPos = int(choppedUpLine[1])
-                    endPos = int(choppedUpLine[2]) - 1
-                    plusOrMinus = choppedUpLine[5]
+                    choppedUpLine[3] = '.'
+                    choppedUpLine[4] = "OTHER"
 
-                    for i in range(2):
-
-                        # Write the two single base lesions from the one 2 bp lesion.
-                        customBedOutputFile.write('\t'.join((chromosome,str(startPos+i),str(endPos+i),".","OTHER",plusOrMinus)) + '\n')
+                    customBedOutputFile.write('\t'.join(choppedUpLine[:6]) + '\n')
 
 
     # Pass the generated files to the custom bed parser.
-    parseCustomBed(customBedOutputFilePaths, genomeFilePath, nucPosFilePath, False, False, False)
+    parseCustomBed(customBedOutputFilePaths, genomeFilePath, nucPosFilePath, False, False, False, True)
 
 
 

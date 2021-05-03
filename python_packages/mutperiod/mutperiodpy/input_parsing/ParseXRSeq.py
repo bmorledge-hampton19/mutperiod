@@ -1,5 +1,5 @@
-# This script takes the repair map data from tXR-Seq, calls BPDE lesions, and writes them to a bed file.
-# file of estimated lesion locations.
+# This script takes the repair map data from XR-Seq, calls estimated lesion locations, and writes them to a bed file
+# which is passed to the custom bed parser.
 
 from typing import List
 import os, subprocess
@@ -7,17 +7,18 @@ from mutperiodpy.Tkinter_scripts.TkinterDialog import TkinterDialog, Selections
 from mutperiodpy.helper_scripts.UsefulBioinformaticsFunctions import bedToFasta, FastaFileIterator
 from mutperiodpy.helper_scripts.UsefulFileSystemFunctions import (getIsolatedParentDir, generateFilePath, getDataDirectory,
                                                                   DataTypeStr, generateMetadata, InputFormat, getAcceptableChromosomes)
+from mutperiodpy.input_parsing.ParseCustomBed import parseCustomBed
 
 
 # Estimates (Most likely with perfect accuracy) the minimum adjusted counts value that is then assumed to represent one count.
-def getMinAdjustedCountValue(tXRSeqBedGraphReadsFilePath):
+def getMinAdjustedCountValue(xRSeqBedGraphReadsFilePath):
 
     # Keep track of how many rows have been read since the last minimum was set.
     rowsSinceLastMin = 0
     minAdjustedCountValue = None
 
-    with open(tXRSeqBedGraphReadsFilePath, 'r') as tXRSeqReadsFile:
-        for line in tXRSeqReadsFile:
+    with open(xRSeqBedGraphReadsFilePath, 'r') as xRSeqReadsFile:
+        for line in xRSeqReadsFile:
 
             # Split each line on tab characters.
             choppedUpLine = line.strip().split("\t")
@@ -40,18 +41,18 @@ def getMinAdjustedCountValue(tXRSeqBedGraphReadsFilePath):
 # Combine + and - reads into one file with a +/- column
 # Also, convert normalized counts to actual counts and swap out the counts column for duplicated entries with multiple counts.
 # The input format should be a bedGraph file.
-def trimBedGraphTXRSeqData(tXRSeqBedGraphReadsFilePathPair: List[str], trimmedReadsFilePath, minAdjustedCountValue, 
+def trimBedGraphXRSeqData(xRSeqBedGraphReadsFilePathPair: List[str], trimmedReadsFilePath, minAdjustedCountValue, 
                            acceptableLengths, acceptableChromosomes, roundingErrorLeniency = 0.01):
     
    with open(trimmedReadsFilePath, 'w') as trimmedReadsFile:
 
        # Trim/Modify all the entries from the file path pair.
-       for tXRSeqBedGraphReadsFilePath in tXRSeqBedGraphReadsFilePathPair:
+       for xRSeqBedGraphReadsFilePath in xRSeqBedGraphReadsFilePathPair:
 
-           plusOrMinus = tXRSeqBedGraphReadsFilePath.rsplit('.',1)[0][-1] # '+' or '-'
+           plusOrMinus = xRSeqBedGraphReadsFilePath.rsplit('.',1)[0][-1] # '+' or '-'
 
-           with open(tXRSeqBedGraphReadsFilePath, 'r') as tXRSeqReadsFile:
-               for line in tXRSeqReadsFile:
+           with open(xRSeqBedGraphReadsFilePath, 'r') as xRSeqReadsFile:
+               for line in xRSeqReadsFile:
 
                     choppedUpLine = line.strip().split("\t")
 
@@ -79,13 +80,13 @@ def trimBedGraphTXRSeqData(tXRSeqBedGraphReadsFilePathPair: List[str], trimmedRe
 # Create a new reads file which filters out any reads with a length greater than 28 or less than 26.
 # Also, replace the columns with the read ID and score with NA.
 # The input format should be a bed file.
-def trimBedTXRSeqData(tXRSeqBedReadsFilePath: str, trimmedReadsFilePath, acceptableLengths, acceptableChromosomes):
+def trimBedXRSeqData(xRSeqBedReadsFilePath: str, trimmedReadsFilePath, acceptableLengths, acceptableChromosomes):
     
    with open(trimmedReadsFilePath, 'w') as trimmedReadsFile:
 
        # Trim/Modify all the entries from the file path.
-        with open(tXRSeqBedReadsFilePath, 'r') as tXRSeqReadsFile:
-            for line in tXRSeqReadsFile:
+        with open(xRSeqBedReadsFilePath, 'r') as xRSeqReadsFile:
+            for line in xRSeqReadsFile:
 
                 choppedUpLine = line.strip().split("\t")
 
@@ -101,22 +102,36 @@ def trimBedTXRSeqData(tXRSeqBedReadsFilePath: str, trimmedReadsFilePath, accepta
 
 
 # Given a nucleotide sequence, do the conditions suggest a lesion is present?
-# The search location indicates the position to look for the lesion relative to one end of the sequence.
-#    A value of 1 indicates the first base at the 5' end, while a value of -1 indicates the first base at the 3' end.
-# The function outputs the index of the lesion in the input sequence if it is found or "None" if it is not.
-def searchForLesion(sequence, expectedLocation, acceptableBases):
+# The expected location start and end values indicate the positions to look for the lesion relative to one end of the sequence.
+#   A value of 1 indicates the first base at the 5' end, while a value of -1 indicates the first base at the 3' end.
+#   If no end value is given, just the base at the start value is used.
+#   e.g. A start value of -3 and an end value of -1 would search the last two 
+# The function outputs a tuple of the start and end indicies for the lesion in the input sequence in bed format (0-based:1-based).
+def searchForLesion(sequence, expectedLocationStart, expectedLocationEnd, acceptableBases):
 
-    assert expectedLocation != 0
-    assert abs(expectedLocation) <= len(sequence), ("Sequence of length {} does not have a {} position.".
-                                                    format(len(sequence), expectedLocation))
+    expectedLocationEnd += 1
+    assert expectedLocationEnd > expectedLocationStart
 
-    if expectedLocation > 0: expectedLocation -= 1
+    assert expectedLocationStart != 0
+    assert abs(expectedLocationStart) <= len(sequence), ("Sequence of length {} does not have a {} position.".
+                                                    format(len(sequence), expectedLocationStart))
 
-    if sequence[expectedLocation] not in acceptableBases: return None
+    if expectedLocationStart > 0: 
+        expectedLocationStart -= 1
+        expectedLocationEnd -= 1
 
-    else:
-        if expectedLocation >= 0: return expectedLocation
-        else: return len(sequence) + expectedLocation
+    assert abs(expectedLocationEnd) <= len(sequence), ("Sequence of length {} does not have a {} position.".
+                                                    format(len(sequence), expectedLocationEnd))
+
+    # If a specific sequence is expected, make sure it is present.
+    if not 'N' in acceptableBases:
+        if expectedLocationEnd == 0: checkSequence = sequence[expectedLocationStart:]
+        else: checkSequence = sequence[expectedLocationStart:expectedLocationEnd]
+
+        if checkSequence not in acceptableBases: return None
+
+    if expectedLocationStart >= 0: return (expectedLocationStart, expectedLocationEnd)
+    else: return (len(sequence) + expectedLocationStart, len(sequence) + expectedLocationEnd)
 
 
 # From a given fasta file of reads, find likely BPDE-dG lesions and write their
@@ -130,20 +145,24 @@ def writeLesions(fastaReadsFilePath, lesionsBedFilePath, expectedLocationsByLeng
             for fastaEntry in FastaFileIterator(fastaReadsFile):
                 for expectedLocation in expectedLocationsByLength[len(fastaEntry.sequence)]:
 
-                    lesionLocation = searchForLesion(fastaEntry.sequence, expectedLocation, acceptableBasesByLength[len(fastaEntry.sequence)])
+                    lesionLocation = searchForLesion(fastaEntry.sequence, expectedLocation[0], expectedLocation[1], acceptableBasesByLength[len(fastaEntry.sequence)])
 
                     if lesionLocation is not None:
                         
+                        lesionStartLocation, lesionEndLocation = lesionLocation
+                        sequence = fastaEntry.sequence[lesionStartLocation:lesionEndLocation]
+
                         # IMPORTANT: If the sequence is on the minus strand, the location needs to be inverted with respect to the fragment
                         # because reverse complement and stuff.
-                        if fastaEntry.strand == '-': lesionLocation = len(fastaEntry.sequence) - (lesionLocation + 1)
+                        if fastaEntry.strand == '-': 
+                            tempLesionStartLocation = lesionStartLocation # To avoid bugs when switching around values in two variables
+                            lesionStartLocation = len(fastaEntry.sequence) - lesionEndLocation
+                            lesionEndLocation = len(fastaEntry.sequence) - tempLesionStartLocation
 
                         bedEntry = '\t'.join((fastaEntry.sequenceLocation[0],
-                                                str(int(fastaEntry.sequenceLocation[1]) + lesionLocation),
-                                                str(int(fastaEntry.sequenceLocation[1]) + lesionLocation + 1),
-                                                fastaEntry.sequence[lesionLocation],
-                                                "OTHER",
-                                                fastaEntry.sequenceLocation[3])) + '\n'
+                                                str(int(fastaEntry.sequenceLocation[1]) + lesionStartLocation),
+                                                str(int(fastaEntry.sequenceLocation[1]) + lesionEndLocation),
+                                                sequence, "OTHER", fastaEntry.strand)) + '\n'
                         lesionsBedFile.write(bedEntry)
 
 
@@ -167,9 +186,9 @@ def getFilePathPair(filePath: str) -> str:
     return (filePath, complementaryPath)
 
 
-# A class which stores all the relevant info for tXR-Seq data as it is parsed from a variety of input formats,
+# A class which stores all the relevant info for XR-Seq data as it is parsed from a variety of input formats,
 # and converts them to the output format.
-class TXRSeqInputDataPipeline:
+class XRSeqInputDataPipeline:
 
     def __init__(self, inputDataFilePath: str, callParamsFilePath: str, genomeFilePath: str, nucPosFilePath: str):
 
@@ -193,7 +212,18 @@ class TXRSeqInputDataPipeline:
                 sequenceLength = int(choppedUpLine[0])
                 assert sequenceLength not in self.expectedLocationsByLength
 
-                self.expectedLocationsByLength[sequenceLength] = [int(location) for location in choppedUpLine[1].split(',')]
+                self.expectedLocationsByLength[sequenceLength] = list()
+                expectedLocations = choppedUpLine[1].split(',')
+                for expectedLocation in expectedLocations:
+                    if ':' not in expectedLocation:
+                        self.expectedLocationsByLength[sequenceLength].append((int(expectedLocation),int(expectedLocation)))
+                    else:
+                        expectedLocationStart, expectedLocationEnd = expectedLocation.split(':')
+                        if int(expectedLocationStart) > int(expectedLocationEnd):
+                            self.expectedLocationsByLength[sequenceLength].append((int(expectedLocationEnd),int(expectedLocationStart)))
+                        else:
+                            self.expectedLocationsByLength[sequenceLength].append((int(expectedLocationStart),int(expectedLocationEnd)))
+
                 self.acceptableBasesByLength[sequenceLength] = choppedUpLine[2].split(',')
 
         # Initialize these values as empty until we know what form the input data is in.
@@ -242,12 +272,12 @@ class TXRSeqInputDataPipeline:
         # Generate the trimmed reads output, the fasta output, and bed output file paths.
         self.trimmedReadsFilePath = os.path.join(intermediateFilesDirectory,dataGroupName+"_trimmed_reads.bed")
         self.fastaReadsFilePath = os.path.join(intermediateFilesDirectory,dataGroupName+"_trimmed_reads.fa")
-        self.lesionsBedFilePath = generateFilePath(directory = localRootDirectory, dataGroup = dataGroupName,
-                                                      context = "singlenuc", dataType = DataTypeStr.mutations, fileExtension = ".bed") 
+        self.lesionsBedFilePath = generateFilePath(directory = intermediateFilesDirectory, dataGroup = dataGroupName,
+                                                   dataType = DataTypeStr.customInput, fileExtension = ".bed") 
 
         # Generate metadata
         generateMetadata(dataGroupName, getIsolatedParentDir(self.genomeFilePath), getIsolatedParentDir(self.nucPosFilePath),
-                         os.path.basename(self.inputDataFilePath), InputFormat.tXRSeq, localRootDirectory,
+                         os.path.basename(self.inputDataFilePath), InputFormat.xRSeq, localRootDirectory,
                          callParamsFilePath = self.callParamsFilePath)
 
     
@@ -256,7 +286,7 @@ class TXRSeqInputDataPipeline:
         
         # If the input data is in bed format, generate the trimmed reads from that data.
         if self.bedInputFilePath is not None:
-            trimBedTXRSeqData(self.bedInputFilePath, self.trimmedReadsFilePath, 
+            trimBedXRSeqData(self.bedInputFilePath, self.trimmedReadsFilePath, 
                               self.acceptableBasesByLength.keys(), self.acceptableChromosomes)
 
         # Otherwise, generate the trimmed reads from bedGraph data.
@@ -269,7 +299,7 @@ class TXRSeqInputDataPipeline:
                                     self.bedGraphReadsFilePathPair[i]), check = True)
 
             # Generate the trimmed reads.
-            trimBedGraphTXRSeqData(self.bedGraphReadsFilePathPair, self.trimmedReadsFilePath, 
+            trimBedGraphXRSeqData(self.bedGraphReadsFilePathPair, self.trimmedReadsFilePath, 
                                    getMinAdjustedCountValue(self.bedGraphReadsFilePathPair[0]),
                                    self.acceptableBasesByLength.keys(), self.acceptableChromosomes)
 
@@ -288,23 +318,27 @@ class TXRSeqInputDataPipeline:
         writeLesions(self.fastaReadsFilePath, self.lesionsBedFilePath, 
                      self.expectedLocationsByLength, self.acceptableBasesByLength)
 
-        # Sort the output file.
-        subprocess.run(("sort","-k1,1","-k2,2n", self.lesionsBedFilePath,"-o", self.lesionsBedFilePath), check = True)    
+        return self.lesionsBedFilePath
 
 
-def parseTXRSeq(inputDataFilePaths, callParamsFilePath, genomeFilePath, nucPosFilePath):
+def parseXRSeq(inputDataFilePaths, callParamsFilePath, genomeFilePath, nucPosFilePath):
 
-    # Use the TXRSeqInputDataPipeline object to convert the input data to the output data!
+    xRSeqOutputFilePaths = list()
+
+    # Use the XRSeqInputDataPipeline object to convert the input data to the output data!
     for inputDataFilePath in inputDataFilePaths:
 
         print("\nWorking with:",os.path.basename(inputDataFilePath))
-        tXRSeqInputDataPipeline = TXRSeqInputDataPipeline(inputDataFilePath, callParamsFilePath, genomeFilePath, nucPosFilePath)
+        xRSeqInputDataPipeline = XRSeqInputDataPipeline(inputDataFilePath, callParamsFilePath, genomeFilePath, nucPosFilePath)
 
         print("Generating trimmed reads bed file...")
-        tXRSeqInputDataPipeline.generateTrimmedReads()
+        xRSeqInputDataPipeline.generateTrimmedReads()
 
         print("Locating and writing lesion locations to final output file...")
-        tXRSeqInputDataPipeline.generateLesionsBedOutputFile()
+        xRSeqOutputFilePaths.append(xRSeqInputDataPipeline.generateLesionsBedOutputFile())
+
+    # Send the output files to the custom bed parser.
+    parseCustomBed(xRSeqOutputFilePaths, genomeFilePath, nucPosFilePath, False, False, False)
  
 
 if __name__ == "__main__":
@@ -329,10 +363,10 @@ if __name__ == "__main__":
 
     # Get the user's input from the dialog.
     selections: Selections = dialog.selections
-    tXRSeqBigWigPlusReadsFilePaths: List[str] = list(selections.getFilePathGroups())[0]
-    tXRSeqBedReadsFilePaths: List[str] = list(selections.getFilePathGroups())[1]
+    xRSeqBigWigPlusReadsFilePaths: List[str] = list(selections.getFilePathGroups())[0]
+    xRSeqBedReadsFilePaths: List[str] = list(selections.getFilePathGroups())[1]
     callParamsFilePath = selections.getIndividualFilePaths()[0]
     genomeFilePath = selections.getIndividualFilePaths()[1]
     nucPosFilePath = selections.getIndividualFilePaths()[2]
 
-    parseTXRSeq(tXRSeqBigWigPlusReadsFilePaths + tXRSeqBedReadsFilePaths, callParamsFilePath, genomeFilePath, nucPosFilePath)
+    parseXRSeq(xRSeqBigWigPlusReadsFilePaths + xRSeqBedReadsFilePaths, callParamsFilePath, genomeFilePath, nucPosFilePath)

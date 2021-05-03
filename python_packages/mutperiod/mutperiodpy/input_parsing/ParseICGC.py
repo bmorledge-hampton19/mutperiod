@@ -8,7 +8,6 @@ from mutperiodpy.Tkinter_scripts.TkinterDialog import TkinterDialog, Selections
 from mutperiodpy.helper_scripts.UsefulFileSystemFunctions import (DataTypeStr, generateFilePath, getDataDirectory, checkDirs,
                                                                   generateMetadata, getIsolatedParentDir, getFilesInDirectory, 
                                                                   InputFormat, getAcceptableChromosomes)
-from mutperiodpy.helper_scripts.UsefulBioinformaticsFunctions import reverseCompliment, isPurine
 from mutperiodpy.input_parsing.ParseCustomBed import parseCustomBed
 
 
@@ -149,7 +148,7 @@ def parseICGC(ICGCFilePaths, genomeFilePath, nucPosFilePath, separateDonors,
 
     # Pass the parsed bed files to the custom bed parser for even more parsing! (Hooray for modularization!)
     print("\nPassing data to custom bed parser...")
-    parseCustomBed(outputBedFilePaths, genomeFilePath, nucPosFilePath, stratifyByMS, stratifyByMutSig, separateDonors)
+    parseCustomBed(outputBedFilePaths, genomeFilePath, nucPosFilePath, stratifyByMS, stratifyByMutSig, separateDonors, True)
 
 
 def parseArgs(args):

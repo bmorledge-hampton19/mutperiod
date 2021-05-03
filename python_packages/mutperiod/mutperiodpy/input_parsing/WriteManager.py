@@ -11,15 +11,18 @@ from mutperiodpy.input_parsing.IdentifyMutSigs import MutSigIdentifier
 
 class WriteManager:
 
-    def __init__(self, rootDataDir):
+    def __init__(self, rootDataDir, context):
 
         # Get the metadata from the given directory
         self.rootDataDir = rootDataDir
         self.rootMetadata = Metadata(self.rootDataDir)
 
+        # Record the data's context.
+        self.context = context
+
         # create and open the output file in the same directory as the root data.
         self.rootOutputFilePath = generateFilePath(directory = self.rootDataDir, dataGroup = self.rootMetadata.dataGroupName,
-                                                   context = "singlenuc", dataType = DataTypeStr.mutations, fileExtension = ".bed")
+                                                   context = self.context, dataType = DataTypeStr.mutations, fileExtension = ".bed")
         self.rootOutputFile = open(self.rootOutputFilePath, 'w')
         self.rootMutCounts = 0
 
@@ -75,10 +78,10 @@ class WriteManager:
         self.aggregateMSIMutCounts = 0
 
         self.aggregateMSSFilePath = generateFilePath(directory = aggregateMSSDirectory, dataGroup = "MSS_" + self.rootMetadata.dataGroupName,
-                                                     context = "singlenuc", dataType = DataTypeStr.mutations, fileExtension = ".bed")
+                                                     context = self.context, dataType = DataTypeStr.mutations, fileExtension = ".bed")
         self.aggregateMSSFile = open(self.aggregateMSSFilePath, 'w')
         self.aggregateMSIFilePath = generateFilePath(directory = aggregateMSIDirectory, dataGroup = "MSI_" + self.rootMetadata.dataGroupName,
-                                                     context = "singlenuc", dataType = DataTypeStr.mutations, fileExtension = ".bed")
+                                                     context = self.context, dataType = DataTypeStr.mutations, fileExtension = ".bed")
         self.aggregateMSIFile = open(self.aggregateMSIFilePath, 'w')
 
         # Set up the MSIIdentifier to be returned.
@@ -126,7 +129,7 @@ class WriteManager:
 
             # File path
             self.mutSigFilePaths[mutSig] = generateFilePath(directory = thisMutSigDirectory, dataGroup = thisMutSigDataGroup, 
-                                                            context = "singlenuc", dataType = DataTypeStr.mutations, fileExtension = ".bed")
+                                                            context = self.context, dataType = DataTypeStr.mutations, fileExtension = ".bed")
             self.mutSigFiles[mutSig] = open(self.mutSigFilePaths[mutSig], 'w')
 
         # Set up the MutSigIdentifier object to be returned.
@@ -177,7 +180,7 @@ class WriteManager:
 
         # Generate the file path and metadata file and open the file for writing.
         self.individualCohortFilePath = generateFilePath(directory = individualCohortDirectory, dataGroup = individualCohortDataGroup, 
-                                                         context = "singlenuc", dataType = DataTypeStr.mutations, fileExtension = ".bed")
+                                                         context = self.context, dataType = DataTypeStr.mutations, fileExtension = ".bed")
         self.currentIndividualCohortFile = open(self.individualCohortFilePath, 'w')
         generateMetadata(individualCohortDataGroup, self.rootMetadata.genomeName, self.rootMetadata.nucPosName,
                          os.path.join("..",self.rootMetadata.localParentDataPath),
@@ -188,11 +191,12 @@ class WriteManager:
     # Writes the given data to all the relevant files based on how the manager was set up.
     def writeData(self, chromosome, startPos, endPos, mutFrom, alteration, strand, cohortID = '.'):
 
-        # Make sure we were given an SNP or OTHER single base lesion.  (Right now, these are the only acceptable data format for the pipeline.)
+        # Make sure we were passed a line that matches the manager's context.
+        assert self.context == float("inf") or self.context == 0 or self.context == len(mutFrom), ("mutFrom: \"" + mutFrom + "\" does not " +
+            "fit within the manager's context: " + str(self.context))
+
         # Then, format it for output.
-        if mutFrom.upper() in ('A','C','G','T') and alteration.upper() in ('A','C','G','T',"OTHER"):
-            outputLine = '\t'.join((chromosome, startPos, endPos, mutFrom, alteration, strand)) + '\n'
-        else: return
+        outputLine = '\t'.join((chromosome, startPos, endPos, mutFrom, alteration, strand)) + '\n'
 
         # Write data to the root output file.
         self.rootOutputFile.write(outputLine)

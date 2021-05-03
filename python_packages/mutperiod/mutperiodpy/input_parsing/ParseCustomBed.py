@@ -48,7 +48,7 @@ def checkForErrors(choppedUpLine: List[str], cohortDesignationPresent, acceptabl
         raise ValueError("The reference base and mutation columns are both set to \"*\".  " + 
                          "(Entry cannot be insertion and deletion simultaneously)")
 
-    if not {'A','C','G','T'}.issuperset(choppedUpLine[3]) and not choppedUpLine[3] in ('*','.'):
+    if not {'A','C','G','T','N'}.issuperset(choppedUpLine[3]) and not choppedUpLine[3] in ('*','.'):
         raise ValueError("Invalid reference base(s): \"" + choppedUpLine[3] + "\".  Should be a string made up of the four DNA bases " + 
                          "or \".\" to auto acquire the base(s) from the corresponding genome, or \"*\" to denote an insertion.")
 
@@ -89,7 +89,8 @@ def equivalentEntries(fastaEntry: FastaFileIterator.FastaEntry, choppedUpLine):
 
 # Checks each line for errors and auto acquire bases/strand designations where requested. 
 # Overwrites the original bed file if auto-acquiring occurred.
-def autoAcquireAndQACheck(bedInputFilePath: str, genomeFilePath, autoAcquiredFilePath):
+# Also returns the numerical nucleotide context of the features.
+def autoAcquireAndQACheck(bedInputFilePath: str, genomeFilePath, autoAcquiredFilePath, onlySinglenuc, includeIndels):
 
     print("Checking custom bed file for formatting and auto-acquire requests...")
 
@@ -98,6 +99,11 @@ def autoAcquireAndQACheck(bedInputFilePath: str, genomeFilePath, autoAcquiredFil
     autoAcquireFastaIterator = None
     fastaEntry = None
     cohortDesignationPresent = None
+
+    # Unless indels are included, determine the context of the feqtures in the file.
+    if includeIndels: context = 0
+    elif onlySinglenuc: context = 1
+    else: context = None
 
     # Get the list of acceptable chromosomes
     acceptableChromosomes = getAcceptableChromosomes(genomeFilePath)
@@ -157,6 +163,14 @@ def autoAcquireAndQACheck(bedInputFilePath: str, genomeFilePath, autoAcquiredFil
                     else: raise ValueError("The given sequence " + choppedUpLine[3] + " for location " + fastaEntry.sequenceName + ' ' +
                                         "does not match the corresponding sequence in the given genome, or its reverse compliment.")
 
+                # Determine the sequence context of the line and whether or not it matches the sequence context for other.
+                # Skip this if the file is "mixed", if only single nucleotide context will be used, or if this line is an indel.
+                if not context == 0 and not onlySinglenuc and not (choppedUpLine[3] == '*' or choppedUpLine[4] == '*'):
+
+                    sequenceLength = int(choppedUpLine[2]) - int(choppedUpLine[1])
+                    if context is None: context = sequenceLength
+                    elif sequenceLength != context: context = 0
+
                 # Write the current line to the temporary bed file.
                 temporaryBedFile.write('\t'.join(choppedUpLine) + '\n')
 
@@ -166,10 +180,13 @@ def autoAcquireAndQACheck(bedInputFilePath: str, genomeFilePath, autoAcquiredFil
         os.replace(temporaryBedFilePath, bedInputFilePath)
     # Otherwise, just delete the temporary file.
     else: os.remove(temporaryBedFilePath)
+
+    if context > 6: context = float("inf")
+    return context
     
 
 # Converts the custom bed input into the singlenuc context format acceptable for analysis further down the pipeline.
-def convertToStandardInput(bedInputFilePath, writeManager: WriteManager):
+def convertToStandardInput(bedInputFilePath, writeManager: WriteManager, onlySinglenuc, includeIndels):
 
     print("Converting custom bed file to standard bed input...")
 
@@ -186,6 +203,22 @@ def convertToStandardInput(bedInputFilePath, writeManager: WriteManager):
                 choppedUpLine[4] = reverseCompliment(choppedUpLine[4])
                 if choppedUpLine[5] == '+': choppedUpLine[5] = '-'
                 elif choppedUpLine[5] == '-': choppedUpLine[5] = '+'
+
+            # Is this an indel, and are those included?
+            if choppedUpLine[3] == '*' or choppedUpLine[4] == '*':
+                if not includeIndels: continue
+
+            # Is this a single nucleotide feature, and if not, are those included?
+            if int(choppedUpLine[2]) - int(choppedUpLine[1]) > 1:
+
+                if onlySinglenuc: continue
+
+                # Center features greater than a single nucleotide so that they occur at a single nucleotide position (or half position)
+                else: 
+                    center = (int(choppedUpLine[1])+int(choppedUpLine[2])-1)/2
+                    choppedUpLine[1] = str(center)
+                    choppedUpLine[2] = str(center + 1)
+            
 
             # Call on the write manager to handle the rest!
             if len(choppedUpLine) == 7:
@@ -255,7 +288,9 @@ def setUpForMutSigStratification(writeManager: WriteManager, bedInputFilePath):
 
 # Handles the scripts main functionality.
 def parseCustomBed(bedInputFilePaths, genomeFilePath, nucPosFilePath, stratifyByMS, 
-                   stratifyByMutSig, separateIndividualCohorts):
+                   stratifyByMutSig, separateIndividualCohorts, onlySinglenuc = False, includeIndels = False):
+
+    assert not (onlySinglenuc and includeIndels), "Indels are incompatible with single nucleotide features."
 
     for bedInputFilePath in bedInputFilePaths:
 
@@ -271,15 +306,14 @@ def parseCustomBed(bedInputFilePaths, genomeFilePath, nucPosFilePath, stratifyBy
             generateMetadata(os.path.basename(dataDirectory), getIsolatedParentDir(genomeFilePath), getIsolatedParentDir(nucPosFilePath), 
                              os.path.basename(bedInputFilePath), InputFormat.customBed,  os.path.dirname(bedInputFilePath))
 
-        metadata = Metadata(dataDirectory)
         intermediateFilesDir = os.path.join(dataDirectory,"intermediate_files")
         checkDirs(intermediateFilesDir)
         autoAcquiredFilePath = os.path.join(intermediateFilesDir,"auto_acquire.fa")
 
-        autoAcquireAndQACheck(bedInputFilePath, genomeFilePath, autoAcquiredFilePath)
+        strand = autoAcquireAndQACheck(bedInputFilePath, genomeFilePath, autoAcquiredFilePath, onlySinglenuc, includeIndels)
 
         # Create an instance of the WriteManager to handle writing.
-        with WriteManager(dataDirectory) as writeManager:
+        with WriteManager(dataDirectory, strand) as writeManager:
 
             # Check to see if cohort designations are present to see if preparations need to be made.
             optionalArgument = tuple()
@@ -302,19 +336,17 @@ def parseCustomBed(bedInputFilePaths, genomeFilePath, nucPosFilePath, stratifyBy
 
             # Sort the input data (should also ensure that the output data is sorted)
             subprocess.run(("sort",) + optionalArgument + 
-                            ("-k1,1","-k2,2n",bedInputFilePath,"-o",bedInputFilePath), check = True)
+                            ("-k1,1","-k2,3n",bedInputFilePath,"-o",bedInputFilePath), check = True)
 
             # If requested, also prepare for stratification by microsatellite stability.
             if stratifyByMS:             
                 setUpForMSStratification(writeManager, bedInputFilePath)
-                inputQAChecked = True
 
             if stratifyByMutSig:
                 setUpForMutSigStratification(writeManager, bedInputFilePath)
-                inputQAChecked = True
 
             # Go, go, go!
-            convertToStandardInput(bedInputFilePath, writeManager)
+            convertToStandardInput(bedInputFilePath, writeManager, onlySinglenuc, includeIndels)
 
 
 # Given a namespace resulting from an argparser object (constructed in mutperiodpy.Main),
@@ -340,7 +372,7 @@ def parseArgs(args):
 
     # Run the parser.
     parseCustomBed(finalCustomBedPaths, args.genome_file, args.nuc_pos_file, args.stratify_by_Microsatellite, 
-                   args.stratify_by_Mut_Sigs, args.stratify_by_cohorts)
+                   args.stratify_by_Mut_Sigs, args.stratify_by_cohorts, args.only_singlenuc, args.include_indels)
 
 
 def main():
@@ -353,6 +385,8 @@ def main():
     dialog.createCheckbox("Stratify data by microsatellite stability?", 3, 0)
     dialog.createCheckbox("Stratify by mutation signature?", 3, 1)
     dialog.createCheckbox("Separate individual cohorts?", 4, 0)
+    dialog.createCheckbox("Only use single nucleotide features?", 5, 0)
+    dialog.createCheckbox("Include indels in output?", 5, 1)
 
     # Run the UI
     dialog.mainloop()
@@ -362,14 +396,17 @@ def main():
 
     # Get the user's input from the dialog.
     selections: Selections = dialog.selections
-    bedInputFilePaths = list(selections.getFilePathGroups())[0]
-    genomeFilePath = list(selections.getIndividualFilePaths())[0]
-    nucPosFilePath = list(selections.getIndividualFilePaths())[1]
-    stratifyByMS = list(selections.getToggleStates())[0]
-    stratifyByMutSig = list(selections.getToggleStates())[1]
-    separateIndividualCohorts = list(selections.getToggleStates())[2]
+    bedInputFilePaths = selections.getFilePathGroups()[0]
+    genomeFilePath = selections.getIndividualFilePaths()[0]
+    nucPosFilePath = selections.getIndividualFilePaths()[1]
+    stratifyByMS = selections.getToggleStates()[0]
+    stratifyByMutSig = selections.getToggleStates()[1]
+    separateIndividualCohorts = selections.getToggleStates()[2]
+    onlySinglenuc = selections.getToggleStates()[3]
+    includeIndels = selections.getToggleStates()[4]
+
 
     parseCustomBed(bedInputFilePaths, genomeFilePath, nucPosFilePath, stratifyByMS, 
-                   stratifyByMutSig, separateIndividualCohorts)
+                   stratifyByMutSig, separateIndividualCohorts, onlySinglenuc, includeIndels)
 
 if __name__ == "__main__": main()
