@@ -26,13 +26,17 @@ minorOutPositions = list(-2:2, 8:12, 19:23, 29:33, 39:43, 49:54, 60:64)
 minorInPositions = list(5:8-74, 15:18-74, 26:29-74, 37:40-74, 47:50-74, 57:60-74, 67:70-74)
 minorOutPositions = list(10:14-74, 21:23-74, 32:34-74, 42:45-74 ,52:55-74, 62:65-74)
 
-# From Cui and Zhurkin, 2010 with 1 added to each side.
-minorInPositions = list(4:9-74, 14:19-74, 25:30-74, 36:41-74, 46:51-74, 56:61-74, 66:71-74)
-minorOutPositions = list(9:14-74, 20:24-74, 31:35-74, 41:46-74 ,51:56-74, 61:66-74)
+# From Cui and Zhurkin, 2010 with 1 added to each side and half-base positions included.
+minorInPositions = list(4:9-74, 14:19-74, 25:30-74, 36:41-74, 46:51-74, 56:61-74, 66:71-74,
+                        5:9-74.5, 15:19-74.5, 26:30-74.5, 37:41-74.5, 47:51-74.5, 57:61-74.5, 67:71-74.5)
+minorOutPositions = list(9:14-74, 20:24-74, 31:35-74, 41:46-74 ,51:56-74, 61:66-74,
+                         10:14-74.5, 21:24-74.5, 32:35-74.5, 42:46-74.5, 52:56-74.5, 62:66-74.5)
 
-# Nucleosome vs. Linker Positions:
-nucleosomePositions = append(lapply(1:10, function(x) return( (-73+x*192):(73+x*192) )),list(0:73))
-linkerPositions = lapply(0:8, function(x) return( (73+x*192):(119+x*192) ))
+# Nucleosome vs. Linker Positions (half-base positions included):
+nucleosomePositions = append(lapply(1:10, function(x) return( append((-73+x*192):(73+x*192), 
+                                                                     (-72.5+x*192):(72.5+x*192)))),
+                             list(0:73, 0.5:72.5))
+linkerPositions = lapply(0:8, function(x) return( append((73+x*192):(119+x*192), (72.5+x*192):(119.5+x*192))))
 
 # Set up plot margins.
 par(mar = c(5,5,4,1))

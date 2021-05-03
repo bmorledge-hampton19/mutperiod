@@ -8,14 +8,17 @@ generateFigures = function(tsvFilePaths = list(), rdaFilePaths = list(), exportD
                            useAlignedStrands = FALSE) {
   
   ### Set up the positions for coloring periodic positions
-  # Minor in vs. out positions from Cui and Zhurkin, with 1 added to each side.
-  minorInPositions = list(4:9-74, 14:19-74, 25:30-74, 36:41-74, 46:51-74, 56:61-74, 66:71-74)
-  minorOutPositions = list(9:14-74, 20:24-74, 31:35-74, 41:46-74 ,51:56-74, 61:66-74)
+  # Minor in vs. out positions from Cui and Zhurkin, with 1 added to each side and internal half-base positions included.
+  minorInPositions = list(4:9-74, 14:19-74, 25:30-74, 36:41-74, 46:51-74, 56:61-74, 66:71-74,
+                          5:9-74.5, 15:19-74.5, 26:30-74.5, 37:41-74.5, 47:51-74.5, 57:61-74.5, 67:71-74.5)
+  minorOutPositions = list(9:14-74, 20:24-74, 31:35-74, 41:46-74 ,51:56-74, 61:66-74,
+                           10:14-74.5, 21:24-74.5, 32:35-74.5, 42:46-74.5, 52:56-74.5, 62:66-74.5)
   
-  # Nucleosome vs. Linker Positions:
-  nucleosomePositions = append(lapply(1:10, function(x) return( (-73+x*192):(73+x*192) )),list(0:73))
-  linkerPositions = lapply(0:8, function(x) return( (73+x*192):(119+x*192) ))
-  
+  # Nucleosome vs. Linker Positions (half-base positions included):
+  nucleosomePositions = append(lapply(1:10, function(x) return( append((-73+x*192):(73+x*192), 
+                                                                       (-72.5+x*192):(72.5+x*192)))),
+                               list(0:73, 0.5:72.5))
+  linkerPositions = lapply(0:8, function(x) return( append((73+x*192):(119+x*192), (72.5+x*192):(119.5+x*192))))
   
   # Retrieve and name a list of data tables from any given tsv files.
   if (length(tsvFilePaths) > 0) {
@@ -97,7 +100,7 @@ generateFigures = function(tsvFilePaths = list(), rdaFilePaths = list(), exportD
     par(mar = c(5,5,4,1))
     
     # Does this appear to be a nuc-group dyad radius?
-    if (nrow(countsTable) > 2000) {
+    if (nrow(countsTable) > 1998) {
       nucGroup = TRUE
     } else nucGroup = FALSE
     
