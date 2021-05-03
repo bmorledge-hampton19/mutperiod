@@ -78,7 +78,8 @@ class DataTypeStr:
 class InputFormat(Enum):
 
     ICGC = "ICGC"
-    tXRSeq = "tXR-seq"
+    tXRSeq_DEPRECATED = "tXR-seq"
+    xRSeq = "XR-seq"
     UVDESeq = "UVDE-seq"
     customBed = "customBed"
 
@@ -168,7 +169,8 @@ def getAcceptableChromosomes(genomeFilePath: str):
 def getContext(filePath: str, asInt = False):
 
     # A dictionary of contexts which matches them to their respective numbers.
-    contexts = {"singlenuc":1, "trinuc":3, "pentanuc":5, "custom_context":-1}
+    contexts = {"singlenuc":1, "dinuc":2, "trinuc":3, "quadrunuc":4, "pentanuc":5, "hexanuc":6, 
+                "polynuc":float('inf'), "custom_context":-1, "mixed_context":0}
 
     # Search for each of the contexts in the filename, and return the first (hopefully only) one that is present.
     fileName = os.path.basename(filePath)
@@ -262,13 +264,14 @@ def generateFilePath(directory = None, dataGroup = None, context = None, linkerO
     if context is not None:
 
         # A dictionary of numbers which matches them to their respective contexts.
-        contexts = {1:"singlenuc", 3:"trinuc", 5:"pentanuc", -1:"custom_context"}
+        contexts = {1:"singlenuc", 2:"dinuc", 3:"trinuc", 4:"quadrunuc", 5:"pentanuc", 6:"hexanuc", 
+                    float('inf'):"polynuc", -1:"custom_context", 0:"mixed_nucleotide"}
 
         if isinstance(context, str): 
             if context.lower() not in contexts.values():
                 raise ValueError(context + " is not a recognized context.")
             filePathPieces.append(context.lower())
-        elif isinstance(context, int): 
+        elif isinstance(context, int) or context == float('inf'): 
             if context not in contexts:
                 raise ValueError(str(context) + " is not a valid context value.")
             filePathPieces.append(contexts[context])
