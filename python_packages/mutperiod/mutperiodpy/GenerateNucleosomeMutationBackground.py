@@ -9,7 +9,7 @@ from mutperiodpy.helper_scripts.UsefulFileSystemFunctions import getContext, get
 
 
 # This function takes a bed file of strongly positioned nucleosomes and expands their coordinates to encompass
-# the given radius plus 2 bases. (in order to get up to pentanucleotide sequences.)
+# the given radius plus 2 bases. (in order to get up to hexanucleotide sequences.)
 # If a linker offset is requested, the expansion will be even greater to accomodate.
 # The expanded bed file is then used to generate a fasta file of nucleosome sequences.
 # Returns the file path to the fasta file.
@@ -84,35 +84,40 @@ def generateDyadPosContextCounts(nucPosFastaFilePath, dyadPosContextCountsFilePa
 
     observedContexts = dict() # Hash table of observed contexts for lookup.
 
+    # This is a bit weird.  If the context number is even, we need to account for half positions,
+    # but if the context number is odd, we need to keep in mind that there's one extra valid position in the dyad range.
+    if contextNum % 2 == 0:
+        halfBaseOffset = 0.5
+        extraDyadPos = 0
+    else:
+        halfBaseOffset = 0
+        extraDyadPos = 1
+
     # Initialize the dictionary for context counts on the plus strand.
-    for dyadPos in range(-dyadRadius-linkerOffset,dyadRadius+linkerOffset+1): 
-        plusStrandNucleosomeDyadPosContextCounts[dyadPos] = dict()
+    for dyadPos in range(-dyadRadius-linkerOffset,dyadRadius+linkerOffset+extraDyadPos): 
+        plusStrandNucleosomeDyadPosContextCounts[dyadPos + halfBaseOffset] = dict()
 
     # Read through the file, adding contexts for every dyad position to the running total in the dictionary
     with open(nucPosFastaFilePath, 'r') as nucPosFastaFile:
 
-        trackedPositionNum = dyadRadius*2 + 1 + linkerOffset*2 # How many dyad positions we care about.
+        trackedPositionNum = dyadRadius*2 + linkerOffset*2 + extraDyadPos # How many dyad positions we care about.
 
         for fastaEntry in FastaFileIterator(nucPosFastaFile):
 
             # Reset dyad position counter
-            dyadPos = -dyadRadius - linkerOffset
+            dyadPos = -dyadRadius - linkerOffset + halfBaseOffset
             
             # Determine how much extra information is present in this line at either end for generating contexts.
-            extraContextNum = len(fastaEntry.sequence) - trackedPositionNum
-
-            # Make sure we have an even number before dividing by 2 (for both ends)
-            if extraContextNum%2 != 0:
-                raise ValueError(str(extraContextNum) + " should be even.")
-            else: extraContextNum = int(extraContextNum/2)
+            extraContextNum = int((len(fastaEntry.sequence) - trackedPositionNum)/2)
 
             # Used to pull out the context of desired length.
-            extensionLength = int(contextNum/2)
+            extensionLength = contextNum/2 - 0.5
 
             # Count all available contexts.
             for i in range(0,trackedPositionNum):
 
-                context = fastaEntry.sequence[i+extraContextNum - extensionLength:i + extraContextNum + extensionLength+1]
+                context = fastaEntry.sequence[int(i + halfBaseOffset + extraContextNum - extensionLength):
+                                              int(i + halfBaseOffset + extraContextNum + extensionLength+1)]
                 if len(context) != contextNum: raise ValueError("Sequence length does not match expected context length.")
                 if context not in observedContexts: observedContexts[context] = None              
                 plusStrandNucleosomeDyadPosContextCounts[dyadPos][context] = plusStrandNucleosomeDyadPosContextCounts[dyadPos].setdefault(context, 0) + 1
@@ -134,7 +139,7 @@ def generateDyadPosContextCounts(nucPosFastaFilePath, dyadPosContextCountsFilePa
             for context in observedContexts.keys():
                 if context in plusStrandNucleosomeDyadPosContextCounts[dyadPos]:
                     dyadPosContextCountsFile.write('\t' + str(plusStrandNucleosomeDyadPosContextCounts[dyadPos][context]))
-                else: dyadPosContextCountsFile.write('\t0')
+                else: dyadPosContextCountsFile.write("\t0")
 
             dyadPosContextCountsFile.write('\n')
         
@@ -157,7 +162,7 @@ def getDyadPosContextCounts(dyadPosContextCountsFilePath):
     
             else: 
                 choppedUpLine = line.strip().split('\t')
-                dyadPos = int(choppedUpLine[0])
+                dyadPos = float(choppedUpLine[0])
                 dyadPosContextCounts[dyadPos] = dict()
                 for i,context in enumerate(contexts):
                     dyadPosContextCounts[dyadPos][context] = int(choppedUpLine[i+1])
@@ -174,8 +179,18 @@ def generateNucleosomeMutationBackgroundFile(dyadPosContextCountsFilePath, mutat
     plusStrandNucleosomeMutationBackground = dict() 
     minusStrandNucleosomeMutationBackground = dict()
 
+    # This is a bit weird.  If the context number is even, we need to account for half positions,
+    # but if the context number is odd, we need to keep in mind that there's one extra valid position in the dyad range.
+    if getContext(mutationBackgroundFilePath, asInt = True) % 2 == 0:
+        halfBaseOffset = 0.5
+        extraDyadPos = 0
+    else:
+        halfBaseOffset = 0
+        extraDyadPos = 1
+
     # Initialize the dictionary
-    for dyadPos in range(-dyadRadius - linkerOffset, dyadRadius + linkerOffset + 1): 
+    for i in range(-dyadRadius - linkerOffset, dyadRadius + linkerOffset + extraDyadPos): 
+        dyadPos = i + halfBaseOffset
         plusStrandNucleosomeMutationBackground[dyadPos] = 0
         minusStrandNucleosomeMutationBackground[dyadPos] = 0
 
@@ -205,8 +220,9 @@ def generateNucleosomeMutationBackgroundFile(dyadPosContextCountsFilePath, mutat
         nucleosomeMutationBackgroundFile.write(headers + '\n')
         
         # Write the data for each dyad position.
-        for dyadPos in range(- dyadRadius - linkerOffset, dyadRadius + linkerOffset + 1):
+        for i in range(-dyadRadius - linkerOffset, dyadRadius + linkerOffset + extraDyadPos):
 
+            dyadPos = i + halfBaseOffset
             dataRow = '\t'.join((str(dyadPos),str(plusStrandNucleosomeMutationBackground[dyadPos]),
             str(minusStrandNucleosomeMutationBackground[dyadPos]),
             str(plusStrandNucleosomeMutationBackground[dyadPos] + minusStrandNucleosomeMutationBackground[dyadPos]),
