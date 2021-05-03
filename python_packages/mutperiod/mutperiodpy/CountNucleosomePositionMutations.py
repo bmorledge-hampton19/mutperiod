@@ -19,7 +19,7 @@ class MutationData:
 
         # Assign variables
         self.chromosome = choppedUpLine[0] # The chromosome that houses the mutation.
-        self.position = int(choppedUpLine[1]) # The position of the mutation in its chromosome. (0 base)
+        self.position = float(choppedUpLine[1]) # The position of the mutation in its chromosome. (0 base)
         self.strand = choppedUpLine[5] # Either '+' or '-' depending on which strand houses the mutation.
 
         # Make sure the mutation is in a valid chromosome.
@@ -62,12 +62,19 @@ class CountsFileGenerator():
         self.dyadRadius = dyadRadius
         self.linkerOffset = linkerOffset
 
-        # Dictionaries holding the number of mutations found at each dyad position from -73 to 73 for each strand.
+        # Dictionaries holding the number of mutations found at each dyad position from -73 to 73 for each strand (including half positions).
         self.minusStrandMutationCounts = dict() 
         self.plusStrandMutationCounts = dict()
+        self.intPositions = list()
+        self.halfPositions = list()
         for i in range(-dyadRadius - linkerOffset, dyadRadius + linkerOffset + 1):
             self.minusStrandMutationCounts[i] = 0
             self.plusStrandMutationCounts[i] = 0
+            self.intPositions.append(i)
+            if i < dyadRadius + linkerOffset:
+                self.minusStrandMutationCounts[i+0.5] = 0
+                self.plusStrandMutationCounts[i+0.5] = 0
+                self.halfPositions.append(i+0.5)
 
         # Keeps track of mutations that matched to a nucleosome to check for overlap.
         self.mutationsInPotentialOverlap: List[MutationData] = list()
@@ -207,8 +214,27 @@ class CountsFileGenerator():
                                                 "Minus_Strand_Counts","Both_Strands_Counts",
                                                 "Aligned_Strands_Counts")) + '\n')
             
+            # Determine whether or not to include just half positions, just int positions, or all positions in the final output.
+            dyadPosRange = self.intPositions
+            hasHalfPositions = False
+
+            # Are there half position counts?
+            for i in self.halfPositions:
+                if self.minusStrandMutationCounts[i] > 0 or self.plusStrandMutationCounts[i] > 0:
+                    dyadPosRange = self.halfPositions
+                    hasHalfPositions = True
+                    break
+
+            # If there were half position counts, are there also int position counts?
+            if hasHalfPositions:
+                for i in self.intPositions:
+                    if self.minusStrandMutationCounts[i] > 0 or self.plusStrandMutationCounts[i] > 0:
+                        dyadPosRange = self.minusStrandMutationCounts.keys()
+                        break
+
+
             # Write the data.
-            for i in range(-self.dyadRadius - self.linkerOffset, self.dyadRadius + self.linkerOffset + 1):
+            for i in dyadPosRange:
                 nucleosomeMutationCountsFile.write('\t'.join((str(i), str(self.plusStrandMutationCounts[i]), 
                                                               str(self.minusStrandMutationCounts[i]), 
                                                               str(self.plusStrandMutationCounts[i] + self.minusStrandMutationCounts[i]),
