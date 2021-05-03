@@ -11,7 +11,7 @@ from mutperiodpy.Tkinter_scripts.TkinterDialog import TkinterDialog, Selections
 
 # Given a list of file paths pointing to nucleosome mutation data, returns the paths that fit the given specifications
 # normalizationMethods: A list of integers designating which normalization methods are allowed.
-#   0: Raw, 1: Singlenuc, 3: trinuc, 5: pentanuc -1: custom
+#   0: Raw, 1/2: Singlenuc or dinuc, 3/4: trinuc or quadrunuc, 5/6: pentanuc or hexanuc, -1: custom
 # singleNuc and nucGroup: Boolean values specifying whether the relevant nucleosome radii are allowed.
 # MSS and MSI: Boolean values specifying whether the relevant microsatellite staibility status is allowed.
 # acceptableCohorts: a list of cohorts.  The mutation group must belong to at least one of these cohorts to be accepted.
@@ -203,9 +203,9 @@ def main():
         # Determine what normalization methods were requested
         normalizationMethods = list()
         normalizationSelections = selections.getToggleStates(dialogID)[:5]
-        if normalizationSelections[0]: normalizationMethods.append(1)
-        if normalizationSelections[1]: normalizationMethods.append(3)
-        if normalizationSelections[2]: normalizationMethods.append(5)
+        if normalizationSelections[0]: normalizationMethods += (1,2)
+        if normalizationSelections[1]: normalizationMethods += (3,4)
+        if normalizationSelections[2]: normalizationMethods += (5,6)
         if normalizationSelections[3]: normalizationMethods.append(-1)
         if normalizationSelections[4]: normalizationMethods.append(0)
 

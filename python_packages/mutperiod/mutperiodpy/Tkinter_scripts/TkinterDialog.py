@@ -331,9 +331,9 @@ class TkinterDialog(tk.Frame):
 
         group.createLabel("Normalization Method:", row, 0, 3)
         row += 1
-        group.createCheckbox("Singlenuc", row, 0, )
-        group.createCheckbox("Trinuc", row, 1)
-        group.createCheckbox("Pentanuc", row, 2)
+        group.createCheckbox("Singlenuc/Dinuc", row, 0, )
+        group.createCheckbox("Trinuc/Quadrunuc", row, 1)
+        group.createCheckbox("Pentanuc/Hexanuc", row, 2)
         row += 1
         group.createCheckbox("Custom", row, 0)
         group.createCheckbox("Raw", row, 1)

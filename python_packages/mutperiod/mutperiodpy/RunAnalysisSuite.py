@@ -1,11 +1,10 @@
 # This script runs a suite of scripts from this project to take a singlenuc context (or trinuc if it's already available) bed file
 # and produce the normalized dyad position counts, along with all the relevant intermediate files.
 
-from tkinter.constants import N
 from typing import List
 import os, sys
 from mutperiodpy.Tkinter_scripts.TkinterDialog import TkinterDialog, Selections
-from mutperiodpy.helper_scripts.UsefulFileSystemFunctions import DataTypeStr, getDataDirectory, getFilesInDirectory
+from mutperiodpy.helper_scripts.UsefulFileSystemFunctions import DataTypeStr, getDataDirectory, getFilesInDirectory, getContext
 from mutperiodpy.ExpandContext import expandContext
 from mutperiodpy.GenerateMutationBackground import generateMutationBackground
 from mutperiodpy.GenerateNucleosomeMutationBackground import generateNucleosomeMutationBackground
@@ -30,9 +29,9 @@ def parseArgs(args):
 
     # Determine what normalization method was selected.
     normalizationMethod = "No Normalization"
-    if args.context_normalization == 1: normalizationMethod = "Singlenuc"
-    elif args.context_normalization == 3: normalizationMethod = "Trinuc"
-    elif args.context_normalization == 5: normalizationMethod = "Pentanuc"
+    if args.context_normalization == 1 or args.args.context_normalization == 2: normalizationMethod = "Singlenuc/Dinuc"
+    elif args.context_normalization == 3 or args.args.context_normalization == 4: normalizationMethod = "Trinuc/Quadrunuc"
+    elif args.context_normalization == 5 or args.args.context_normalization == 6: normalizationMethod = "Pentanuc/Hexanuc"
     elif args.background is not None: normalizationMethod = "Custom Background"
 
     runAnalysisSuite(finalBedMutationPaths, normalizationMethod, args.background, 
@@ -46,7 +45,8 @@ def main():
     dialog.createMultipleFileSelector("Bed Mutation Files:",0,DataTypeStr.mutations + ".bed",("Bed Files",".bed"))
 
     normalizationSelector = dialog.createDynamicSelector(1, 0)
-    normalizationSelector.initDropdownController("Normalization Method",("Trinuc", "Singlenuc", "Pentanuc", "Custom Background", "No Normalization"))
+    normalizationSelector.initDropdownController("Normalization Method",("No Normalization", "Singlenuc/Dinuc", "Trinuc/Quadrunuc", "Pentanuc/Hexanuc", 
+                                                                         "Custom Background"))
     customBackgroundFileSelector = normalizationSelector.initDisplay("Custom Background", "customBackground")
     customBackgroundFileSelector.createFileSelector("Custom Background Directory:", 0, ("Bed Files", ".bed"), directory = True)
     customBackgroundFileSelector.createCheckbox("Generate Background now", 1, 0)
@@ -111,11 +111,11 @@ def runAnalysisSuite(mutationFilePaths: List[str], normalizationMethod, customBa
     assert len(mutationFilePaths) > 0, "No valid input files given."
 
     # Convert background context to int
-    if normalizationMethod == "Singlenuc":
+    if normalizationMethod == "Singlenuc/Dinuc":
         normalizationMethodNum = 1
-    elif normalizationMethod == "Trinuc":
+    elif normalizationMethod == "Trinuc/Quadrunuc":
         normalizationMethodNum = 3
-    elif normalizationMethod == "Pentanuc":
+    elif normalizationMethod == "Pentanuc/Hexanuc":
         normalizationMethodNum = 5
     elif normalizationMethod in ("No Normalization", "Custom Background"):
         normalizationMethodNum = None
@@ -127,20 +127,19 @@ def runAnalysisSuite(mutationFilePaths: List[str], normalizationMethod, customBa
 
     ### Ensure that every mutation file has a context sufficient for the requested background.
 
-    # Returns the number associated with the context of the given mutation file.
-    def determineMutationFileContext(mutationFilePath: str):
-
-        if mutationFilePath.endswith("singlenuc_context_mutations.bed"): return 1
-        elif mutationFilePath.endswith("trinuc_context_mutations.bed"): return 3
-        elif mutationFilePath.endswith("pentanuc_context_mutations.bed"): return 5
-        else: raise ValueError("Unexpected file ending for " + os.path.basename(mutationFilePath))
-
     # create a new list of mutation file paths, replacing any with contexts that are too low.
     if normalizationMethodNum is not None:
         print("\nExpanding file context where necessary...\n")
         updatedMutationFilePaths = list()
         for mutationFilePath in mutationFilePaths:
-            if determineMutationFileContext(mutationFilePath) < normalizationMethodNum:
+            mutationFileContext = getContext(mutationFilePath, True)
+
+            # Some error checking...
+            assert mutationFileContext is not None, "Malformed file name.  Context is not clear for " + os.path.basename(mutationFilePath)
+            assert mutationFileContext != 0, "Mixed context files cannot be normalized by sequence context."
+            assert mutationFileContext != -1, "Wait, what?  How did you even get this context for this input file? " + os.path.basename
+
+            if mutationFileContext < normalizationMethodNum:
                 updatedMutationFilePaths += expandContext((mutationFilePath,),normalizationMethodNum)
             else: updatedMutationFilePaths.append(mutationFilePath)
     else: updatedMutationFilePaths = mutationFilePaths
