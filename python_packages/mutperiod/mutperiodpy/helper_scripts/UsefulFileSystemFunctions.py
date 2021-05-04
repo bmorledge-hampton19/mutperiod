@@ -80,7 +80,8 @@ class InputFormat(Enum):
     ICGC = "ICGC"
     tXRSeq_DEPRECATED = "tXR-seq"
     xRSeq = "XR-seq"
-    UVDESeq = "UVDE-seq"
+    UVDESeq_DEPRECATED = "UVDE-seq"
+    standardBed = "standardBed"
     customBed = "customBed"
 
 

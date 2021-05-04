@@ -1,5 +1,5 @@
-# This script takes the data obtained from mapping lesions cleaved by UVDE
-# and converts it to a format suitable for downstream analysis.
+# This script takes standard bed formatted data and converts it to custom bed format.
+# (Basically, it just replaces the 4th column with the auto-acquire '.' and the 5th column with "OTHER" and also generates metadata)
 
 import os
 from mutperiodpy.Tkinter_scripts.TkinterDialog import Selections, TkinterDialog
@@ -9,39 +9,39 @@ from mutperiodpy.helper_scripts.UsefulFileSystemFunctions import (getIsolatedPar
                                                                   getAcceptableChromosomes)
 
 
-def parseUVDESeq(UVDESeqFilePaths, genomeFilePath, nucPosFilePath):
+def parseStandardBed(standardBedFilePaths, genomeFilePath, nucPosFilePath):
 
     customBedOutputFilePaths = list() # The list of file paths to be passed to the custom bed parser.
 
-    # Parse the given reads into singlenuc context.
-    for UVDESeqFilePath in UVDESeqFilePaths:
+    # Parse the given files into custom bed format.
+    for standardBedFilePath in standardBedFilePaths:
 
-        print("\nWorking in:",os.path.basename(UVDESeqFilePath))
-        if not os.path.basename(UVDESeqFilePath).endswith(".bed"):
+        print("\nWorking in:",os.path.basename(standardBedFilePath))
+        if not os.path.basename(standardBedFilePath).endswith(".bed"):
             raise ValueError("Error:  Expected bed file format.")
 
         # Store useful paths and names.
-        localRootDirectory = os.path.dirname(UVDESeqFilePath)
+        localRootDirectory = os.path.dirname(standardBedFilePath)
         intermediateFilesDir = os.path.join(localRootDirectory,"intermediate_files")
         checkDirs(intermediateFilesDir)
-        dataGroupName = getIsolatedParentDir(UVDESeqFilePath)
+        dataGroupName = getIsolatedParentDir(standardBedFilePath)
 
         # Generate the output file path and metadata
         customBedOutputFilePath = generateFilePath(directory = intermediateFilesDir, dataGroup = dataGroupName,
                                                    dataType = DataTypeStr.customInput, fileExtension = ".bed")
         customBedOutputFilePaths.append(customBedOutputFilePath)
         generateMetadata(dataGroupName, getIsolatedParentDir(genomeFilePath), getIsolatedParentDir(nucPosFilePath), 
-                         os.path.basename(UVDESeqFilePath), InputFormat.UVDESeq, localRootDirectory)
+                         os.path.basename(standardBedFilePath), InputFormat.standardBed, localRootDirectory)
 
         # Get the list of acceptable chromosomes.
         acceptableChromosomes = getAcceptableChromosomes(genomeFilePath)
 
-        # Iterate through the 2 bp lesions preparing them for custom-bed input.
+        # Iterate through the standard bed file entries preparing them for custom-bed input.
         print("Converting entries for custom bed input...")
-        with open(UVDESeqFilePath, 'r') as UVDESeqFile:
+        with open(standardBedFilePath, 'r') as standardBedFile:
             with open(customBedOutputFilePath, 'w') as customBedOutputFile:
 
-                for line in UVDESeqFile:
+                for line in standardBedFile:
                     
                     choppedUpLine = line.strip().split("\t")
 
@@ -64,7 +64,7 @@ if __name__ == "__main__":
 
     # Create the Tkinter UI
     dialog = TkinterDialog(workingDirectory=getDataDirectory())
-    dialog.createMultipleFileSelector("UVDE-seq data:",0,"dipy.bed",("Bed Files",".bed"),additionalFileEndings=("TA.bed",))    
+    dialog.createMultipleFileSelector("Standard Bed Data:",0,"dipy.bed",("Bed Files",".bed"),additionalFileEndings=("TA.bed",))    
     dialog.createFileSelector("Genome Fasta File:",1,("Fasta Files",".fa"))
     dialog.createFileSelector("Strongly Positioned Nucleosome File:",2,("Bed Files",".bed"))
 
@@ -76,8 +76,8 @@ if __name__ == "__main__":
 
     # Get the user's input from the dialog.
     selections: Selections = dialog.selections
-    UVDESeqFilePaths = list(selections.getFilePathGroups())[0]
+    standardBedFilePaths = list(selections.getFilePathGroups())[0]
     genomeFilePath = list(selections.getIndividualFilePaths())[0]
     nucPosFilePath = list(selections.getIndividualFilePaths())[1]
 
-    parseUVDESeq(UVDESeqFilePaths, genomeFilePath, nucPosFilePath)
+    parseStandardBed(standardBedFilePaths, genomeFilePath, nucPosFilePath)
