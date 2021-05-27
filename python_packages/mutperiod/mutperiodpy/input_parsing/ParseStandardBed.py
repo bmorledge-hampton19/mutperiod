@@ -55,7 +55,7 @@ def parseStandardBed(standardBedFilePaths, genomeFilePath, nucPosFilePath):
 
 
     # Pass the generated files to the custom bed parser.
-    parseCustomBed(customBedOutputFilePaths, genomeFilePath, nucPosFilePath, False, False, False, True)
+    parseCustomBed(customBedOutputFilePaths, genomeFilePath, nucPosFilePath, False, False, False, False)
 
 
 
