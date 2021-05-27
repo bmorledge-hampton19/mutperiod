@@ -136,7 +136,7 @@ def checkDirs(*directoryPaths):
 
 
 # Given a genome fasta file, return the chromosomes present in that file.  
-def getAcceptableChromosomes(genomeFilePath: str):
+def getAcceptableChromosomes(genomeFilePath: str, returnFilePathInstead = False):
 
     # Make sure we were given a reasonable file path.
     assert getIsolatedParentDir(genomeFilePath) in genomeFilePath and genomeFilePath.endswith(".fa"), \
@@ -162,8 +162,11 @@ def getAcceptableChromosomes(genomeFilePath: str):
         print("If these chromosome designations seem incorrect, check that the genome fasta file headers are formatted correctly.")
 
     # Create a list of acceptable chromosome strings from the acceptable chromosomes file and return it.
-    with open(acceptableChromosomesFilePath, 'r') as acceptableChromosomesFile:
-        return [line.strip() for line in acceptableChromosomesFile]
+    # Or, if requested, return the path to the acceptable chromosomes file instead.
+    if returnFilePathInstead: return acceptableChromosomesFilePath
+    else:
+        with open(acceptableChromosomesFilePath, 'r') as acceptableChromosomesFile:
+            return [line.strip() for line in acceptableChromosomesFile]
 
 
 # Returns the context associated with a given file path as lowercase text (or an int if specified), or none if there is none.
