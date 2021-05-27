@@ -19,16 +19,15 @@
 import os, subprocess, sys
 from typing import List
 from mutperiodpy.Tkinter_scripts.TkinterDialog import TkinterDialog, Selections
-from mutperiodpy.helper_scripts.UsefulFileSystemFunctions import (getDataDirectory, getIsolatedParentDir, generateMetadata,
-                                                                  Metadata, checkDirs, getFilesInDirectory, 
-                                                                  InputFormat, getAcceptableChromosomes)
+from mutperiodpy.helper_scripts.UsefulFileSystemFunctions import (getDataDirectory, getIsolatedParentDir, generateMetadata, checkDirs, 
+                                                                  getFilesInDirectory, InputFormat, getAcceptableChromosomes)
 from mutperiodpy.helper_scripts.UsefulBioinformaticsFunctions import (bedToFasta, FastaFileIterator,
                                                                       isPurine, reverseCompliment)
 from mutperiodpy.input_parsing.WriteManager import WriteManager
 
 
 # Checks for common errors in a line of input.
-def checkForErrors(choppedUpLine: List[str], cohortDesignationPresent, acceptableChromosomes):
+def checkForErrors(choppedUpLine: List[str], cohortDesignationPresent, acceptableChromosomes, acceptableChromosomesFilePath):
 
     if len(choppedUpLine) < 6 or len(choppedUpLine) > 7:
         raise ValueError("Entry given with invalid number of arguments (" + str(len(choppedUpLine)) + ").  " +
@@ -36,7 +35,7 @@ def checkForErrors(choppedUpLine: List[str], cohortDesignationPresent, acceptabl
 
     if choppedUpLine[0] not in acceptableChromosomes:
         raise ValueError("Invalid chromosome identifier \"" + choppedUpLine[0] + "\" found.  " + 
-                         "Expected chromosome in the set at: NEED TO LINK TO ACCEPTABLE CHROMOSOME FILE")
+                         "Expected chromosome in the set at: " + acceptableChromosomesFilePath)
 
     if not (choppedUpLine[1].isnumeric() and choppedUpLine[2].isnumeric()) or int(choppedUpLine[1]) >= int(choppedUpLine[2]):
         raise ValueError("Base positions should be integers and specify a minimum range of 1 base.  " +
@@ -107,6 +106,7 @@ def autoAcquireAndQACheck(bedInputFilePath: str, genomeFilePath, autoAcquiredFil
 
     # Get the list of acceptable chromosomes
     acceptableChromosomes = getAcceptableChromosomes(genomeFilePath)
+    acceptableChromosomesFilePath = getAcceptableChromosomes(genomeFilePath, True)
 
     # Create a temporary file to write the data to (potentially after auto-acquiring).  
     # Will replace original file at the end if auto-acquiring occurred.
@@ -123,7 +123,7 @@ def autoAcquireAndQACheck(bedInputFilePath: str, genomeFilePath, autoAcquiredFil
                 if cohortDesignationPresent is None: cohortDesignationPresent = len(choppedUpLine) == 7
 
                 # Check for possible error states.
-                checkForErrors(choppedUpLine, cohortDesignationPresent, acceptableChromosomes)
+                checkForErrors(choppedUpLine, cohortDesignationPresent, acceptableChromosomes, acceptableChromosomesFilePath)
 
                 # If this is the first entry requiring auto-acquiring, generate the required fasta file.
                 if not autoAcquiring and (choppedUpLine[3] == '.' or (choppedUpLine[5] == '.' and choppedUpLine[3] != '*')):
