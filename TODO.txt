@@ -9,3 +9,5 @@ Better doc strings.  (Function/argument descriptions.)
 One big main UI
 
 Multithread the process of running several data files through the same portion of the pipeline?!?!  (e.g. running 4 different files through the "CountNucleosomeMutations" function)
+
+Allow for multiple nucleosome positioning files to be used in one data set, without copying that data set over and over again.
