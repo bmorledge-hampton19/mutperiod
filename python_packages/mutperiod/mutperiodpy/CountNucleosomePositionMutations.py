@@ -276,8 +276,8 @@ def countNucleosomePositionMutations(mutationFilePaths, nucleosomeMapNames, coun
                 # Check to see if the data name should be altered by this nucleosome map.
                 dataGroupName = parentMetadata.dataGroupName
 
-                dataGroupNameSuffixFilePath = os.path.join(os.path.dirname(parentMetadata.baseNucPosFilePath), 
-                                                               "append_to_data_name.txt")
+                dataGroupNameSuffixFilePath = os.path.join(os.path.dirname(parentMetadata.genomeFilePath), 
+                                                           nucleosomeMapName, "append_to_data_name.txt")
                 if os.path.exists(dataGroupNameSuffixFilePath):
 
                     with open(dataGroupNameSuffixFilePath) as dataGroupNameSuffixFile:
