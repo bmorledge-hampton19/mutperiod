@@ -41,10 +41,14 @@ def getBackgroundRawPairs(backgroundCountsFilePaths):
 def getCustomBackgroundRawPairs(customRawCountsFilePaths, customBackgroundCountsDir):
 
     customBackgroundRawPairs: Dict[str, List[str]] = dict()
-    backgroundMetadata = Metadata(customBackgroundCountsDir)
+    
 
-    # For every raw counts file in the customRawCountsDir, try to match it to a raw counts file in the customBackgroundCountsDir.
+    # For every raw counts file given, try to match it to a raw counts file in the customBackgroundCountsDir.
     for customRawCountsFilePath in customRawCountsFilePaths:
+
+        rawMetadata = Metadata(customRawCountsFilePath)
+        backgroundMetadata = Metadata(os.path.join(customBackgroundCountsDir,rawMetadata.nucPosName))
+
         customBackgroundCountsFilePath = generateFilePath(
             directory = backgroundMetadata.directory, dataGroup = backgroundMetadata.dataGroupName,
             linkerOffset = getLinkerOffset(customRawCountsFilePath), 
@@ -119,7 +123,7 @@ def main():
     customBackgroundSelector = dialog.createDynamicSelector(1, 0)
     customBackgroundSelector.initCheckboxController("Use another data set as custom background.")
     customBackgroundFileSelector = customBackgroundSelector.initDisplay(True, "customBackground")
-    customBackgroundFileSelector.createFileSelector("Data Directory for nucleosome counts to be used as raw", 0, directory = True)
+    customBackgroundFileSelector.createMultipleFileSelector("Raw nucleosome counts to be normalized", 0, DataTypeStr.rawNucCounts, ("TSV Files", ".tsv"))
     customBackgroundFileSelector.createFileSelector("Data Directory for nucleosome counts to be used as background", 1, directory = True)
     customBackgroundSelector.initDisplayState()
 
@@ -134,12 +138,12 @@ def main():
     backgroundCountsFilePaths = selections.getFilePathGroups()[0] # A list of background mutation counts file paths
 
     if customBackgroundSelector.getControllerVar():
-        customRawCountsDir = selections.getFilePaths("customBackground")[0]
-        customBackgroundCountsDir = selections.getFilePaths("customBackground")[1]
+        customRawCountsFilePaths = selections.getFilePathGroups("customBackground")[0]
+        customBackgroundCountsDir = selections.getIndividualFilePaths("customBackground")[0]
     else:
-        customRawCountsDir = None
+        customRawCountsFilePaths = None
         customBackgroundCountsDir = None
 
-    normalizeCounts(backgroundCountsFilePaths, customRawCountsDir, customBackgroundCountsDir)
+    normalizeCounts(backgroundCountsFilePaths, customRawCountsFilePaths, customBackgroundCountsDir)
 
 if __name__ == "__main__": main()
