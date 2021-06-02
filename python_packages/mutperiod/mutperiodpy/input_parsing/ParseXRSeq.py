@@ -347,7 +347,7 @@ if __name__ == "__main__":
     dialog.createMultipleFileSelector("XR-seq bigwig data (plus strand):",0,
                                       "+.bigWig",("BigWig Files",".bigWig"))
     dialog.createMultipleFileSelector("XR-seq bed data (alternative to bigwig):",1,"aligned_reads.bed",
-                                      ("Bed Files",".bed"), additionalFileEndings=("Rep1.bed","Rep2.bed"))
+                                      ("Bed Files",".bed"), additionalFileEndings=("rep1.bed","rep2.bed"))
 
     dialog.createFileSelector("Lesion Call Parameter File:", 2, ("Tab Seperated Values",".tsv"))
 
