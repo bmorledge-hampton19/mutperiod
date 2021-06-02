@@ -190,11 +190,10 @@ def getFilePathPair(filePath: str) -> str:
 # and converts them to the output format.
 class XRSeqInputDataPipeline:
 
-    def __init__(self, inputDataFilePath: str, callParamsFilePath: str, genomeFilePath: str, nucPosFilePath: str):
+    def __init__(self, inputDataFilePath: str, callParamsFilePath: str, genomeFilePath: str):
 
         self.inputDataFilePath = inputDataFilePath
         self.genomeFilePath = genomeFilePath
-        self.nucPosFilePath = nucPosFilePath
 
         # Get the list of acceptable chromosomes
         self.acceptableChromosomes = getAcceptableChromosomes(self.genomeFilePath)
@@ -276,7 +275,7 @@ class XRSeqInputDataPipeline:
                                                    dataType = DataTypeStr.customInput, fileExtension = ".bed") 
 
         # Generate metadata
-        generateMetadata(dataGroupName, getIsolatedParentDir(self.genomeFilePath), getIsolatedParentDir(self.nucPosFilePath),
+        generateMetadata(dataGroupName, getIsolatedParentDir(self.genomeFilePath),
                          os.path.basename(self.inputDataFilePath), InputFormat.xRSeq, localRootDirectory,
                          callParamsFilePath = self.callParamsFilePath)
 
@@ -321,7 +320,7 @@ class XRSeqInputDataPipeline:
         return self.lesionsBedFilePath
 
 
-def parseXRSeq(inputDataFilePaths, callParamsFilePath, genomeFilePath, nucPosFilePath):
+def parseXRSeq(inputDataFilePaths, callParamsFilePath, genomeFilePath):
 
     xRSeqOutputFilePaths = list()
 
@@ -329,7 +328,7 @@ def parseXRSeq(inputDataFilePaths, callParamsFilePath, genomeFilePath, nucPosFil
     for inputDataFilePath in inputDataFilePaths:
 
         print("\nWorking with:",os.path.basename(inputDataFilePath))
-        xRSeqInputDataPipeline = XRSeqInputDataPipeline(inputDataFilePath, callParamsFilePath, genomeFilePath, nucPosFilePath)
+        xRSeqInputDataPipeline = XRSeqInputDataPipeline(inputDataFilePath, callParamsFilePath, genomeFilePath)
 
         print("Generating trimmed reads bed file...")
         xRSeqInputDataPipeline.generateTrimmedReads()
@@ -338,7 +337,7 @@ def parseXRSeq(inputDataFilePaths, callParamsFilePath, genomeFilePath, nucPosFil
         xRSeqOutputFilePaths.append(xRSeqInputDataPipeline.generateLesionsBedOutputFile())
 
     # Send the output files to the custom bed parser.
-    parseCustomBed(xRSeqOutputFilePaths, genomeFilePath, nucPosFilePath, False, False, False)
+    parseCustomBed(xRSeqOutputFilePaths, genomeFilePath, False, False, False)
  
 
 if __name__ == "__main__":
@@ -353,7 +352,6 @@ if __name__ == "__main__":
     dialog.createFileSelector("Lesion Call Parameter File:", 2, ("Tab Seperated Values",".tsv"))
 
     dialog.createFileSelector("Genome Fasta File:",3,("Fasta Files",".fa"))
-    dialog.createFileSelector("Strongly Positioned Nucleosome File:",4,("Bed Files",".bed"))
 
     # Run the UI
     dialog.mainloop()
@@ -367,6 +365,5 @@ if __name__ == "__main__":
     xRSeqBedReadsFilePaths: List[str] = list(selections.getFilePathGroups())[1]
     callParamsFilePath = selections.getIndividualFilePaths()[0]
     genomeFilePath = selections.getIndividualFilePaths()[1]
-    nucPosFilePath = selections.getIndividualFilePaths()[2]
 
-    parseXRSeq(xRSeqBigWigPlusReadsFilePaths + xRSeqBedReadsFilePaths, callParamsFilePath, genomeFilePath, nucPosFilePath)
+    parseXRSeq(xRSeqBigWigPlusReadsFilePaths + xRSeqBedReadsFilePaths, callParamsFilePath, genomeFilePath)

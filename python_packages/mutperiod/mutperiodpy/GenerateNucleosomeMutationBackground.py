@@ -5,7 +5,7 @@ import os
 from typing import Dict
 from mutperiodpy.Tkinter_scripts.TkinterDialog import TkinterDialog, Selections
 from mutperiodpy.helper_scripts.UsefulBioinformaticsFunctions import bedToFasta, reverseCompliment, FastaFileIterator
-from mutperiodpy.helper_scripts.UsefulFileSystemFunctions import getContext, getLinkerOffset, Metadata, generateFilePath, DataTypeStr, getDataDirectory
+from mutperiodpy.helper_scripts.UsefulFileSystemFunctions import getContext, getIsolatedParentDir, getLinkerOffset, Metadata, generateFilePath, DataTypeStr, getDataDirectory
 
 
 # This function takes a bed file of strongly positioned nucleosomes and expands their coordinates to encompass
@@ -231,7 +231,7 @@ def generateNucleosomeMutationBackgroundFile(dyadPosContextCountsFilePath, mutat
             nucleosomeMutationBackgroundFile.write(dataRow + '\n')
 
 
-def generateNucleosomeMutationBackground(mutationBackgroundFilePaths, useSingleNucRadius, 
+def generateNucleosomeMutationBackground(mutationBackgroundFilePaths, nucleosomeMapNames, useSingleNucRadius, 
                                          useNucGroupRadius, linkerOffset):
 
     if not (useSingleNucRadius or useNucGroupRadius):
@@ -246,59 +246,63 @@ def generateNucleosomeMutationBackground(mutationBackgroundFilePaths, useSingleN
         if not DataTypeStr.mutBackground in os.path.basename(mutationBackgroundFilePath): 
             raise ValueError("Error, expected file with \"" + DataTypeStr.mutBackground + "\" in the name.")
 
-        # Get metadata
-        metadata = Metadata(mutationBackgroundFilePath)
+        for nucleosomeMapName in nucleosomeMapNames:
 
-        # Determine the context of the mutation background file
-        contextNum = getContext(mutationBackgroundFilePath, asInt=True)
-        contextText = getContext(mutationBackgroundFilePath)
-        print("Given mutation background is in", contextText, "context.")
+            print("Counting with nucleosome map:",nucleosomeMapName)
 
-        # To avoid copy pasting this code, here is a simple function to change how the background file is generated 
-        # based on the desired dyad radius.
-        def generateBackgroundBasedOnRadius(usesNucGroup):
+            # Get metadata (Assumes that the metadata has already been generated from a call to countNucleosomePositionMutations)
+            metadata = Metadata(os.path.join(mutationBackgroundFilePath,nucleosomeMapName))
 
-            # Set the dyad radius (And linker offset)
-            if usesNucGroup: 
-                dyadRadius = 1000
-                currentLinkerOffset = 0
-            else: 
-                dyadRadius = 73
-                currentLinkerOffset = linkerOffset
+            # Determine the context of the mutation background file
+            contextNum = getContext(mutationBackgroundFilePath, asInt=True)
+            contextText = getContext(mutationBackgroundFilePath)
+            print("Given mutation background is in", contextText, "context.")
 
-            # Make sure we have a fasta file for strongly positioned nucleosome coordinates
-            nucPosFastaFilePath = generateNucleosomeFasta(metadata.baseNucPosFilePath, metadata.genomeFilePath, dyadRadius, currentLinkerOffset)
+            # To avoid copy pasting this code, here is a simple function to change how the background file is generated 
+            # based on the desired dyad radius.
+            def generateBackgroundBasedOnRadius(usesNucGroup):
 
-            # Generate the path to the tsv file of dyad position context counts
-            dyadPosContextCountsFilePath = generateFilePath(directory = os.path.dirname(metadata.baseNucPosFilePath),
-                                                            dataGroup = metadata.nucPosName,
-                                                            context = contextText, linkerOffset = currentLinkerOffset,
-                                                            usesNucGroup = usesNucGroup,
-                                                            dataType = "dyad_pos_counts", fileExtension = ".tsv")
+                # Set the dyad radius (And linker offset)
+                if usesNucGroup: 
+                    dyadRadius = 1000
+                    currentLinkerOffset = 0
+                else: 
+                    dyadRadius = 73
+                    currentLinkerOffset = linkerOffset
 
-            # Make sure we have a tsv file with the appropriate context counts at each dyad position.
-            if not os.path.exists(dyadPosContextCountsFilePath): 
-                print("Dyad position " + contextText + " counts file not found at",dyadPosContextCountsFilePath)
-                print("Generating genome wide dyad position " + contextText + " counts file...")
-                generateDyadPosContextCounts(nucPosFastaFilePath, dyadPosContextCountsFilePath,
-                                            contextNum, dyadRadius, currentLinkerOffset)
+                # Make sure we have a fasta file for strongly positioned nucleosome coordinates
+                nucPosFastaFilePath = generateNucleosomeFasta(metadata.baseNucPosFilePath, metadata.genomeFilePath, dyadRadius, currentLinkerOffset)
 
-            # A path to the final output file.
-            nucleosomeMutationBackgroundFilePath = generateFilePath(directory = metadata.directory, dataGroup = metadata.dataGroupName,
-                                                                    context = contextText, linkerOffset = currentLinkerOffset,
-                                                                    usesNucGroup = usesNucGroup,
-                                                                    dataType = DataTypeStr.nucMutBackground, fileExtension = ".tsv")
+                # Generate the path to the tsv file of dyad position context counts
+                dyadPosContextCountsFilePath = generateFilePath(directory = os.path.dirname(metadata.baseNucPosFilePath),
+                                                                dataGroup = metadata.nucPosName,
+                                                                context = contextText, linkerOffset = currentLinkerOffset,
+                                                                usesNucGroup = usesNucGroup,
+                                                                dataType = "dyad_pos_counts", fileExtension = ".tsv")
 
-            # Generate the nucleosome mutation background file!
-            generateNucleosomeMutationBackgroundFile(dyadPosContextCountsFilePath,mutationBackgroundFilePath,
-                                                    nucleosomeMutationBackgroundFilePath, dyadRadius, currentLinkerOffset)
+                # Make sure we have a tsv file with the appropriate context counts at each dyad position.
+                if not os.path.exists(dyadPosContextCountsFilePath): 
+                    print("Dyad position " + contextText + " counts file not found at",dyadPosContextCountsFilePath)
+                    print("Generating genome wide dyad position " + contextText + " counts file...")
+                    generateDyadPosContextCounts(nucPosFastaFilePath, dyadPosContextCountsFilePath,
+                                                contextNum, dyadRadius, currentLinkerOffset)
 
-            nucleosomeMutationBackgroundFilePaths.append(nucleosomeMutationBackgroundFilePath)
+                # A path to the final output file.
+                nucleosomeMutationBackgroundFilePath = generateFilePath(directory = metadata.directory, dataGroup = metadata.dataGroupName,
+                                                                        context = contextText, linkerOffset = currentLinkerOffset,
+                                                                        usesNucGroup = usesNucGroup,
+                                                                        dataType = DataTypeStr.nucMutBackground, fileExtension = ".tsv")
 
-        if useSingleNucRadius:
-            generateBackgroundBasedOnRadius(False)
-        if useNucGroupRadius:
-            generateBackgroundBasedOnRadius(True)
+                # Generate the nucleosome mutation background file!
+                generateNucleosomeMutationBackgroundFile(dyadPosContextCountsFilePath,mutationBackgroundFilePath,
+                                                        nucleosomeMutationBackgroundFilePath, dyadRadius, currentLinkerOffset)
+
+                nucleosomeMutationBackgroundFilePaths.append(nucleosomeMutationBackgroundFilePath)
+
+            if useSingleNucRadius:
+                generateBackgroundBasedOnRadius(False)
+            if useNucGroupRadius:
+                generateBackgroundBasedOnRadius(True)
 
     return nucleosomeMutationBackgroundFilePaths
 
@@ -308,15 +312,16 @@ def main():
     #Create the Tkinter UI
     dialog = TkinterDialog(workingDirectory=getDataDirectory())
     dialog.createMultipleFileSelector("Mutation Background Files:",0,DataTypeStr.mutBackground + ".tsv",("Tab Seperated Values Files",".tsv"))
+    dialog.createMultipleFileSelector("Nucleosome Map Files:", 1, "nucleosome_map.bed", ("Bed Files", ".bed"))
 
-    selectSingleNuc = dialog.createDynamicSelector(1,0)
+    selectSingleNuc = dialog.createDynamicSelector(2,0)
     selectSingleNuc.initCheckboxController("Generate background with a single nucleosome radius (73 bp)")
     linkerSelectionDialog = selectSingleNuc.initDisplay(1, "singleNuc")
     linkerSelectionDialog.createCheckbox("Include 30 bp linker DNA on either side of single nucleosome radius.",0,0)
     selectSingleNuc.initDisplay(0)
     selectSingleNuc.initDisplayState()
 
-    dialog.createCheckbox("Generate background with a nucleosome group radius (1000 bp)", 2, 0)
+    dialog.createCheckbox("Generate background with a nucleosome group radius (1000 bp)", 3, 0)
 
     # Run the UI
     dialog.mainloop()
@@ -327,6 +332,7 @@ def main():
     # Get the user's input from the dialog.
     selections: Selections = dialog.selections
     mutationBackgroundFilePaths = selections.getFilePathGroups()[0] # A list of mutation file paths
+    nucleosomeMapNames = [getIsolatedParentDir(nucleosomeMapFile) for nucleosomeMapFile in selections.getFilePathGroups()[1]]
     if selectSingleNuc.getControllerVar():
         useSingleNucRadius = True
         includeLinker = selections.getToggleStates("singleNuc")[0]
@@ -338,7 +344,7 @@ def main():
     if includeLinker: linkerOffset = 30
     else: linkerOffset = 0
 
-    generateNucleosomeMutationBackground(mutationBackgroundFilePaths, useSingleNucRadius, 
+    generateNucleosomeMutationBackground(mutationBackgroundFilePaths, nucleosomeMapNames, useSingleNucRadius, 
                                          useNucGroupRadius, linkerOffset)
 
 if __name__ == "__main__": main()

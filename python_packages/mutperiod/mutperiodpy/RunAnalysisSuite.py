@@ -4,7 +4,8 @@
 from typing import List
 import os, sys
 from mutperiodpy.Tkinter_scripts.TkinterDialog import TkinterDialog, Selections
-from mutperiodpy.helper_scripts.UsefulFileSystemFunctions import DataTypeStr, getDataDirectory, getFilesInDirectory, getContext
+from mutperiodpy.helper_scripts.UsefulFileSystemFunctions import (DataTypeStr, getDataDirectory, getFilesInDirectory, 
+                                                                  getContext, getIsolatedParentDir)
 from mutperiodpy.ExpandContext import expandContext
 from mutperiodpy.GenerateMutationBackground import generateMutationBackground
 from mutperiodpy.GenerateNucleosomeMutationBackground import generateNucleosomeMutationBackground
@@ -44,7 +45,9 @@ def main():
     dialog = TkinterDialog(workingDirectory=getDataDirectory())
     dialog.createMultipleFileSelector("Bed Mutation Files:",0,DataTypeStr.mutations + ".bed",("Bed Files",".bed"))
 
-    normalizationSelector = dialog.createDynamicSelector(1, 0)
+    dialog.createMultipleFileSelector("Nucleosome Map Files", 1, "nucleosome_map.bed", ("Bed Files", ".bed"))
+
+    normalizationSelector = dialog.createDynamicSelector(2, 0)
     normalizationSelector.initDropdownController("Normalization Method",("No Normalization", "Singlenuc/Dinuc", "Trinuc/Quadrunuc", "Pentanuc/Hexanuc", 
                                                                          "Custom Background"))
     customBackgroundFileSelector = normalizationSelector.initDisplay("Custom Background", "customBackground")
@@ -53,13 +56,13 @@ def main():
     customBackgroundFileSelector.createLabel("", 2, 0)
     normalizationSelector.initDisplayState()
 
-    selectNucleosomeDyadRadius = dialog.createDynamicSelector(2,0)
+    selectNucleosomeDyadRadius = dialog.createDynamicSelector(3,0)
     selectNucleosomeDyadRadius.initCheckboxController("Run analysis with a single nucleosome dyad radius (73 bp)")
     linkerSelectionDialog = selectNucleosomeDyadRadius.initDisplay(1, "singleNuc")
     linkerSelectionDialog.createCheckbox("Include 30 bp linker DNA on either side of single nucleosome dyad radius.",0,0)
     selectNucleosomeDyadRadius.initDisplayState()
 
-    dialog.createCheckbox("Count with a nucleosome group radius (1000 bp)", 3, 0)
+    dialog.createCheckbox("Count with a nucleosome group radius (1000 bp)", 4, 0)
 
     # Run the UI
     dialog.mainloop()
@@ -69,7 +72,8 @@ def main():
 
     # Get the user's input from the dialog.
     selections: Selections = dialog.selections
-    mutationFilePaths: List[str] = selections.getFilePathGroups()[0] # A list of paths to bed mutation files
+    mutationFilePaths = selections.getFilePathGroups()[0] # A list of paths to bed mutation files
+    nucleosomeMapNames = [getIsolatedParentDir(nucleosomeMapFile) for nucleosomeMapFile in selections.getFilePathGroups()[1]]
 
     normalizationMethod = normalizationSelector.getControllerVar() # The normalization method to be used.
     if normalizationMethod == "Custom Background":
@@ -96,12 +100,12 @@ def main():
 
         print ("Finished generating background!\n")
 
-    runAnalysisSuite(mutationFilePaths, normalizationMethod, customBackgroundDir, useSingleNucRadius, 
+    runAnalysisSuite(mutationFilePaths, nucleosomeMapNames, normalizationMethod, customBackgroundDir, useSingleNucRadius, 
                      includeLinker, useNucGroupRadius)
 
 
-def runAnalysisSuite(mutationFilePaths: List[str], normalizationMethod, customBackgroundDir, useSingleNucRadius,
-                     includeLinker, useNucGroupRadius):
+def runAnalysisSuite(mutationFilePaths: List[str], nucleosomeMapNames: List[str], normalizationMethod, customBackgroundDir, 
+                     useSingleNucRadius, includeLinker, useNucGroupRadius):
 
     # Make sure at least one radius was selected.
     if not useNucGroupRadius and not useSingleNucRadius:
@@ -146,9 +150,9 @@ def runAnalysisSuite(mutationFilePaths: List[str], normalizationMethod, customBa
 
     ### Run the rest of the analysis.
 
-    print("\nCounting mutations at each dyad position...")                                                                             
-    nucleosomeMutationCountsFilePaths = countNucleosomePositionMutations(updatedMutationFilePaths, useSingleNucRadius,
-                                                                         useNucGroupRadius, linkerOffset)
+    print("\nCounting mutations at each dyad position...")
+    nucleosomeMutationCountsFilePaths = countNucleosomePositionMutations(updatedMutationFilePaths, nucleosomeMapNames,
+                                                                         useSingleNucRadius, useNucGroupRadius, linkerOffset)
 
     if normalizationMethodNum is not None:
 
@@ -156,8 +160,8 @@ def runAnalysisSuite(mutationFilePaths: List[str], normalizationMethod, customBa
         mutationBackgroundFilePaths = generateMutationBackground(updatedMutationFilePaths,normalizationMethodNum)
 
         print("\nGenerating nucleosome mutation background...")
-        nucleosomeMutationBackgroundFilePaths = generateNucleosomeMutationBackground(mutationBackgroundFilePaths, useSingleNucRadius, 
-                                                                                     useNucGroupRadius, linkerOffset)
+        nucleosomeMutationBackgroundFilePaths = generateNucleosomeMutationBackground(mutationBackgroundFilePaths, nucleosomeMapNames,
+                                                                                     useSingleNucRadius, useNucGroupRadius, linkerOffset)
 
         print("\nNormalizing counts with nucleosome background data...")
         normalizeCounts(nucleosomeMutationBackgroundFilePaths)

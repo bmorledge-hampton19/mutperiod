@@ -295,9 +295,8 @@ def generateFilePath(directory = None, dataGroup = None, context = None, linkerO
 
 
 # Generates a .metadata file from the given information.
-def generateMetadata(dataGroupName, associatedGenome, associatedNucleosomePositions, 
-                     localParentDataPath, inputFormat, metadataDirectory, *cohorts,
-                     callParamsFilePath = None):
+def generateMetadata(dataGroupName, associatedGenome, localParentDataPath, inputFormat, metadataDirectory, *cohorts,
+                     associatedNucleosomePositions = None, callParamsFilePath = None):
 
     # Open up the metadata file.
     with open(os.path.join(metadataDirectory,".metadata"), 'w') as metadataFile:
@@ -307,7 +306,8 @@ def generateMetadata(dataGroupName, associatedGenome, associatedNucleosomePositi
 
         metadataFile.write("associatedGenome:\t" + associatedGenome + '\n')
 
-        metadataFile.write("associatedNucleosomePositions:\t" + associatedNucleosomePositions + '\n')
+        if associatedNucleosomePositions is not None:
+            metadataFile.write("associatedNucleosomePositions:\t" + associatedNucleosomePositions + '\n')
 
         metadataFile.write("localParentDataPath:\t" + localParentDataPath + '\n')
 
@@ -377,7 +377,7 @@ class Metadata:
 
         self.genomeName: str = self.getMetadataByKey("associatedGenome")
 
-        self.nucPosName: str = self.getMetadataByKey("associatedNucleosomePositions")
+        self.nucPosName: str = self.getMetadataByKey("associatedNucleosomePositions", False)
 
         self.localParentDataPath: str = self.getMetadataByKey("localParentDataPath")
 
@@ -400,8 +400,10 @@ class Metadata:
 
         self.genomeFilePath = os.path.join(getExternalDataDirectory(),self.genomeName,self.genomeName+".fa")
 
-        self.baseNucPosFilePath = os.path.join(getExternalDataDirectory(), self.genomeName,
-                                               self.nucPosName, self.nucPosName+".bed")
+        if self.nucPosName is not None:
+            self.baseNucPosFilePath = os.path.join(getExternalDataDirectory(), self.genomeName,
+                                                   self.nucPosName, self.nucPosName+".bed")
+        else: self.baseNucPosFilePath = None
 
         self.parentDataFilePath = os.path.join(self.directory, self.localParentDataPath)
 

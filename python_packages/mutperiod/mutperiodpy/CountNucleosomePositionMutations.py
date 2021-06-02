@@ -6,8 +6,8 @@
 import os, warnings
 from typing import List
 from mutperiodpy.Tkinter_scripts.TkinterDialog import TkinterDialog, Selections
-from mutperiodpy.helper_scripts.UsefulFileSystemFunctions import (Metadata, generateFilePath, getDataDirectory,
-                                                                  DataTypeStr, getAcceptableChromosomes)
+from mutperiodpy.helper_scripts.UsefulFileSystemFunctions import (Metadata, generateFilePath, generateMetadata, getDataDirectory,
+                                                                  DataTypeStr, getAcceptableChromosomes, checkDirs, getIsolatedParentDir)
 
 
 class MutationData:
@@ -242,7 +242,7 @@ class CountsFileGenerator():
                                                    + '\n')
 
 
-def countNucleosomePositionMutations(mutationFilePaths, countSingleNuc, countNucGroup, linkerOffset):
+def countNucleosomePositionMutations(mutationFilePaths, nucleosomeMapNames, countSingleNuc, countNucGroup, linkerOffset):
 
     if not (countSingleNuc or countNucGroup):
         raise ValueError("Must count in either a single nucleosome or group nucleosome radius.")
@@ -258,45 +258,75 @@ def countNucleosomePositionMutations(mutationFilePaths, countSingleNuc, countNuc
         if not DataTypeStr.mutations in os.path.basename(mutationFilePath): 
             raise ValueError("Mutation file should have \"" + DataTypeStr.mutations + "\" in the name.")
 
-        # Get metadata and use it to generate a path to the nucleosome positions file.
-        metadata = Metadata(mutationFilePath)
+        for nucleosomeMapName in nucleosomeMapNames:
 
-        # Get the list of acceptable chromosomes
-        acceptableChromosomes = getAcceptableChromosomes(metadata.genomeFilePath)
+            print("Counting with nucleosome map:",nucleosomeMapName)
 
-        # Generate the counts file for a single nucleosome region if requested.
-        if countSingleNuc:
+            # Generate the path to the nucleosome-map-specific directory.
+            nucleosomeMapDataDirectory = os.path.join(os.path.dirname(mutationFilePath),nucleosomeMapName)
+            checkDirs(nucleosomeMapDataDirectory)
 
-            # Generate the output file path
-            nucleosomeMutationCountsFilePath = generateFilePath(directory = metadata.directory,
-                                                                dataGroup = metadata.dataGroupName, linkerOffset = linkerOffset, 
-                                                                fileExtension = ".tsv", dataType = DataTypeStr.rawNucCounts)
+            # Check to see if the metadata for this directory has been generated before, and if not, set it up!
+            if not os.path.exists(os.path.join(nucleosomeMapDataDirectory,".metadata")):
 
-            # Ready, set, go!
-            print("Counting mutations at each nucleosome position in a 73 bp radius +", str(linkerOffset), "bp linker DNA.")
-            counter = CountsFileGenerator(mutationFilePath, metadata.baseNucPosFilePath, 
-                                          nucleosomeMutationCountsFilePath, 73, linkerOffset, acceptableChromosomes)
-            counter.count()
-            counter.writeResults()
+                print("No metadata found.  Generating...")
 
-            nucleosomeMutationCountsFilePaths.append(nucleosomeMutationCountsFilePath)
+                parentMetadata = Metadata(mutationFilePath)
 
-        # Generate the counts file for a nucleosome group region if requested.
-        if countNucGroup:
+                # Check to see if the data name should be altered by this nucleosome map.
+                dataGroupName = parentMetadata.dataGroupName
 
-            # Generate the output file path
-            nucleosomeMutationCountsFilePath = generateFilePath(directory = metadata.directory,
-                                                                dataGroup = metadata.dataGroupName, usesNucGroup = True,
-                                                                fileExtension = ".tsv", dataType = DataTypeStr.rawNucCounts)
+                dataGroupNameSuffixFilePath = os.path.join(os.path.dirname(parentMetadata.baseNucPosFilePath), 
+                                                               "append_to_data_name.txt")
+                if os.path.exists(dataGroupNameSuffixFilePath):
 
-            # Ready, set, go!
-            print("Counting mutations at each nucleosome position in a 1000 bp radius.")
-            counter = CountsFileGenerator(mutationFilePath, metadata.baseNucPosFilePath, 
-                                          nucleosomeMutationCountsFilePath, 1000, 0, acceptableChromosomes)
-            counter.count()
-            counter.writeResults()
+                    with open(dataGroupNameSuffixFilePath) as dataGroupNameSuffixFile:
+                        dataGroupName += dataGroupNameSuffixFile.readline().strip()
 
-            nucleosomeMutationCountsFilePaths.append(nucleosomeMutationCountsFilePath)
+                generateMetadata(dataGroupName, parentMetadata.genomeName, os.path.join("..",parentMetadata.localParentDataPath),
+                                 parentMetadata.inputFormat, nucleosomeMapDataDirectory, *parentMetadata.cohorts,
+                                 callParamsFilePath = parentMetadata.callParamsFilePath,
+                                 associatedNucleosomePositions = nucleosomeMapName)
+
+            # Get metadata and use it to generate a path to the nucleosome positions file.
+            metadata = Metadata(nucleosomeMapDataDirectory)
+
+            # Get the list of acceptable chromosomes
+            acceptableChromosomes = getAcceptableChromosomes(metadata.genomeFilePath)
+
+            # Generate the counts file for a single nucleosome region if requested.
+            if countSingleNuc:
+
+                # Generate the output file path
+                nucleosomeMutationCountsFilePath = generateFilePath(directory = metadata.directory,
+                                                                    dataGroup = metadata.dataGroupName, linkerOffset = linkerOffset, 
+                                                                    fileExtension = ".tsv", dataType = DataTypeStr.rawNucCounts)
+
+                # Ready, set, go!
+                print("Counting mutations at each nucleosome position in a 73 bp radius +", str(linkerOffset), "bp linker DNA.")
+                counter = CountsFileGenerator(mutationFilePath, metadata.baseNucPosFilePath, 
+                                            nucleosomeMutationCountsFilePath, 73, linkerOffset, acceptableChromosomes)
+                counter.count()
+                counter.writeResults()
+
+                nucleosomeMutationCountsFilePaths.append(nucleosomeMutationCountsFilePath)
+
+            # Generate the counts file for a nucleosome group region if requested.
+            if countNucGroup:
+
+                # Generate the output file path
+                nucleosomeMutationCountsFilePath = generateFilePath(directory = metadata.directory,
+                                                                    dataGroup = metadata.dataGroupName, usesNucGroup = True,
+                                                                    fileExtension = ".tsv", dataType = DataTypeStr.rawNucCounts)
+
+                # Ready, set, go!
+                print("Counting mutations at each nucleosome position in a 1000 bp radius.")
+                counter = CountsFileGenerator(mutationFilePath, metadata.baseNucPosFilePath, 
+                                            nucleosomeMutationCountsFilePath, 1000, 0, acceptableChromosomes)
+                counter.count()
+                counter.writeResults()
+
+                nucleosomeMutationCountsFilePaths.append(nucleosomeMutationCountsFilePath)
 
     return nucleosomeMutationCountsFilePaths
 
@@ -306,15 +336,15 @@ def main():
     #Create the Tkinter UI
     dialog = TkinterDialog(workingDirectory=getDataDirectory())
     dialog.createMultipleFileSelector("Mutation Files:",0,DataTypeStr.mutations+".bed",("Bed Files",".bed"))
-    
-    selectSingleNuc = dialog.createDynamicSelector(1,0)
+    dialog.createMultipleFileSelector("Nucleosome Map Files:", 1, "nucleosome_map.bed", ("Bed Files", ".bed"))
+    selectSingleNuc = dialog.createDynamicSelector(2,0)
     selectSingleNuc.initCheckboxController("Count with a single nucleosome radius (73 bp)")
     linkerSelectionDialog = selectSingleNuc.initDisplay(1, "singleNuc")
     linkerSelectionDialog.createCheckbox("Include 30 bp linker DNA on either side of single nucleosome radius.",0,0)
     selectSingleNuc.initDisplay(0)
     selectSingleNuc.initDisplayState()
 
-    dialog.createCheckbox("Count with a nucleosome group radius (1000 bp)", 2, 0)
+    dialog.createCheckbox("Count with a nucleosome group radius (1000 bp)", 3, 0)
 
     # Run the UI
     dialog.mainloop()
@@ -325,6 +355,7 @@ def main():
     # Get the user's input from the dialog.
     selections: Selections = dialog.selections
     mutationFilePaths = selections.getFilePathGroups()[0] # A list of mutation file paths
+    nucleosomeMapNames = [getIsolatedParentDir(nucleosomeMapFile) for nucleosomeMapFile in selections.getFilePathGroups()[1]]
     if selectSingleNuc.getControllerVar():
         countSingleNuc = True
         includeLinker = selections.getToggleStates("singleNuc")[0]
@@ -336,6 +367,6 @@ def main():
     if includeLinker: linkerOffset = 30
     else: linkerOffset = 0
 
-    countNucleosomePositionMutations(mutationFilePaths, countSingleNuc, countNucGroup, linkerOffset)
+    countNucleosomePositionMutations(mutationFilePaths, nucleosomeMapNames, countSingleNuc, countNucGroup, linkerOffset)
 
 if __name__ == "__main__": main()

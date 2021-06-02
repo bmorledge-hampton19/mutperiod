@@ -287,7 +287,7 @@ def setUpForMutSigStratification(writeManager: WriteManager, bedInputFilePath):
 
 
 # Handles the scripts main functionality.
-def parseCustomBed(bedInputFilePaths, genomeFilePath, nucPosFilePath, stratifyByMS, 
+def parseCustomBed(bedInputFilePaths, genomeFilePath, stratifyByMS, 
                    stratifyByMutSig, separateIndividualCohorts, onlySinglenuc = False, includeIndels = False):
 
     assert not (onlySinglenuc and includeIndels), "Indels are incompatible with single nucleotide features."
@@ -303,7 +303,7 @@ def parseCustomBed(bedInputFilePaths, genomeFilePath, nucPosFilePath, stratifyBy
             dataDirectory = os.path.dirname(os.path.dirname(bedInputFilePath))
         else:
             dataDirectory = os.path.dirname(bedInputFilePath)
-            generateMetadata(os.path.basename(dataDirectory), getIsolatedParentDir(genomeFilePath), getIsolatedParentDir(nucPosFilePath), 
+            generateMetadata(os.path.basename(dataDirectory), getIsolatedParentDir(genomeFilePath), 
                              os.path.basename(bedInputFilePath), InputFormat.customBed,  os.path.dirname(bedInputFilePath))
 
         intermediateFilesDir = os.path.join(dataDirectory,"intermediate_files")
@@ -381,12 +381,11 @@ def main():
     dialog = TkinterDialog(workingDirectory=getDataDirectory())
     dialog.createMultipleFileSelector("Custom bed Input Files:",0,"custom_input.bed",("bed files",".bed"))
     dialog.createFileSelector("Genome Fasta File:",1,("Fasta Files",".fa"))
-    dialog.createFileSelector("Strongly Positioned Nucleosome File:",2,("Bed Files",".bed"))
-    dialog.createCheckbox("Stratify data by microsatellite stability?", 3, 0)
-    dialog.createCheckbox("Stratify by mutation signature?", 3, 1)
-    dialog.createCheckbox("Separate individual cohorts?", 4, 0)
-    dialog.createCheckbox("Only use single nucleotide features?", 5, 0)
-    dialog.createCheckbox("Include indels in output?", 5, 1)
+    dialog.createCheckbox("Stratify data by microsatellite stability?", 2, 0)
+    dialog.createCheckbox("Stratify by mutation signature?", 2, 1)
+    dialog.createCheckbox("Separate individual cohorts?", 3, 0)
+    dialog.createCheckbox("Only use single nucleotide features?", 4, 0)
+    dialog.createCheckbox("Include indels in output?", 4, 1)
 
     # Run the UI
     dialog.mainloop()
@@ -398,7 +397,6 @@ def main():
     selections: Selections = dialog.selections
     bedInputFilePaths = selections.getFilePathGroups()[0]
     genomeFilePath = selections.getIndividualFilePaths()[0]
-    nucPosFilePath = selections.getIndividualFilePaths()[1]
     stratifyByMS = selections.getToggleStates()[0]
     stratifyByMutSig = selections.getToggleStates()[1]
     separateIndividualCohorts = selections.getToggleStates()[2]
@@ -406,7 +404,7 @@ def main():
     includeIndels = selections.getToggleStates()[4]
 
 
-    parseCustomBed(bedInputFilePaths, genomeFilePath, nucPosFilePath, stratifyByMS, 
+    parseCustomBed(bedInputFilePaths, genomeFilePath, stratifyByMS, 
                    stratifyByMutSig, separateIndividualCohorts, onlySinglenuc, includeIndels)
 
 if __name__ == "__main__": main()

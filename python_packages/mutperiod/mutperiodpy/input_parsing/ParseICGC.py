@@ -97,7 +97,7 @@ class ICGCIterator:
 
 
 # Handles the basic parsing of the script.
-def parseICGC(ICGCFilePaths, genomeFilePath, nucPosFilePath, separateDonors, 
+def parseICGC(ICGCFilePaths, genomeFilePath, separateDonors, 
               stratifyByMS, stratifyByMutSig):
 
     outputBedFilePaths = list()
@@ -119,7 +119,7 @@ def parseICGC(ICGCFilePaths, genomeFilePath, nucPosFilePath, separateDonors,
         intermediateFilesDir = os.path.join(dataDirectory,"intermediate_files")
         checkDirs(intermediateFilesDir)
 
-        generateMetadata(getIsolatedParentDir(ICGCFilePath), getIsolatedParentDir(genomeFilePath), getIsolatedParentDir(nucPosFilePath), 
+        generateMetadata(getIsolatedParentDir(ICGCFilePath), getIsolatedParentDir(genomeFilePath), 
                          os.path.basename(ICGCFilePath), InputFormat.ICGC, os.path.dirname(ICGCFilePath))
 
         # Generate the output file.
@@ -148,7 +148,7 @@ def parseICGC(ICGCFilePaths, genomeFilePath, nucPosFilePath, separateDonors,
 
     # Pass the parsed bed files to the custom bed parser for even more parsing! (Hooray for modularization!)
     print("\nPassing data to custom bed parser...")
-    parseCustomBed(outputBedFilePaths, genomeFilePath, nucPosFilePath, stratifyByMS, stratifyByMutSig, separateDonors, True)
+    parseCustomBed(outputBedFilePaths, genomeFilePath, stratifyByMS, stratifyByMutSig, separateDonors, True)
 
 
 def parseArgs(args):
@@ -182,10 +182,9 @@ def main():
     dialog = TkinterDialog(workingDirectory=getDataDirectory())
     dialog.createMultipleFileSelector("ICGC Mutation Files:",0,".tsv.gz",("gzip files",".gz"))
     dialog.createFileSelector("Genome Fasta File:",1,("Fasta Files",".fa"))
-    dialog.createFileSelector("Strongly Positioned Nucleosome File:",2,("Bed Files",".bed"))
-    dialog.createCheckbox("Create individual bed files for each donor.",3, 0)
-    dialog.createCheckbox("Stratify results by microsatellite stability", 4, 0)
-    dialog.createCheckbox("Stratify results by mutation signature", 5, 0)
+    dialog.createCheckbox("Create individual bed files for each donor.",2, 0)
+    dialog.createCheckbox("Stratify results by microsatellite stability", 3, 0)
+    dialog.createCheckbox("Stratify results by mutation signature", 4, 0)
 
     # Run the UI
     dialog.mainloop()
@@ -197,12 +196,11 @@ def main():
     selections: Selections = dialog.selections
     ICGCFilePaths = list(selections.getFilePathGroups())[0] # A list of ICGC mutation file paths
     genomeFilePath = list(selections.getIndividualFilePaths())[0]
-    nucPosFilePath = list(selections.getIndividualFilePaths())[1]
     separateDonors = list(selections.getToggleStates())[0]
     stratifyByMS  = list(selections.getToggleStates())[1]
     stratifyByMutSig = list(selections.getToggleStates())[2]
 
-    parseICGC(ICGCFilePaths, genomeFilePath, nucPosFilePath, separateDonors, 
+    parseICGC(ICGCFilePaths, genomeFilePath, separateDonors, 
               stratifyByMS, stratifyByMutSig)
 
 if __name__ == "__main__": main()

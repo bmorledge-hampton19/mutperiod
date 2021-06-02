@@ -9,7 +9,7 @@ from mutperiodpy.helper_scripts.UsefulFileSystemFunctions import (getIsolatedPar
                                                                   getAcceptableChromosomes)
 
 
-def parseStandardBed(standardBedFilePaths, genomeFilePath, nucPosFilePath):
+def parseStandardBed(standardBedFilePaths, genomeFilePath):
 
     customBedOutputFilePaths = list() # The list of file paths to be passed to the custom bed parser.
 
@@ -30,7 +30,7 @@ def parseStandardBed(standardBedFilePaths, genomeFilePath, nucPosFilePath):
         customBedOutputFilePath = generateFilePath(directory = intermediateFilesDir, dataGroup = dataGroupName,
                                                    dataType = DataTypeStr.customInput, fileExtension = ".bed")
         customBedOutputFilePaths.append(customBedOutputFilePath)
-        generateMetadata(dataGroupName, getIsolatedParentDir(genomeFilePath), getIsolatedParentDir(nucPosFilePath), 
+        generateMetadata(dataGroupName, getIsolatedParentDir(genomeFilePath), 
                          os.path.basename(standardBedFilePath), InputFormat.standardBed, localRootDirectory)
 
         # Get the list of acceptable chromosomes.
@@ -55,9 +55,7 @@ def parseStandardBed(standardBedFilePaths, genomeFilePath, nucPosFilePath):
 
 
     # Pass the generated files to the custom bed parser.
-    parseCustomBed(customBedOutputFilePaths, genomeFilePath, nucPosFilePath, False, False, False, False)
-
-
+    parseCustomBed(customBedOutputFilePaths, genomeFilePath, False, False, False, False)
 
 
 if __name__ == "__main__":
@@ -66,7 +64,6 @@ if __name__ == "__main__":
     dialog = TkinterDialog(workingDirectory=getDataDirectory())
     dialog.createMultipleFileSelector("Standard Bed Data:",0,"dipy.bed",("Bed Files",".bed"),additionalFileEndings=("TA.bed",))    
     dialog.createFileSelector("Genome Fasta File:",1,("Fasta Files",".fa"))
-    dialog.createFileSelector("Strongly Positioned Nucleosome File:",2,("Bed Files",".bed"))
 
     # Run the UI
     dialog.mainloop()
@@ -78,6 +75,5 @@ if __name__ == "__main__":
     selections: Selections = dialog.selections
     standardBedFilePaths = list(selections.getFilePathGroups())[0]
     genomeFilePath = list(selections.getIndividualFilePaths())[0]
-    nucPosFilePath = list(selections.getIndividualFilePaths())[1]
 
-    parseStandardBed(standardBedFilePaths, genomeFilePath, nucPosFilePath)
+    parseStandardBed(standardBedFilePaths, genomeFilePath)
