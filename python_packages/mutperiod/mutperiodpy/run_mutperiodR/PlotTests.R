@@ -106,6 +106,9 @@ captureOutput = sapply(minorOutPositions, colorInRange, color = "#993299", dataC
 captureOutput = sapply(linkerPositions, colorInRange, color = "#ca0020", dataCol = dataCol)
 captureOutput = sapply(nucleosomePositions, colorInRange, color = "#0571b0", dataCol = dataCol)
 
+# Color linker DNA in linker+ plots.
+captureOutput = sapply(list(min(data$Dyad_Position):-73, 73:max(data$Dyad_Position)), colorInRange,
+                       color = "Gold", dataCol = dataCol)
 
 # Create grouped comparison figure
 
