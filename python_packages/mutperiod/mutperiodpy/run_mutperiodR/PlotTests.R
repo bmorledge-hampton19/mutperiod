@@ -8,10 +8,12 @@ load(choose.files(multi = FALSE))
 # Column names...
 # ...for normalized
 dataCol = "Normalized_Both_Strands"
+
 dataCol = "Normalized_Aligned_Strands"
 
 # ...for raw
 dataCol = "Both_Strands_Counts"
+
 dataCol = "Aligned_Strands_Counts"
 
 # Trim to the desired region
