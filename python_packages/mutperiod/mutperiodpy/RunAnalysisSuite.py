@@ -96,7 +96,8 @@ def main():
         customBackgroundMutationFilePath = getFilesInDirectory(customBackgroundDir, DataTypeStr.mutations + ".bed", searchRecursively = False)
         assert customBackgroundMutationFilePath is not None, "No parsed mutation file in the directory " + customBackgroundDir
 
-        runAnalysisSuite((customBackgroundMutationFilePath,), "No Normalization", None, useSingleNucRadius, includeLinker, useNucGroupRadius)
+        runAnalysisSuite((customBackgroundMutationFilePath,), nucleosomeMapNames, "No Normalization", None, 
+                          useSingleNucRadius, includeLinker, useNucGroupRadius)
 
         print ("Finished generating background!\n")
 
