@@ -87,8 +87,8 @@ def runNucleosomeMutationAnalysis(nucleosomeMutationCountsFilePaths: List[str], 
             
         else:
             print("Generating inputs to run analysis with grouped comparison...")
-            inputsFile.write('\n'.join(('$'.join(nucleosomeMutationCountsFilePaths), outputFilePath, str(defaultPeriodicity),
-                                        '$'.join(filePathGroup1), '$'.join(filePathGroup2))) + '\n')
+            inputsFile.write('\n'.join(('$'.join(nucleosomeMutationCountsFilePaths), outputFilePath,
+                                        '$'.join(filePathGroup1), '$'.join(filePathGroup2), str(defaultPeriodicity))) + '\n')
 
     # Call the R script
     print("Calling R script...")

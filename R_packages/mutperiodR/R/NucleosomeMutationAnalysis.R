@@ -9,7 +9,7 @@ generateMutperiodData = function(mutationCountsFilePaths, outputFilePath,
                                  relevantPeriodicityDefault = NA) {
 
   # A default periodicity of 0 is equivalent to NA, but the script expects NA, not 0 (whoops)
-  if (relevantPeriodicityDefault == 0) relevantPeriodicityDefault = NA
+  if (!is.na(relevantPeriodicityDefault) && relevantPeriodicityDefault == 0) relevantPeriodicityDefault = NA
 
   # Get the raw mutation counts for each given mutation counts file.
   # If naming conventions aren't enforced, it is assumed that the given mutation counts file will suffice.
