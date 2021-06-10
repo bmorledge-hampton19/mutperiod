@@ -66,7 +66,7 @@ def getFilePathGroup(potentialFilePaths, normalizationMethods: List[int], single
     return filePathGroup
 
 
-def runNucleosomeMutationAnalysis(nucleosomeMutationCountsFilePaths: List[str], outputFilePath: str, 
+def runNucleosomeMutationAnalysis(nucleosomeMutationCountsFilePaths: List[str], outputFilePath: str, defaultPeriodicity,
                                   filePathGroup1: List[str] = list(), filePathGroup2: List[str] = list()):
 
     # Check for valid input.
@@ -83,12 +83,12 @@ def runNucleosomeMutationAnalysis(nucleosomeMutationCountsFilePaths: List[str], 
     with open(inputsFilePath, 'w') as inputsFile:
         if (len(filePathGroup1) == 0 and len(filePathGroup2) == 0):
             print("Generating inputs to run analysis without grouped comparison...")
-            inputsFile.write('\n'.join(('$'.join(nucleosomeMutationCountsFilePaths), outputFilePath)) + '\n')
+            inputsFile.write('\n'.join(('$'.join(nucleosomeMutationCountsFilePaths), outputFilePath, str(defaultPeriodicity))) + '\n')
             
         else:
             print("Generating inputs to run analysis with grouped comparison...")
             inputsFile.write('\n'.join(('$'.join(nucleosomeMutationCountsFilePaths), outputFilePath,
-                                        '$'.join(filePathGroup1), '$'.join(filePathGroup2))) + '\n')
+                                        '$'.join(filePathGroup1), '$'.join(filePathGroup2), str(defaultPeriodicity))) + '\n')
 
     # Call the R script
     print("Calling R script...")
@@ -134,13 +134,18 @@ def main():
                                       DataTypeStr.normNucCounts + ".tsv",("Tab Seperated Values Files",".tsv"),
                                       additionalFileEndings = (DataTypeStr.rawNucCounts + ".tsv",))
     dialog.createFileSelector("Output File", 1, ("R Data File", ".rda"), ("Tab Separated Values File", ".tsv"), newFile = True)
+    
+    relevantPeriodicityDefault = dialog.createDynamicSelector(2,0)
+    relevantPeriodicityDefault.initCheckboxController("Specify constant period to analyze")
+    relevantPeriodicityDefault.initDisplay(True, selectionsID = "DefaultPeriodicity").createTextField("Periodicity:", 0, 0, 2, "0")
+    relevantPeriodicityDefault.initDisplayState()
 
-    mainGroupSearchRefine = dialog.createDynamicSelector(2, 0)
+    mainGroupSearchRefine = dialog.createDynamicSelector(3, 0)
     mainGroupSearchRefine.initCheckboxController("Filter counts files")
     mainGroupSearchRefine.initDisplay(True).createNucMutGroupSubDialog("MainGroup", 0)
     mainGroupSearchRefine.initDisplayState()
 
-    periodicityComparison = dialog.createDynamicSelector(3, 0)
+    periodicityComparison = dialog.createDynamicSelector(4, 0)
     periodicityComparison.initCheckboxController("Compare periodicities between two groups")
     periodicityGroupType = periodicityComparison.initDisplay(True,"periodicityGroupType")
 
@@ -178,6 +183,15 @@ def main():
     if periodicityGroupTypeSelector.getControllerVar() == "Against a newly selected group":
         secondaryNucMutCountsFilePaths = selections.getFilePathGroups("secondaryGroupFilePaths")[0]
     outputFilePath = list(selections.getIndividualFilePaths())[0]
+
+    # Get the default periodicity value, testing the string to see if it is a valid float, if necessary.
+    if relevantPeriodicityDefault.getControllerVar():
+        try:
+            defaultPeriodicity = float(dialog.selections.getTextEntries("DefaultPeriodicity")[0])
+        except ValueError:
+            print("Given default period: \"",dialog.selections.getTextEntries("DefaultPeriodicity")[0],
+                  "\" cannot be cast as a float.", sep = '')
+    else: defaultPeriodicity = 0
 
     # If group comparisons were requested, get the respective groups.
     filePathGroups:List[list] = list()
@@ -247,7 +261,7 @@ def main():
         #If this is the first pass through the loop, set the file paths list to the newly filtered list.
         if i == 0: nucleosomeMutationCountsFilePaths = filePathGroups[0]
 
-    runNucleosomeMutationAnalysis(filePathGroups[0], outputFilePath,
+    runNucleosomeMutationAnalysis(filePathGroups[0], outputFilePath, defaultPeriodicity,
                                   filePathGroups[1], filePathGroups[2])
 
 if __name__ == "__main__": main()

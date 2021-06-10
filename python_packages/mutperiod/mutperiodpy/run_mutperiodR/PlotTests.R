@@ -8,10 +8,12 @@ load(choose.files(multi = FALSE))
 # Column names...
 # ...for normalized
 dataCol = "Normalized_Both_Strands"
+
 dataCol = "Normalized_Aligned_Strands"
 
 # ...for raw
 dataCol = "Both_Strands_Counts"
+
 dataCol = "Aligned_Strands_Counts"
 
 # Trim to the desired region
@@ -112,11 +114,11 @@ captureOutput = sapply(list(min(data$Dyad_Position):-73, 73:max(data$Dyad_Positi
 
 # Create grouped comparison figure
 
-group1DataSetNames = sapply(strsplit(basename(nucPeriodData$group1Inputs),"_nucleosome"), function(x) x[1])
-group2DataSetNames = sapply(strsplit(basename(nucPeriodData$group2Inputs),"_nucleosome"), function(x) x[1])
+group1DataSetNames = sapply(strsplit(basename(mutperiodData$group1Inputs),"_nucleosome"), function(x) x[1])
+group2DataSetNames = sapply(strsplit(basename(mutperiodData$group2Inputs),"_nucleosome"), function(x) x[1])
 
-group1SNR = nucPeriodData$periodicityResults[Data_Set %in% group1DataSetNames, Peak_Periodicity]
-group2SNR = nucPeriodData$periodicityResults[Data_Set %in% group2DataSetNames, Peak_Periodicity]
+group1SNR = mutperiodData$periodicityResults[Data_Set %in% group1DataSetNames, SNR]
+group2SNR = mutperiodData$periodicityResults[Data_Set %in% group2DataSetNames, SNR]
 
 groupedSNRs = data.table(group = c(rep("MSS", length(group1SNR)),rep("MSI", length(group2SNR))),
                          SNR = c(group1SNR, group2SNR))
@@ -132,7 +134,7 @@ ggplot(groupedSNRs, aes(group, SNR)) +
 
 # ggplot jittered scatter plot (Log scale)
 ggplot(groupedSNRs, aes(group, SNR)) + 
-  geom_jitter(width = 0.2, shape = 1, size = 2) + 
+  geom_jitter(width = 0.2, height = 0, shape = 1, size = 2) + 
   stat_summary(fun = median, geom = "crossbar", width = 0.5, fatten = 2, colour = "red") +
   labs(title = "Translational Periodicity SNR Values",
        x = "Microsatellite Stability", y = "SNR") +

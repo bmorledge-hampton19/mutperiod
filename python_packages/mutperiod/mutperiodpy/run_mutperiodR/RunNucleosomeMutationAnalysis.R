@@ -42,21 +42,23 @@ if (length(args) == 1) {
   close(inputFile)
   
   # Call the function to generate the mutperiodData object based on the inputs in the given file.
-  if (length(inputs) == 2) {
+  if (length(inputs) == 3) {
     
-    # Two inputs should mean that the input file contains a string of mutation counts file paths separated by '$'
-    # followed by the path to the output file.
+    # Three inputs should mean that the input file contains a string of mutation counts file paths separated by '$'
+    # followed by the path to the output file and the default relevant periodicity.
     mutperiodData = generateMutperiodData(unlist(strsplit(inputs[1],'$',fixed = TRUE)), inputs[2], 
-                                          enforceInputNamingConventions = TRUE)
+                                          enforceInputNamingConventions = TRUE, 
+                                          relevantPeriodicityDefault = as.numeric(inputs[3]))
     
-  } else if (length(inputs) == 4) {
+  } else if (length(inputs) == 5) {
     
-    # Two inputs should mean that the input file contains the counts file paths and the output file path
-    # along with 2 file path groups for comparison (in that order).
+    # Five inputs should mean that the input file contains the counts file paths and the output file path
+    # along with 2 file path groups for comparison and the default relevant periodicity (in that order).
     mutperiodData = generateMutperiodData(unlist(strsplit(inputs[1],'$',fixed = TRUE)),inputs[2],
                                           unlist(strsplit(inputs[3],'$',fixed = TRUE)),
                                           unlist(strsplit(inputs[4],'$',fixed = TRUE)),
-                                          enforceInputNamingConventions = TRUE)
+                                          enforceInputNamingConventions = TRUE,
+                                          relevantPeriodicityDefault = as.numeric(inputs[5]))
     
   } else {
     stop("Invalid number of arguments in input file.  Expected 2 argument for mutation counts and output path, or

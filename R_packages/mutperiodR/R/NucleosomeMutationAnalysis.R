@@ -5,7 +5,11 @@ generateMutperiodData = function(mutationCountsFilePaths, outputFilePath,
                                  nucleosomeMutationCutoff = 5000,
                                  enforceInputNamingConventions = FALSE,
                                  alignStrands = FALSE,
-                                 outputGraphs = FALSE) {
+                                 outputGraphs = FALSE,
+                                 relevantPeriodicityDefault = NA) {
+
+  # A default periodicity of 0 is equivalent to NA, but the script expects NA, not 0 (whoops)
+  if (!is.na(relevantPeriodicityDefault) && relevantPeriodicityDefault == 0) relevantPeriodicityDefault = NA
 
   # Get the raw mutation counts for each given mutation counts file.
   # If naming conventions aren't enforced, it is assumed that the given mutation counts file will suffice.
@@ -57,7 +61,7 @@ generateMutperiodData = function(mutationCountsFilePaths, outputFilePath,
                                             function(x) data.table::fread(file = x))
   names(normalizedNucleosomeCountsTables) = validDataSetNames[!(validFilePaths %in% rawInputFilePaths)]
 
-  peakPeriodicities = numeric(length(validFilePaths))
+  relevantPeriodicities = numeric(length(validFilePaths))
   periodicityPValues = numeric(length(validFilePaths))
   periodicitySNRs = numeric(length(validFilePaths))
 
@@ -113,19 +117,33 @@ generateMutperiodData = function(mutationCountsFilePaths, outputFilePath,
     lombResult = lomb::lsp(counts, type = "period", from = lombFrom, to = lombTo,
                            ofac = 100, plot = FALSE)
 
-    # Store the relevant results!
-    peakPeriodicities[i] = lombResult$peak.at[1]
+    # Check for a default periodicity and if it is missing, retrieve the peak periodicity and associated power
+    if (is.na(relevantPeriodicityDefault)) {
+      relevantPeriodicity = lombResult$peak.at[1]
+      relevantPower = lombResult$peak
+    } else {
+      relevantPeriodicity = relevantPeriodicityDefault
+      closestPeriodicity = lombResult$scanned[which.min(abs(lombResult$scanned - relevantPeriodicity))]
+      if (abs(closestPeriodicity - relevantPeriodicity) > 0.1) {
+        stop(paste0("No scanned periodicities exist within 0.1 units of the given default periodicity, ",
+             relevantPeriodicity,".  Closest scanned periodicity is at ",closestPeriodicity,"."))
+      }
+      relevantPower = lombResult$power[lombResult$scanned == closestPeriodicity]
+    }
+
+    # Store the relevant periodicity and p-value
+    relevantPeriodicities[i] = relevantPeriodicity
     periodicityPValues[i] = lombResult$p.value
 
-    # Calculate the SNR
-    noiseBooleanVector = (lombResult$scanned < lombResult$peak.at[1] - 0.5
-                          | lombResult$scanned > lombResult$peak.at[1] + 0.5)
-    periodicitySNRs[i] = lombResult$peak / median(lombResult$power[noiseBooleanVector])
+    # Calculate the SNR, then store it.
+    noiseBooleanVector = (lombResult$scanned < relevantPeriodicity - 0.5
+                          | lombResult$scanned > relevantPeriodicity + 0.5)
+    periodicitySNRs[i] = relevantPower / median(lombResult$power[noiseBooleanVector])
 
   }
 
   # Create data.tables for all the results.
-  periodicityResults = data.table::data.table(Data_Set=validDataSetNames,Peak_Periodicity=peakPeriodicities,
+  periodicityResults = data.table::data.table(Data_Set=validDataSetNames,Relevant_Periodicity=relevantPeriodicities,
                                               PValue=periodicityPValues,SNR=periodicitySNRs)
 
   # Run the SNR wilcoxon's test if necessary.
@@ -147,10 +165,17 @@ generateMutperiodData = function(mutationCountsFilePaths, outputFilePath,
 
   }
 
+  # Create a string to represent the type of relevant periodicity
+  if (is.na(relevantPeriodicityDefault)) {
+    relevantPeriodicityType = "Peak Periodicity"
+  } else {
+    relevantPeriodicityType = "Default Periodicity"
+  }
+
   # Create the data object to return
   mutperiodData = list(normalizedNucleosomeCountsTables = normalizedNucleosomeCountsTables,
                        rawNucleosomeCountsTables = rawNucleosomeCountsTables,
-                       periodicityResults = periodicityResults)
+                       relevantPeriodicityType = relevantPeriodicityType, periodicityResults = periodicityResults)
 
   # Add the group comparison results if requested.
   if (compareGroups) {

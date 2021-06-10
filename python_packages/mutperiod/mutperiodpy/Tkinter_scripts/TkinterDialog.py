@@ -98,7 +98,8 @@ class TkinterDialog(tk.Frame):
            self.parentCanvas.bind("<Leave>", self.onLeaveScrollableCanvas)
 
         # Prepare lists for the selections object.
-        self.entries = list() # A list of entry objects created by the script
+        self.individualFileEntries = list() # A list of entry objects from individual file selections
+        self.plainTextEntries = list() # A list of entry objects from createTextField
         self.toggles = list() # A list of toggle objects created by the script
         self.dropdownVars = list() # A list of stringVars associated with dropdowns
         self.checkboxVars = list() # A list of intVars associated with checkboxes
@@ -222,7 +223,7 @@ class TkinterDialog(tk.Frame):
         #Create the "browse" button.
         tk.Button(fileSelectorFrame, text = "Browse", command = lambda: self.browseForFile(textField,title,newFile,directory,*fileTypes)).grid(row = 0, column = 3)
 
-        self.entries.append(textField)
+        self.individualFileEntries.append(textField)
 
 
     def createMultipleFileSelector(self, title: str, row: int, fileEnding, *fileTypes, additionalFileEndings = list(), columnSpan = 2):
@@ -316,7 +317,7 @@ class TkinterDialog(tk.Frame):
         textBox.grid(row = 1, columnspan = 2, pady = 2, padx = 5)
         textBox.insert(0, defaultText)
 
-        self.entries.append(textBox)
+        self.plainTextEntries.append(textBox)
 
 
     def createNucMutGroupSubDialog(self, groupID, row, column = 0, columnSpan = 1):
@@ -410,16 +411,20 @@ class TkinterDialog(tk.Frame):
 
         individualFilePaths = list() # A list of the filenames selected with the dialog
         filePathGroups = list() # A list of the groups of filepaths selected through MultipleFileSelectors.
+        textEntries = list()
         toggleStates = list() # A list of the states of the toggles in the dialog
         dropdownSelections = list() # A list of the selections from dropdown menus
 
         # Get all the different Selections-relevant variables from this dialog object
         if self.ID is not None:
-            for entry in self.entries:
-                individualFilePaths.append(entry.get())
+            for individualFileEntry in self.individualFileEntries:
+                individualFilePaths.append(individualFileEntry.get())
 
             for multipleFileSelector in self.multipleFileSelectors:
                 filePathGroups.append(multipleFileSelector.getFilePaths())
+
+            for plainTextEntry in self.plainTextEntries:
+                textEntries.append(plainTextEntry.get())
 
             for checkboxVar in self.checkboxVars:
                 toggleStates.append(checkboxVar.get())
@@ -428,7 +433,8 @@ class TkinterDialog(tk.Frame):
                 dropdownSelections.append(stringVar.get())
 
             # Generate the Selections object from the above variables.
-            self.selections = Selections(self.ID,individualFilePaths,filePathGroups,toggleStates,dropdownSelections)
+            self.selections = Selections(self.ID,individualFilePaths,filePathGroups, 
+                                         textEntries, toggleStates,dropdownSelections)
         
         # Generate a blank selections object if the ID is NoneType,
         else: self.selections = Selections(None)
@@ -451,7 +457,7 @@ class Selections:
     "A data structure to hold the results from the TkinterDialog"
 
     def __init__(self, ID, individualFilePaths = None, filePathGroups = None, 
-                 toggleStates = None, dropdownSelections = None):
+                 textEntries = None, toggleStates = None, dropdownSelections = None):
 
         # This is a dictionary for storing a list of input values as lists themselves.  (See key below)
         self.selectionSets: Dict[str, List[List]] = dict()
@@ -460,11 +466,13 @@ class Selections:
         # Populate the selectionSet associated with the given ID.  List indices are given below
         # 0: individual file paths
         # 1: file path groups
-        # 2: toggle states
-        # 3: dropdown selections
+        # 2: text entries
+        # 3: toggle states
+        # 4: dropdown selections
         if ID is not None:
             self.selectionSets[ID].append(individualFilePaths)
             self.selectionSets[ID].append(filePathGroups)
+            self.selectionSets[ID].append(textEntries)
             self.selectionSets[ID].append(toggleStates)
             self.selectionSets[ID].append(dropdownSelections)
 
@@ -479,11 +487,14 @@ class Selections:
     def getFilePathGroups(self, ID = "Root") -> list:
         return self.selectionSets[ID][1]
 
-    def getToggleStates(self, ID = "Root") -> list:
+    def getTextEntries(self, ID = "Root") -> list:
         return self.selectionSets[ID][2]
 
-    def getDropdownSelections(self, ID = "Root") -> list:
+    def getToggleStates(self, ID = "Root") -> list:
         return self.selectionSets[ID][3]
+
+    def getDropdownSelections(self, ID = "Root") -> list:
+        return self.selectionSets[ID][4]
 
 
     def addSelections(self, newSelections):
