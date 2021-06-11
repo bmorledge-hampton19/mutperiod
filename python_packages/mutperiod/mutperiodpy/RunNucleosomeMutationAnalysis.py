@@ -16,7 +16,8 @@ from mutperiodpy.Tkinter_scripts.TkinterDialog import TkinterDialog, Selections
 # MSS and MSI: Boolean values specifying whether the relevant microsatellite staibility status is allowed.
 # acceptableCohorts: a list of cohorts.  The mutation group must belong to at least one of these cohorts to be accepted.
 def getFilePathGroup(potentialFilePaths, normalizationMethods: List[int], singleNuc, nucGroup,
-                     acceptableMSCohorts: List[str], acceptableMutSigCohorts: List[str], acceptableCustomCohorts: List[str]):
+                     acceptableMSCohorts: List[str], acceptableMutSigCohorts: List[str], acceptableCustomCohorts: List[str],
+                     acceptableNucleosomeMaps: List[str]):
 
     filePathGroup = list() # The file paths to be returned.
 
@@ -59,6 +60,12 @@ def getFilePathGroup(potentialFilePaths, normalizationMethods: List[int], single
                     continue
 
         if invalidCohortGroup: continue
+
+        # Does it belong to one of the acceptable nucleosome maps given?
+        if len(acceptableNucleosomeMaps) != 0:
+            filePathNucleosomeMap = Metadata(potentialFilePath).nucPosName
+            if not filePathNucleosomeMap in acceptableNucleosomeMaps: continue
+
 
         # If we've made it this far, add the file path to the return group!
         filePathGroup.append(potentialFilePath)        
@@ -246,15 +253,26 @@ def main():
 
                 for line in customCohortsFile: acceptableCustomCohorts[line.strip()] = None
 
+        # Check for nucleosome map input
+        acceptableNucleosomeMaps = dict()
+        if selections.getToggleStates(dialogID)[10]:
+
+            acceptableNucMapsFilePath = selections.getIndividualFilePaths(dialogID + "NucleosomeMaps")[0]
+            with open(acceptableNucMapsFilePath, 'r') as acceptableNucMapsFile:
+
+                for line in acceptableNucMapsFile: acceptableNucleosomeMaps[line.strip()] = None
+
         # Get the file paths associated with the given parameters.
         if dialogID != "Secondary Group":
             filePathGroups[i] += getFilePathGroup(nucleosomeMutationCountsFilePaths, normalizationMethods, 
                                                   selections.getToggleStates(dialogID)[5], selections.getToggleStates(dialogID)[6],
-                                                  acceptableMSCohorts, acceptableMutSigCohorts, acceptableCustomCohorts)
+                                                  acceptableMSCohorts, acceptableMutSigCohorts, acceptableCustomCohorts,
+                                                  acceptableNucleosomeMaps)
         else: 
             filePathGroups[i] += getFilePathGroup(secondaryNucMutCountsFilePaths, normalizationMethods, 
                                                   selections.getToggleStates(dialogID)[5], selections.getToggleStates(dialogID)[6],
-                                                  acceptableMSCohorts, acceptableMutSigCohorts, acceptableCustomCohorts)
+                                                  acceptableMSCohorts, acceptableMutSigCohorts, acceptableCustomCohorts,
+                                                  acceptableNucleosomeMaps)
             filePathGroups[2] = filePathGroups[0].copy()
             filePathGroups[0] += filePathGroups[1]
 

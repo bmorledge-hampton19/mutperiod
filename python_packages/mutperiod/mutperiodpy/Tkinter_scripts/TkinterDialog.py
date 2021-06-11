@@ -370,6 +370,14 @@ class TkinterDialog(tk.Frame):
         customDynamicSelector.initDisplay(True, groupID + "CustomCohorts").createFileSelector("Custom Cohort Designations:", 0, ("Text File",".txt"))
         customDynamicSelector.initDisplayState()
         row += 1
+
+        nucleosomeMapSelector = group.createDynamicSelector(row, 0, 4)
+        nucleosomeMapSelector.initCheckboxController("Stratify by nucleosome map")
+        group.checkboxVars.append(nucleosomeMapSelector.controllerVar)
+        nucleosomeMapSelector.initDisplay(True, groupID + "NucleosomeMaps").createFileSelector("Nucleosome Map Designations:", 0, ("Text File",".txt"))
+        nucleosomeMapSelector.initDisplayState()
+        row += 1
+
         group.createLabel("",row,0)
 
 
