@@ -251,7 +251,7 @@ def generateNucleosomeMutationBackground(mutationBackgroundFilePaths, nucleosome
             print("Counting with nucleosome map:",nucleosomeMapName)
 
             # Get metadata (Assumes that the metadata has already been generated from a call to countNucleosomePositionMutations)
-            metadata = Metadata(os.path.join(mutationBackgroundFilePath,nucleosomeMapName))
+            metadata = Metadata(os.path.join(os.path.dirname(mutationBackgroundFilePath),nucleosomeMapName))
 
             # Determine the context of the mutation background file
             contextNum = getContext(mutationBackgroundFilePath, asInt=True)
