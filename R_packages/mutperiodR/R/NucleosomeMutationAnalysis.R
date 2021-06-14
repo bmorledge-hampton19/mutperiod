@@ -63,6 +63,7 @@ generateMutperiodData = function(mutationCountsFilePaths, outputFilePath,
 
   relevantPeriodicities = numeric(length(validFilePaths))
   periodicityPValues = numeric(length(validFilePaths))
+  relevantPeriodicityPowers = numeric(length(validFilePaths))
   periodicitySNRs = numeric(length(validFilePaths))
 
   for (i in 1:length(validFilePaths)) {
@@ -131,8 +132,9 @@ generateMutperiodData = function(mutationCountsFilePaths, outputFilePath,
       relevantPower = lombResult$power[lombResult$scanned == closestPeriodicity]
     }
 
-    # Store the relevant periodicity and p-value
+    # Store the relevant periodicity as well as its power and p-value
     relevantPeriodicities[i] = relevantPeriodicity
+    relevantPeriodicityPowers[i] = relevantPower
     periodicityPValues[i] = lombResult$p.value
 
     # Calculate the SNR, then store it.
@@ -144,7 +146,7 @@ generateMutperiodData = function(mutationCountsFilePaths, outputFilePath,
 
   # Create data.tables for all the results.
   periodicityResults = data.table::data.table(Data_Set=validDataSetNames,Relevant_Periodicity=relevantPeriodicities,
-                                              PValue=periodicityPValues,SNR=periodicitySNRs)
+                                              Power = relevantPeriodicityPowers, PValue=periodicityPValues,SNR=periodicitySNRs)
 
   # Run the SNR wilcoxon's test if necessary.
   if (compareGroups) {
