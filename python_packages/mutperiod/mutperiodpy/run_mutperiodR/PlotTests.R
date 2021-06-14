@@ -6,19 +6,23 @@ library(ggplot2)
 load(choose.files(multi = FALSE))
 
 # Column names...
-# ...for normalized
+# ...for normalized (CHOOSE ONE)
 dataCol = "Normalized_Both_Strands"
 
 dataCol = "Normalized_Aligned_Strands"
 
-# ...for raw
+# ...for raw (CHOOSE ONE)
 dataCol = "Both_Strands_Counts"
 
 dataCol = "Aligned_Strands_Counts"
 
-# Trim to the desired region
-nucPosCutoff = 60
-data = data[Dyad_Position >= -nucPosCutoff & Dyad_Position <= nucPosCutoff]
+# Where to trim rotational only plots to (default of 60 is what is used in the lsp analysis)
+rotationalOnlyCutoff = 60
+
+# Default plot values
+title = "PLACEHOLDER TITLE"
+yAxisLabel = "Feature Counts"
+ylim = c(0.75,)
 
 # from Pich et al.
 minorInPositions = list(3:7, 13:17, 24:28, 34:38, 44:48, 55:59, 65:69)
@@ -43,23 +47,83 @@ linkerPositions = lapply(0:8, function(x) return( append((73+x*192):(119+x*192),
 # Set up plot margins.
 par(mar = c(5,5,4,1))
 
-# Remove outliers (roughly)
-data = data[Normalized_Both_Strands < 2]
 
 # Average across 11 base pairs centered on the given position.
-smoothValues = function(middlePos, dataCol, averagingRadius = 5) {
+smoothValues = function(middlePos, data, dataCol, averagingRadius = 5) {
  
   positionsToAverage = (middlePos-averagingRadius):(middlePos+averagingRadius)
   valuesToAverage = data[Dyad_Position %in% positionsToAverage][[dataCol]]
   return(mean(valuesToAverage))
   
 }
-data[, (dataCol) := sapply(data$Dyad_Position, smoothValues, dataCol)]
 
-# Basic Plotting Template (ylim = c(min,max) to set axis bounds)
-plot(data$Dyad_Position, data[[dataCol]], type = 'l', main = "MSS Subset Translational Periodicity",
-     ylab = "Normalized Mutation Counts", xlab = "Position Relative to Dyad (bp)",
-     cex.lab = 2, cex.main = 1.75, cex.axis = 1.5, lwd = 3, col = "black", ylim = c(0.9,1.1))
+
+colorInRange = function(range, color, data, dataCol, includeNegative = TRUE) {
+
+  lines(data[Dyad_Position %in% range, Dyad_Position], 
+       data[Dyad_Position %in% range][[dataCol]], type = 'l', lwd = 3, col = color)
+  
+  if (includeNegative) {
+    
+    lines(data[Dyad_Position %in% -range, Dyad_Position], 
+         data[Dyad_Position %in% -range][[dataCol]], type = 'l', lwd = 3, col = color)
+    
+  }
+  
+}
+
+
+plottingSuite = function(data) {
+  
+  # Determine whether the data is rotational, rotational+linker, or translational.
+  rotational = FALSE
+  rotationalPlus = FALSE
+  translational = FALSE
+  if (min(data$Dyad_Position) >= -72) { 
+    rotational = TRUE
+  } else if (min(data$Dyad_Position) > -999) {
+    rotational = TRUE
+    rotationalPlus = TRUE
+  } else translational = TRUE
+  
+  # If only rotational, trim to the cutoff value
+  if (rotational && !rotationalPlus) {
+    data = data[Dyad_Position >= -rotationalOnlyCutoff & Dyad_Position <= rotationalOnlyCutoff]
+  }
+  
+  # Smooth if translational
+  if (translational) {
+    data = copy(data)
+    data[, (dataCol) := sapply(data$Dyad_Position, smoothValues, data = data, dataCol = dataCol)]
+  }
+  
+  # Basic Plotting Template (ylim = c(min,max) to set axis bounds)
+  plot(data$Dyad_Position, data[[dataCol]], type = 'l', main = title,
+       ylab = yAxisLabel, xlab = "Position Relative to Dyad (bp)",
+       cex.lab = 2, cex.main = 1.75, cex.axis = 1.5, lwd = 3, col = "black", ylim = ylim)
+  
+  # Color code
+  
+  if (rotational) {
+    # Color rotational positioning
+    captureOutput = sapply(minorInPositions, colorInRange, color = "#1bcc44", data = data, dataCol = dataCol)
+    captureOutput = sapply(minorOutPositions, colorInRange, color = "#993299", data = data, dataCol = dataCol)
+  }
+  
+  if (rotationalPlus) {
+    # Color linker DNA in linker+ plots.
+    captureOutput = sapply(list(min(data$Dyad_Position):-73, 73:max(data$Dyad_Position)), colorInRange,
+                           color = "Gold", data = data, dataCol = dataCol)
+  }
+  
+  if (translational) {
+    # Color translational positioning
+    captureOutput = sapply(linkerPositions, colorInRange, color = "#ca0020", data = data, dataCol = dataCol)
+    captureOutput = sapply(nucleosomePositions, colorInRange, color = "#0571b0", data = data, dataCol = dataCol)
+  }
+  
+}
+
 
 # Plot Plus and minus strands on the same graph (normalized).
 plot(data$Dyad_Position, data$Normalized_Plus_Strand, type = 'l', 
@@ -77,40 +141,6 @@ plot(data$Dyad_Position, data$Plus_Strand_Counts, type = 'l',
 lines(data$Dyad_Position, data$Minus_Strand_Counts, type = 'l',
       lwd = 3, col = "light green")
 
-# Plotting for paper
-plot(data$Dyad_Position, data[[dataCol]], type = 'l', main = NULL,
-     ylab = "Normalized Mutation Counts", xlab = "Position Relative to Dyad (bp)",
-     cex.lab = 1.75, cex.axis = 1.75, lwd = 3, col = "black", ylim = c(0.9,1.1))
-
-plot(data$Dyad_Position, data[[dataCol]], type = 'l', main = NULL,
-     yaxt = 'n', ylab = '', xlab = "Position Relative to Dyad (bp)",
-     cex.lab = 1.75, cex.axis = 1.75, lwd = 3, col = "black", ylim = c(0.9,1.1))
-
-colorInRange = function(range, color, dataCol, includeNegative = TRUE) {
-
-  lines(data[Dyad_Position %in% range, Dyad_Position], 
-       data[Dyad_Position %in% range][[dataCol]], type = 'l', lwd = 3, col = color)
-  
-  if (includeNegative) {
-    
-    lines(data[Dyad_Position %in% -range, Dyad_Position], 
-         data[Dyad_Position %in% -range][[dataCol]], type = 'l', lwd = 3, col = color)
-    
-  }
-  
-}
-
-# Color rotational positioning
-captureOutput = sapply(minorInPositions, colorInRange, color = "#1bcc44", dataCol = dataCol)
-captureOutput = sapply(minorOutPositions, colorInRange, color = "#993299", dataCol = dataCol)
-
-# Color translational positioning
-captureOutput = sapply(linkerPositions, colorInRange, color = "#ca0020", dataCol = dataCol)
-captureOutput = sapply(nucleosomePositions, colorInRange, color = "#0571b0", dataCol = dataCol)
-
-# Color linker DNA in linker+ plots.
-captureOutput = sapply(list(min(data$Dyad_Position):-73, 73:max(data$Dyad_Position)), colorInRange,
-                       color = "Gold", dataCol = dataCol)
 
 # Create grouped comparison figure
 
