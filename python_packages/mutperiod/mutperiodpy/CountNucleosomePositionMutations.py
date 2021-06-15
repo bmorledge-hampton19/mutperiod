@@ -244,6 +244,26 @@ class CountsFileGenerator():
 
 def countNucleosomePositionMutations(mutationFilePaths, nucleosomeMapNames, countSingleNuc, countNucGroup, linkerOffset):
 
+    # Check for the special case where a nucleosome map is being counted against itself to determine the nucleosome repeat length.
+    if (len(mutationFilePaths) == 1 and len(nucleosomeMapNames) == 1 and 
+        os.path.basename(mutationFilePaths[0]).rsplit('.',1)[0] == nucleosomeMapNames[0]):
+        
+        mutationFilePath = mutationFilePaths[0]
+        nucleosomeMapName = nucleosomeMapNames[0]
+
+        print("Counting nucleosome map", os.path.basename(nucleosomeMapName), "against itself in a 1000 bp radius.")
+
+        countsFilePath = generateFilePath(directory = os.path.dirname(mutationFilePath),
+                                          dataGroup = nucleosomeMapName, usesNucGroup = True, 
+                                          fileExtension = ".tsv", dataType = "self_" + DataTypeStr.rawNucCounts)
+        acceptableChromosomes = getAcceptableChromosomes(os.path.dirname(os.path.dirname(mutationFilePath)))
+
+        counter = CountsFileGenerator(mutationFilePath, mutationFilePath, countsFilePath, 1000, 0, acceptableChromosomes)
+        counter.count()
+        counter.writeResults()
+
+        return [countsFilePath]
+
     if not (countSingleNuc or countNucGroup):
         raise ValueError("Must count in either a single nucleosome or group nucleosome radius.")
 
@@ -305,7 +325,7 @@ def countNucleosomePositionMutations(mutationFilePaths, nucleosomeMapNames, coun
                 # Ready, set, go!
                 print("Counting mutations at each nucleosome position in a 73 bp radius +", str(linkerOffset), "bp linker DNA.")
                 counter = CountsFileGenerator(mutationFilePath, metadata.baseNucPosFilePath, 
-                                            nucleosomeMutationCountsFilePath, 73, linkerOffset, acceptableChromosomes)
+                                              nucleosomeMutationCountsFilePath, 73, linkerOffset, acceptableChromosomes)
                 counter.count()
                 counter.writeResults()
 
