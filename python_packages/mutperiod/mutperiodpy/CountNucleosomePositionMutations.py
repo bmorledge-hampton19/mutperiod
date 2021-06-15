@@ -50,7 +50,7 @@ class NucleosomeData:
 class CountsFileGenerator():
 
     def __init__(self, mutationFilePath, nucPosFilePath, nucleosomeMutationCountsFilePath, 
-                 dyadRadius, linkerOffset, acceptableChromosomes):
+                 dyadRadius, linkerOffset, acceptableChromosomes, selfCounting = False):
 
          # Open the mutation and nucleosome positions files to compare against one another.
         self.mutationFile = open(mutationFilePath, 'r')
@@ -61,6 +61,7 @@ class CountsFileGenerator():
         self.nucleosomeMutationCountsFilePath = nucleosomeMutationCountsFilePath
         self.dyadRadius = dyadRadius
         self.linkerOffset = linkerOffset
+        self.selfCounting = selfCounting
 
         # Dictionaries holding the number of mutations found at each dyad position from -73 to 73 for each strand (including half positions).
         self.minusStrandMutationCounts = dict() 
@@ -94,7 +95,9 @@ class CountsFileGenerator():
         if len(nextLine) == 0: 
             self.currentMutation = None
         # Otherwise, read in the next mutation.
-        else: self.currentMutation = MutationData(nextLine, self.acceptableChromosomes)
+        else: 
+            self.currentMutation = MutationData(nextLine, self.acceptableChromosomes)
+            if self.selfCounting: self.currentMutation.strand = '+'
 
     
     # Reads in the next nucleosome from the nucleosome positioning file into currentNucleosome
@@ -258,7 +261,8 @@ def countNucleosomePositionMutations(mutationFilePaths, nucleosomeMapNames, coun
                                           fileExtension = ".tsv", dataType = "self_" + DataTypeStr.rawNucCounts)
         acceptableChromosomes = getAcceptableChromosomes(os.path.dirname(os.path.dirname(mutationFilePath)))
 
-        counter = CountsFileGenerator(mutationFilePath, mutationFilePath, countsFilePath, 1000, 0, acceptableChromosomes)
+        counter = CountsFileGenerator(mutationFilePath, mutationFilePath, countsFilePath, 
+                                      1000, 0, acceptableChromosomes, True)
         counter.count()
         counter.writeResults()
 
