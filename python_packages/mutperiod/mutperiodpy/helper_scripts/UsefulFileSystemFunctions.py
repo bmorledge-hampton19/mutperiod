@@ -404,7 +404,7 @@ class Metadata:
         self.genomeFilePath = os.path.join(getExternalDataDirectory(),self.genomeName,self.genomeName+".fa")
 
         if self.nucPosName is not None:
-            self.baseNucPosFilePath = os.path.join(getExternalDataDirectory(), self.genomeName,
+            self.baseNucPosFilePath: str = os.path.join(getExternalDataDirectory(), self.genomeName,
                                                    self.nucPosName, self.nucPosName+".bed")
         else: self.baseNucPosFilePath = None
 
