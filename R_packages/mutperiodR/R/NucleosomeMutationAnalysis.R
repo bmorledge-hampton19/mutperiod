@@ -1,5 +1,5 @@
 #' @export
-generateMutperiodData = function(mutationCountsFilePaths, expectedPeakPeriodicities,
+generateMutperiodData = function(mutationCountsFilePaths, expectedPeakPeriodicities = NA,
                                  filePathGroup1 = '', filePathGroup2 = '',
                                  nucleosomeDyadPosCutoff = 60,
                                  nucleosomeMutationCutoff = 5000,

@@ -98,11 +98,11 @@ def runNucleosomeMutationAnalysis(nucleosomeMutationCountsFilePaths: List[str], 
             # If the file containing the nucleosome repeat length has not been generated, generate it!
             if not os.path.exists(nucMapRepeatLengthFilePath):
 
-                print("No repeat length file found for nucleosome map ",os.path.basename(nucMapFilePath),".  Generating...", sep = ' ')
+                print("No repeat length file found for nucleosome map ",os.path.basename(nucMapFilePath),".  Generating...", sep = '')
                 nucMapSelfCountsFilePath = countNucleosomePositionMutations((nucMapFilePath,), (getIsolatedParentDir(nucMapFilePath),),
-                                                                            None, None, None)
+                                                                            None, None, None)[0]
                 subprocess.run(("Rscript",os.path.join(rScriptsDirectory,"GetNucleosomeRepeatLength.R"),
-                                nucMapSelfCountsFilePath, nucMapRepeatLengthFilePath))
+                                nucMapSelfCountsFilePath, nucMapRepeatLengthFilePath), check = True)
 
             # Retrieve the repeat length for the nucleosome map.
             with open(nucMapRepeatLengthFilePath, 'r') as nucMapRepeatLengthFile:
@@ -220,7 +220,7 @@ def main():
     outputFilePath = list(selections.getIndividualFilePaths())[0]
 
     # Get the default periodicity value, testing the string to see if it is a valid float, if necessary.
-    overridePeakPeriodWithExpected = dialog.selections.getToggleStates()[0]
+    overridePeakPeriodWithExpected = bool(dialog.selections.getToggleStates()[0])
 
     # If group comparisons were requested, get the respective groups.
     filePathGroups:List[list] = list()

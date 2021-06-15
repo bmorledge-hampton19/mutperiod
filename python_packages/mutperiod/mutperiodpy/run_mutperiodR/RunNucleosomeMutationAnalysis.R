@@ -50,7 +50,7 @@ if (length(args) == 1) {
     mutperiodData = generateMutperiodData(unlist(strsplit(inputs[1],'$',fixed = TRUE)),
                                           as.numeric(unlist(strsplit(inputs[4],'$',fixed = TRUE))), 
                                           enforceInputNamingConventions = TRUE, 
-                                          relevantPeriodicityDefault = as.logical(inputs[3]))
+                                          overridePeakPeriodicityWithExpectedPeak = as.logical(inputs[3]))
     
   } else if (length(inputs) == 6) {
     
@@ -61,7 +61,7 @@ if (length(args) == 1) {
                                           unlist(strsplit(inputs[3],'$',fixed = TRUE)),
                                           unlist(strsplit(inputs[4],'$',fixed = TRUE)),
                                           enforceInputNamingConventions = TRUE,
-                                          relevantPeriodicityDefault = as.logical(inputs[5]))
+                                          overridePeakPeriodicityWithExpectedPeak = as.logical(inputs[5]))
     
   } else {
     stop("Invalid number of arguments in input file.  Expected 4 argument for mutation counts, output path, 
