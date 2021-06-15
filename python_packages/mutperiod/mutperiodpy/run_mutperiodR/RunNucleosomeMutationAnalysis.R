@@ -42,27 +42,31 @@ if (length(args) == 1) {
   close(inputFile)
   
   # Call the function to generate the mutperiodData object based on the inputs in the given file.
-  if (length(inputs) == 3) {
+  if (length(inputs) == 4) {
     
-    # Three inputs should mean that the input file contains a string of mutation counts file paths separated by '$'
-    # followed by the path to the output file and the default relevant periodicity.
-    mutperiodData = generateMutperiodData(unlist(strsplit(inputs[1],'$',fixed = TRUE)), inputs[2], 
+    # Four inputs should mean that the input file contains a string of mutation counts file paths separated by '$'
+    # followed by the path to the output file, whether or not to override the peak periodicity, and a string of
+    # expected counts seperated by '$'.
+    mutperiodData = generateMutperiodData(unlist(strsplit(inputs[1],'$',fixed = TRUE)),
+                                          as.numeric(unlist(strsplit(inputs[4],'$',fixed = TRUE))), 
                                           enforceInputNamingConventions = TRUE, 
-                                          relevantPeriodicityDefault = as.numeric(inputs[3]))
+                                          relevantPeriodicityDefault = as.logical(inputs[3]))
     
-  } else if (length(inputs) == 5) {
+  } else if (length(inputs) == 6) {
     
     # Five inputs should mean that the input file contains the counts file paths and the output file path
     # along with 2 file path groups for comparison and the default relevant periodicity (in that order).
-    mutperiodData = generateMutperiodData(unlist(strsplit(inputs[1],'$',fixed = TRUE)),inputs[2],
+    mutperiodData = generateMutperiodData(unlist(strsplit(inputs[1],'$',fixed = TRUE)),
+                                          as.numeric(unlist(strsplit(inputs[6],'$',fixed = TRUE))),
                                           unlist(strsplit(inputs[3],'$',fixed = TRUE)),
                                           unlist(strsplit(inputs[4],'$',fixed = TRUE)),
                                           enforceInputNamingConventions = TRUE,
-                                          relevantPeriodicityDefault = as.numeric(inputs[5]))
+                                          relevantPeriodicityDefault = as.logical(inputs[5]))
     
   } else {
-    stop("Invalid number of arguments in input file.  Expected 2 argument for mutation counts and output path, or
-          4 arguments for mutation counts, output path, and 2 file path groups for comparison.")
+    stop("Invalid number of arguments in input file.  Expected 4 argument for mutation counts, output path, 
+         and information on expected counts, or 6 arguments for mutation counts, output path,
+         2 file path groups for comparison, and information on expected counts.")
   }
   
   writeResults(mutperiodData, inputs[2])

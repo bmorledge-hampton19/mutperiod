@@ -3,9 +3,10 @@
 
 import os, subprocess, sys
 from typing import List
-from mutperiodpy.helper_scripts.UsefulFileSystemFunctions import (DataTypeStr, getDataDirectory, Metadata,
+from mutperiodpy.helper_scripts.UsefulFileSystemFunctions import (DataTypeStr, getDataDirectory, Metadata, getIsolatedParentDir,
                                                                   rScriptsDirectory, getContext, checkForNucGroup,
                                                                   getFilesInDirectory)
+from mutperiodpy.CountNucleosomePositionMutations import countNucleosomePositionMutations
 from mutperiodpy.Tkinter_scripts.TkinterDialog import TkinterDialog, Selections
 
 
@@ -73,7 +74,7 @@ def getFilePathGroup(potentialFilePaths, normalizationMethods: List[int], single
     return filePathGroup
 
 
-def runNucleosomeMutationAnalysis(nucleosomeMutationCountsFilePaths: List[str], outputFilePath: str, defaultPeriodicity,
+def runNucleosomeMutationAnalysis(nucleosomeMutationCountsFilePaths: List[str], outputFilePath: str, overridePeakPeriodicityWithExpected,
                                   filePathGroup1: List[str] = list(), filePathGroup2: List[str] = list()):
 
     # Check for valid input.
@@ -84,18 +85,48 @@ def runNucleosomeMutationAnalysis(nucleosomeMutationCountsFilePaths: List[str], 
     assert outputFilePath.endswith(".rda") or outputFilePath.endswith(".tsv"), (
         "Output file should end with \".rda\" or \".tsv\".")
 
+    # Retrieve the expected periods for each of the given counts files, generating them as necessary.
+    expectedPeriods = list()
+    for nucleosomeMutationCountsFilePath in nucleosomeMutationCountsFilePaths:
+
+        # If this file uses a nuc-group radius (1000bp) the expected peak must be determined empirically from the nucleosome map
+        if checkForNucGroup(nucleosomeMutationCountsFilePath):
+
+            nucMapFilePath = Metadata(nucleosomeMutationCountsFilePath).baseNucPosFilePath
+            nucMapRepeatLengthFilePath = nucMapFilePath.rsplit('.',1)[0] + "_repeat_length.txt"
+
+            # If the file containing the nucleosome repeat length has not been generated, generate it!
+            if not os.path.exists(nucMapRepeatLengthFilePath):
+
+                print("No repeat length file found for nucleosome map ",os.path.basename(nucMapFilePath),".  Generating...", sep = ' ')
+                nucMapSelfCountsFilePath = countNucleosomePositionMutations((nucMapFilePath,), (getIsolatedParentDir(nucMapFilePath),),
+                                                                            None, None, None)
+                subprocess.run(("Rscript",os.path.join(rScriptsDirectory,"GetNucleosomeRepeatLength.R"),
+                                nucMapSelfCountsFilePath, nucMapRepeatLengthFilePath))
+
+            # Retrieve the repeat length for the nucleosome map.
+            with open(nucMapRepeatLengthFilePath, 'r') as nucMapRepeatLengthFile:
+                expectedPeriods.append(nucMapRepeatLengthFile.readline().strip())
+                
+        # Otherwise, this file uses a single nucleosome radius, and the expected peak is simply 10.2
+        else: expectedPeriods.append("10.2")
+
     # Write the inputs to a temporary file to be read by the R script
     inputsFilePath = os.path.join(os.getenv("HOME"), ".mutperiod","R_inputs.txt")
 
     with open(inputsFilePath, 'w') as inputsFile:
         if (len(filePathGroup1) == 0 and len(filePathGroup2) == 0):
             print("Generating inputs to run analysis without grouped comparison...")
-            inputsFile.write('\n'.join(('$'.join(nucleosomeMutationCountsFilePaths), outputFilePath, str(defaultPeriodicity))) + '\n')
+            inputsFile.write('\n'.join(('$'.join(nucleosomeMutationCountsFilePaths), outputFilePath, 
+                                        str(overridePeakPeriodicityWithExpected), 
+                                        '$'.join(expectedPeriods))) + '\n')
             
         else:
             print("Generating inputs to run analysis with grouped comparison...")
             inputsFile.write('\n'.join(('$'.join(nucleosomeMutationCountsFilePaths), outputFilePath,
-                                        '$'.join(filePathGroup1), '$'.join(filePathGroup2), str(defaultPeriodicity))) + '\n')
+                                        '$'.join(filePathGroup1), '$'.join(filePathGroup2), 
+                                        str(overridePeakPeriodicityWithExpected),
+                                        '$'.join(expectedPeriods))) + '\n')
 
     # Call the R script
     print("Calling R script...")
@@ -142,10 +173,7 @@ def main():
                                       additionalFileEndings = (DataTypeStr.rawNucCounts + ".tsv",))
     dialog.createFileSelector("Output File", 1, ("R Data File", ".rda"), ("Tab Separated Values File", ".tsv"), newFile = True)
     
-    relevantPeriodicityDefault = dialog.createDynamicSelector(2,0)
-    relevantPeriodicityDefault.initCheckboxController("Specify constant period to analyze")
-    relevantPeriodicityDefault.initDisplay(True, selectionsID = "DefaultPeriodicity").createTextField("Periodicity:", 0, 0, 2, "0")
-    relevantPeriodicityDefault.initDisplayState()
+    dialog.createCheckbox("Use expected periodicity from nucleosome maps instead of peak periodicity", 2, 0)
 
     mainGroupSearchRefine = dialog.createDynamicSelector(3, 0)
     mainGroupSearchRefine.initCheckboxController("Filter counts files")
@@ -192,13 +220,7 @@ def main():
     outputFilePath = list(selections.getIndividualFilePaths())[0]
 
     # Get the default periodicity value, testing the string to see if it is a valid float, if necessary.
-    if relevantPeriodicityDefault.getControllerVar():
-        try:
-            defaultPeriodicity = float(dialog.selections.getTextEntries("DefaultPeriodicity")[0])
-        except ValueError:
-            print("Given default period: \"",dialog.selections.getTextEntries("DefaultPeriodicity")[0],
-                  "\" cannot be cast as a float.", sep = '')
-    else: defaultPeriodicity = 0
+    overridePeakPeriodWithExpected = dialog.selections.getToggleStates()[0]
 
     # If group comparisons were requested, get the respective groups.
     filePathGroups:List[list] = list()
@@ -279,7 +301,7 @@ def main():
         #If this is the first pass through the loop, set the file paths list to the newly filtered list.
         if i == 0: nucleosomeMutationCountsFilePaths = filePathGroups[0]
 
-    runNucleosomeMutationAnalysis(filePathGroups[0], outputFilePath, defaultPeriodicity,
+    runNucleosomeMutationAnalysis(filePathGroups[0], outputFilePath, overridePeakPeriodWithExpected,
                                   filePathGroups[1], filePathGroups[2])
 
 if __name__ == "__main__": main()
