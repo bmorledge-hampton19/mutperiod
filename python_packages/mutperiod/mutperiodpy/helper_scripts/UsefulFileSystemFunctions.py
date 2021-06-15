@@ -135,13 +135,16 @@ def checkDirs(*directoryPaths):
         if not os.path.exists(directoryPath): os.makedirs(directoryPath)
 
 
-# Given a genome fasta file, return the chromosomes present in that file.  
+# Given a genome fasta file (or directory containing a genome fasta file), return the chromosomes present in that file.  
 def getAcceptableChromosomes(genomeFilePath: str, returnFilePathInstead = False):
+
+    # If given a directory, retrieve the genome file path from it.
+    if os.path.isdir(genomeFilePath): genomeFilePath = os.path.join(genomeFilePath,os.path.basename(genomeFilePath) + ".fa")
 
     # Make sure we were given a reasonable file path.
     assert getIsolatedParentDir(genomeFilePath) in genomeFilePath and genomeFilePath.endswith(".fa"), \
         "Given file path does not appear to be a genome file path internal to mutperiod.  Make sure to \
-         choose a .fa file within the mutperiod_data/__external_data/[genome_name] directory"
+         choose a .fa file within the mutperiod_data/__external_data/[genome_name] directory or the genome directory itself."
 
     # Parse the path to the acceptable cohromosomes file from the given path.
     acceptableChromosomesFilePath = genomeFilePath.rsplit(".fa",1)[0] + "_acceptable_chromosomes.txt"
