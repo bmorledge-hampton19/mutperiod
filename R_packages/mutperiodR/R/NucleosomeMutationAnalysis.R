@@ -150,6 +150,7 @@ generateMutperiodData = function(mutationCountsFilePaths, expectedPeakPeriodicit
                                               Expected_Peak_Periodicity = expectedPeakPeriodicities,
                                               Power = relevantPeriodicityPowers,
                                               SNR = periodicitySNRs)
+  data.table::setorder(periodicityResults, Data_Set)
 
   # Run the SNR wilcoxon's test if necessary.
   if (compareGroups) {
