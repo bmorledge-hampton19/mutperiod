@@ -4,6 +4,7 @@ library(ggplot2)
 
 # Read in data.
 load(choose.files(multi = FALSE))
+dataSetNames = as.list(setNames(nm = mutperiodData$periodicityResults$Data_Set))
 
 # Column names...
 # ...for normalized (CHOOSE ONE)
@@ -22,7 +23,7 @@ rotationalOnlyCutoff = 60
 # Default plot values
 title = "PLACEHOLDER TITLE"
 yAxisLabel = "Feature Counts"
-ylim = c(0.75,)
+ylim = NULL
 
 # from Pich et al.
 minorInPositions = list(3:7, 13:17, 24:28, 34:38, 44:48, 55:59, 65:69)
@@ -37,12 +38,6 @@ minorInPositions = list(4:9-74, 14:19-74, 25:30-74, 36:41-74, 46:51-74, 56:61-74
                         5:9-74.5, 15:19-74.5, 26:30-74.5, 37:41-74.5, 47:51-74.5, 57:61-74.5, 67:71-74.5)
 minorOutPositions = list(9:14-74, 20:24-74, 31:35-74, 41:46-74 ,51:56-74, 61:66-74,
                          10:14-74.5, 21:24-74.5, 32:35-74.5, 42:46-74.5, 52:56-74.5, 62:66-74.5)
-
-# Nucleosome vs. Linker Positions (half-base positions included):
-nucleosomePositions = append(lapply(1:10, function(x) return( append((-73+x*192):(73+x*192), 
-                                                                     (-72.5+x*192):(72.5+x*192)))),
-                             list(0:73, 0.5:72.5))
-linkerPositions = lapply(0:8, function(x) return( append((73+x*192):(119+x*192), (72.5+x*192):(119.5+x*192))))
 
 # Set up plot margins.
 par(mar = c(5,5,4,1))
@@ -73,32 +68,41 @@ colorInRange = function(range, color, data, dataCol, includeNegative = TRUE) {
 }
 
 
-plottingSuite = function(data) {
+plottingSuite = function(dataSetName) {
+  
+  # Get the relevant counts and periodicity data for the given data set name.
+  if (dataSetName %in% names(mutperiodData$normalizedNucleosomeCountsTables)) {
+    countsData = mutperiodData$normalizedNucleosomeCountsTables[[dataSetName]]
+  } else if (dataSetName %in% names(mutperiodData$rawNucleosomeCountsTables)) {
+    countsData = mutperiodData$rawNucleosomeCountsTables[[dataSetName]]
+  } else stop("Unknown data set name.")
+  
+  periodicityData = as.list(mutperiodData$periodicityResults[Data_Set == dataSetName])
   
   # Determine whether the data is rotational, rotational+linker, or translational.
   rotational = FALSE
   rotationalPlus = FALSE
   translational = FALSE
-  if (min(data$Dyad_Position) >= -72) { 
+  if (min(countsData$Dyad_Position) >= -72) { 
     rotational = TRUE
-  } else if (min(data$Dyad_Position) > -999) {
+  } else if (min(countsData$Dyad_Position) > -999) {
     rotational = TRUE
     rotationalPlus = TRUE
   } else translational = TRUE
   
   # If only rotational, trim to the cutoff value
   if (rotational && !rotationalPlus) {
-    data = data[Dyad_Position >= -rotationalOnlyCutoff & Dyad_Position <= rotationalOnlyCutoff]
+    countsData = countsData[Dyad_Position >= -rotationalOnlyCutoff & Dyad_Position <= rotationalOnlyCutoff]
   }
   
   # Smooth if translational
   if (translational) {
-    data = copy(data)
-    data[, (dataCol) := sapply(data$Dyad_Position, smoothValues, data = data, dataCol = dataCol)]
+    countsData = copy(countsData)
+    countsData[, (dataCol) := sapply(countsData$Dyad_Position, smoothValues, data = countsData, dataCol = dataCol)]
   }
   
   # Basic Plotting Template (ylim = c(min,max) to set axis bounds)
-  plot(data$Dyad_Position, data[[dataCol]], type = 'l', main = title,
+  plot(countsData$Dyad_Position, countsData[[dataCol]], type = 'l', main = title,
        ylab = yAxisLabel, xlab = "Position Relative to Dyad (bp)",
        cex.lab = 2, cex.main = 1.75, cex.axis = 1.5, lwd = 3, col = "black", ylim = ylim)
   
@@ -106,24 +110,74 @@ plottingSuite = function(data) {
   
   if (rotational) {
     # Color rotational positioning
-    captureOutput = sapply(minorInPositions, colorInRange, color = "#1bcc44", data = data, dataCol = dataCol)
-    captureOutput = sapply(minorOutPositions, colorInRange, color = "#993299", data = data, dataCol = dataCol)
+    captureOutput = sapply(minorInPositions, colorInRange, color = "#1bcc44", data = countsData, dataCol = dataCol)
+    captureOutput = sapply(minorOutPositions, colorInRange, color = "#993299", data = countsData, dataCol = dataCol)
   }
   
   if (rotationalPlus) {
     # Color linker DNA in linker+ plots.
-    captureOutput = sapply(list(min(data$Dyad_Position):-73, 73:max(data$Dyad_Position)), colorInRange,
-                           color = "Gold", data = data, dataCol = dataCol)
+    captureOutput = sapply(list(min(countsData$Dyad_Position):-73, 73:max(countsData$Dyad_Position)), colorInRange,
+                           color = "Gold", data = countsData, dataCol = dataCol)
   }
   
   if (translational) {
+    
+    # Derive linker and nucleosome positions from the expected period of the data.
+    nucRepLen = round(periodicityData$Expected_Peak_Periodicity)
+    
+    nucleosomePositions = lapply(1:10, function(x) return(append((-73+x*nucRepLen):(73+x*nucRepLen), 
+                                                                 (-72.5+x*nucRepLen):(72.5+x*nucRepLen))))
+    nucleosomePositions = append(nucleosomePositions, list(0:73, 0.5:72.5))
+    linkerPositions = lapply(0:8, function(x) return( append((73+x*nucRepLen):(-73+(x+1)*nucRepLen), 
+                                                             (72.5+x*nucRepLen):(-72.5+(x+1)*nucRepLen))))
+    
     # Color translational positioning
-    captureOutput = sapply(linkerPositions, colorInRange, color = "#ca0020", data = data, dataCol = dataCol)
-    captureOutput = sapply(nucleosomePositions, colorInRange, color = "#0571b0", data = data, dataCol = dataCol)
+    captureOutput = sapply(nucleosomePositions, colorInRange, color = "#0571b0", data = countsData, dataCol = dataCol)
+    captureOutput = sapply(linkerPositions, colorInRange, color = "#ca0020", data = countsData, dataCol = dataCol)
   }
   
 }
 
+
+# Plot a bunch of figures together using facets, stratified by timepoint on one axis and domains on the other.
+expectedTimepoints = c("10m", "30m", "8h", "16h", "24h")
+expectedDomains = c("BLACK", "BLUE", "GREEN", "RED", "YELLOW")
+
+addTimepointAndDomainInfo = function(dataSetName) {
+  
+  timepoint = names(which(sapply(expectedTimepoints, function(x) grepl(x,dataSetName))))
+  domain = names(which(sapply(expectedDomains, function(x) grepl(x,dataSetName))))
+  
+  if (length(timepoint) == 0 || length(domain) == 0) return(data.table())
+  
+  if (dataSetName %in% names(mutperiodData$normalizedNucleosomeCountsTables)) {
+    countsData = mutperiodData$normalizedNucleosomeCountsTables[[dataSetName]]
+  } else if (dataSetName %in% names(mutperiodData$rawNucleosomeCountsTables)) {
+    countsData = mutperiodData$rawNucleosomeCountsTables[[dataSetName]]
+  } else stop("Unknown data set name.")
+  
+  return(countsData[, c("Timepoint", "Domain") := list(rep(timepoint, .N), rep(domain, .N))])
+  
+}
+
+translationalDataSetsLogicalVector = grepl("nuc-group", dataSetNames, fixed = TRUE)
+
+stratifiedCountsData = rbindlist(lapply(dataSetNames[translationalDataSetsLogicalVector], 
+                                                     addTimepointAndDomainInfo))
+stratifiedCountsData = rbindlist(lapply(dataSetNames[!translationalDataSetsLogicalVector], 
+                                                  addTimepointAndDomainInfo))
+
+ggplot(stratifiedCountsData,
+       aes_string("Dyad_Position", "Normalized_Both_Strands")) +
+  geom_line() +
+  labs(title = title, x = "Position Relative to Dyad (bp)", y = yAxisLabel) +
+  facet_grid(factor(Timepoint, levels = expectedTimepoints)~Domain) +
+  coord_cartesian(ylim = ylim) +
+  scale_x_continuous(breaks = c(round(min(stratifiedCountsData$Dyad_Position)/2),0,
+                                round(max(stratifiedCountsData$Dyad_Position)/2))) +
+  theme(plot.title = element_text(size = 20, hjust = 0.5),
+        axis.title = element_text(size = 15), axis.text = element_text(size = 12),
+        strip.text = element_text(size = 15))
 
 # Plot Plus and minus strands on the same graph (normalized).
 plot(data$Dyad_Position, data$Normalized_Plus_Strand, type = 'l', 
