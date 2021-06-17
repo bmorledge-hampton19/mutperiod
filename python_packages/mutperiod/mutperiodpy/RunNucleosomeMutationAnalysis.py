@@ -4,10 +4,10 @@
 import os, subprocess, sys
 from typing import List
 from mutperiodpy.helper_scripts.UsefulFileSystemFunctions import (DataTypeStr, getDataDirectory, Metadata, getIsolatedParentDir,
-                                                                  rScriptsDirectory, getContext, checkForNucGroup,
-                                                                  getFilesInDirectory)
+                                                                  rScriptsDirectory, getContext, checkForNucGroup)
+from benbiohelpers.FileSystemHandling.DirectoryHandling import getFilesInDirectory
 from mutperiodpy.CountNucleosomePositionMutations import countNucleosomePositionMutations
-from mutperiodpy.Tkinter_scripts.TkinterDialog import TkinterDialog, Selections
+from benbiohelpers.TkWrappers.TkinterDialog import TkinterDialog, Selections
 
 
 # Given a list of file paths pointing to nucleosome mutation data, returns the paths that fit the given specifications

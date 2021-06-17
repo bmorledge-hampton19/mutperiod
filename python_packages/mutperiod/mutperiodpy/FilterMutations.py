@@ -1,7 +1,7 @@
 # This script filters out individual mutations from a bed file as requested through a Tkinter interface.
 
 import os
-from mutperiodpy.Tkinter_scripts.TkinterDialog import TkinterDialog, Selections
+from benbiohelpers.TkWrappers.TkinterDialog import TkinterDialog, Selections
 from mutperiodpy.helper_scripts.UsefulFileSystemFunctions import getDataDirectory
 
 

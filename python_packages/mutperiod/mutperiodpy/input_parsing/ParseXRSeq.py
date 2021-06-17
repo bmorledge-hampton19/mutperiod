@@ -3,8 +3,9 @@
 
 from typing import List
 import os, subprocess
-from mutperiodpy.Tkinter_scripts.TkinterDialog import TkinterDialog, Selections
-from mutperiodpy.helper_scripts.UsefulBioinformaticsFunctions import bedToFasta, FastaFileIterator
+from benbiohelpers.TkWrappers.TkinterDialog import TkinterDialog, Selections
+from benbiohelpers.FileSystemHandling.BedToFasta import bedToFasta
+from benbiohelpers.FileSystemHandling.FastaFileIterator import FastaFileIterator
 from mutperiodpy.helper_scripts.UsefulFileSystemFunctions import (getIsolatedParentDir, generateFilePath, getDataDirectory,
                                                                   DataTypeStr, generateMetadata, InputFormat, getAcceptableChromosomes)
 from mutperiodpy.input_parsing.ParseCustomBed import parseCustomBed

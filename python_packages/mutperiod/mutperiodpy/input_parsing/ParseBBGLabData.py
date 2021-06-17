@@ -1,7 +1,7 @@
 # Parses data from the bbglab's format.  More of a proof of concept and mostly deprecated, tbh.
 
 import os, gzip
-from mutperiodpy.helper_scripts.UsefulBioinformaticsFunctions import reverseCompliment, isPurine
+from benbiohelpers.DNA_SequenceHandling import reverseCompliment, isPurine
 
 
 # This function takes the input from the bbglab's mutation data and converts it to bed format.

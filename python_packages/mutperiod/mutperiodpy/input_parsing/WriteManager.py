@@ -4,7 +4,7 @@
 import os, subprocess
 from typing import IO
 from mutperiodpy.helper_scripts.UsefulFileSystemFunctions import (Metadata, checkDirs, DataTypeStr, generateFilePath,
-                                                                  generateMetadata, getIsolatedParentDir)
+                                                                  generateMetadata)
 from mutperiodpy.input_parsing.IdentifyMSI import MSIIdentifier
 from mutperiodpy.input_parsing.IdentifyMutSigs import MutSigIdentifier
 

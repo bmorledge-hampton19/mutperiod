@@ -18,11 +18,13 @@
 
 import os, subprocess, sys
 from typing import List
-from mutperiodpy.Tkinter_scripts.TkinterDialog import TkinterDialog, Selections
+from benbiohelpers.TkWrappers.TkinterDialog import TkinterDialog, Selections
 from mutperiodpy.helper_scripts.UsefulFileSystemFunctions import (getDataDirectory, getIsolatedParentDir, generateMetadata, checkDirs, 
-                                                                  getFilesInDirectory, InputFormat, getAcceptableChromosomes)
-from mutperiodpy.helper_scripts.UsefulBioinformaticsFunctions import (bedToFasta, FastaFileIterator,
-                                                                      isPurine, reverseCompliment)
+                                                                  InputFormat, getAcceptableChromosomes)
+from benbiohelpers.FileSystemHandling.DirectoryHandling import getFilesInDirectory
+from benbiohelpers.FileSystemHandling.BedToFasta import bedToFasta
+from benbiohelpers.FileSystemHandling.FastaFileIterator import FastaFileIterator
+from benbiohelpers.DNA_SequenceHandling import isPurine, reverseCompliment
 from mutperiodpy.input_parsing.WriteManager import WriteManager
 
 

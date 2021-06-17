@@ -2,10 +2,10 @@
 # a trinucleotide context bed file.
 
 import os, subprocess
-from mutperiodpy.Tkinter_scripts.TkinterDialog import TkinterDialog, Selections
-from mutperiodpy.helper_scripts.UsefulBioinformaticsFunctions import reverseCompliment, isPurine
-from mutperiodpy.helper_scripts.UsefulFileSystemFunctions import (getIsolatedParentDir, generateFilePath, dataDirectory,
-                                                                  dataTypes, generateMetadata, getAcceptableChromosomes)
+from benbiohelpers.TkWrappers.TkinterDialog import TkinterDialog, Selections
+from benbiohelpers.DNA_SequenceHandling import reverseCompliment, isPurine
+from mutperiodpy.helper_scripts.UsefulFileSystemFunctions import (getIsolatedParentDir, generateFilePath, getDataDirectory,
+                                                                  DataTypeStr, generateMetadata, getAcceptableChromosomes)
                                                                   
 
 def parseKucabCompendium(kucabSubstitutionsFilePaths, genomeFilePath, nucPosFilePath, includeAllPAHs):
@@ -32,7 +32,7 @@ def parseKucabCompendium(kucabSubstitutionsFilePaths, genomeFilePath, nucPosFile
 
         # Generate the output file path and metadata
         outputTrinucBedFilePath = generateFilePath(directory = outputDirectory, dataGroup = dataGroupName,
-                                                   context = "trinuc", dataType = dataTypes.mutations, fileExtension = ".bed")
+                                                   context = "trinuc", dataType = DataTypeStr.mutations, fileExtension = ".bed")
         generateMetadata(dataGroupName, getIsolatedParentDir(genomeFilePath), getIsolatedParentDir(nucPosFilePath),
                          os.path.join("..",os.path.basename(kucabSubstitutionsFilePath)), outputDirectory)
 
@@ -110,7 +110,7 @@ def parseKucabCompendium(kucabSubstitutionsFilePaths, genomeFilePath, nucPosFile
 if __name__ == "__main__":
 
     #Create the Tkinter UI
-    dialog = TkinterDialog(workingDirectory=dataDirectory)
+    dialog = TkinterDialog(workingDirectory=getDataDirectory())
     dialog.createMultipleFileSelector("Kucab Substitutions File Paths:",0,"final.txt",("text files",".txt")) #NOTE: Weird file ending?
     dialog.createFileSelector("Genome Fasta File:",1,("Fasta Files",".fa"))
     dialog.createFileSelector("Strongly Positioned Nucleosome File:",2,("Bed Files",".bed"))

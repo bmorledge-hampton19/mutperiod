@@ -2,7 +2,7 @@
 # (Basically, it just replaces the 4th column with the auto-acquire '.' and the 5th column with "OTHER" and also generates metadata)
 
 import os
-from mutperiodpy.Tkinter_scripts.TkinterDialog import Selections, TkinterDialog
+from benbiohelpers.TkWrappers.TkinterDialog import Selections, TkinterDialog
 from mutperiodpy.input_parsing.ParseCustomBed import parseCustomBed
 from mutperiodpy.helper_scripts.UsefulFileSystemFunctions import (getIsolatedParentDir, generateFilePath, getDataDirectory,
                                                                   DataTypeStr, generateMetadata, InputFormat, checkDirs,

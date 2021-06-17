@@ -4,10 +4,11 @@
 import os, gzip, sys
 from typing import IO, List
 
-from mutperiodpy.Tkinter_scripts.TkinterDialog import TkinterDialog, Selections
+from benbiohelpers.TkWrappers.TkinterDialog import TkinterDialog, Selections
 from mutperiodpy.helper_scripts.UsefulFileSystemFunctions import (DataTypeStr, generateFilePath, getDataDirectory, checkDirs,
-                                                                  generateMetadata, getIsolatedParentDir, getFilesInDirectory, 
+                                                                  generateMetadata, getIsolatedParentDir,
                                                                   InputFormat, getAcceptableChromosomes)
+from benbiohelpers.FileSystemHandling.DirectoryHandling import getFilesInDirectory                                                                  
 from mutperiodpy.input_parsing.ParseCustomBed import parseCustomBed
 
 

@@ -1,9 +1,10 @@
 # This script takes data from the Alexandrov paper and parses it into a format acceptable for the rest of the pipeline.
 
 import os
-from mutperiodpy.Tkinter_scripts.TkinterDialog import TkinterDialog, Selections
+from benbiohelpers.TkWrappers.TkinterDialog import TkinterDialog, Selections
 from mutperiodpy.helper_scripts.UsefulFileSystemFunctions import (generateFilePath, generateMetadata, DataTypeStr, InputFormat,
-                                                                  checkDirs, getIsolatedParentDir, dataDirectory, getAcceptableChromosomes)
+                                                                  checkDirs, getIsolatedParentDir, getDataDirectory, 
+                                                                  getAcceptableChromosomes)
 from mutperiodpy.input_parsing.ParseCustomBed import parseCustomBed
 
 
@@ -58,7 +59,7 @@ def parseAlexandrov (bedInputFilePaths, genomeFilePath, nucPosFilePath):
 if __name__ == "__main__":
 
     #Create the Tkinter UI
-    dialog = TkinterDialog(workingDirectory=dataDirectory)
+    dialog = TkinterDialog(workingDirectory=getDataDirectory())
     dialog.createMultipleFileSelector("Input Files:",0,"alexandrov.txt",("text files",".txt"))
     dialog.createFileSelector("Genome Fasta File:",1,("Fasta Files",".fa"))
     dialog.createFileSelector("Strongly Positioned Nucleosome File:",2,("Bed Files",".bed"))

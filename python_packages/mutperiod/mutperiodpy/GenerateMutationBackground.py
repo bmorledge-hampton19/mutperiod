@@ -2,10 +2,11 @@
 # a genome fasta file.
 
 import os
-from mutperiodpy.helper_scripts.UsefulBioinformaticsFunctions import reverseCompliment, FastaFileIterator
+from benbiohelpers.DNA_SequenceHandling import reverseCompliment
+from benbiohelpers.FileSystemHandling.FastaFileIterator import FastaFileIterator
 from mutperiodpy.helper_scripts.UsefulFileSystemFunctions import (Metadata, DataTypeStr, generateFilePath, getContext,
                                                                   getDataDirectory, getAcceptableChromosomes)
-from mutperiodpy.Tkinter_scripts.TkinterDialog import TkinterDialog, Selections
+from benbiohelpers.TkWrappers.TkinterDialog import TkinterDialog, Selections
 
 
 # This function generates a file containing the frequencies of each tri/singlenuc context in a genome

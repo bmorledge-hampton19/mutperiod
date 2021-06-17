@@ -2,7 +2,7 @@
 
 import os, subprocess, datetime
 from typing import List, Dict
-from mutperiodpy.Tkinter_scripts.TkinterDialog import TkinterDialog, Selections
+from benbiohelpers.TkWrappers.TkinterDialog import TkinterDialog, Selections
 from mutperiodpy.helper_scripts.UsefulFileSystemFunctions import (getLinkerOffset, getContext, getDataDirectory, Metadata, 
                                                                   generateFilePath, DataTypeStr, rScriptsDirectory, checkForNucGroup)
 

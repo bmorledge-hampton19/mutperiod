@@ -2,10 +2,12 @@
 # generates a background file with the expected mutations at each dyad position from -73 to 73 (inclusive).
 
 import os
-from typing import Dict
-from mutperiodpy.Tkinter_scripts.TkinterDialog import TkinterDialog, Selections
-from mutperiodpy.helper_scripts.UsefulBioinformaticsFunctions import bedToFasta, reverseCompliment, FastaFileIterator
-from mutperiodpy.helper_scripts.UsefulFileSystemFunctions import getContext, getIsolatedParentDir, getLinkerOffset, Metadata, generateFilePath, DataTypeStr, getDataDirectory
+from benbiohelpers.TkWrappers.TkinterDialog import TkinterDialog, Selections
+from benbiohelpers.DNA_SequenceHandling import reverseCompliment
+from benbiohelpers.FileSystemHandling.BedToFasta import bedToFasta
+from benbiohelpers.FileSystemHandling.FastaFileIterator import FastaFileIterator
+from mutperiodpy.helper_scripts.UsefulFileSystemFunctions import (getContext, getIsolatedParentDir, Metadata, 
+                                                                  generateFilePath, DataTypeStr, getDataDirectory)
 
 
 # This function takes a bed file of strongly positioned nucleosomes and expands their coordinates to encompass

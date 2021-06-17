@@ -3,9 +3,10 @@
 
 from typing import List
 import os, sys
-from mutperiodpy.Tkinter_scripts.TkinterDialog import TkinterDialog, Selections
-from mutperiodpy.helper_scripts.UsefulFileSystemFunctions import (DataTypeStr, getDataDirectory, getFilesInDirectory, 
+from benbiohelpers.TkWrappers.TkinterDialog import TkinterDialog, Selections
+from mutperiodpy.helper_scripts.UsefulFileSystemFunctions import (DataTypeStr, getDataDirectory, 
                                                                   getContext, getIsolatedParentDir)
+from benbiohelpers.FileSystemHandling.DirectoryHandling import getFilesInDirectory
 from mutperiodpy.ExpandContext import expandContext
 from mutperiodpy.GenerateMutationBackground import generateMutationBackground
 from mutperiodpy.GenerateNucleosomeMutationBackground import generateNucleosomeMutationBackground

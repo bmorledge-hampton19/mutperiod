@@ -1,7 +1,7 @@
 # This script takes a given cohort group (e.g. microsatellite satellite stability) and groups it by a potential secondary cohort feature (e.g. mut sigs)
 import os
 from typing import Dict
-from mutperiodpy.Tkinter_scripts.TkinterDialog import TkinterDialog, Selections
+from benbiohelpers.TkWrappers.TkinterDialog import TkinterDialog, Selections
 from mutperiodpy.helper_scripts.UsefulFileSystemFunctions import getDataDirectory
 
 

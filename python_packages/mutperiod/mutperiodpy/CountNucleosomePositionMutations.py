@@ -5,7 +5,7 @@
 
 import os, warnings
 from typing import List
-from mutperiodpy.Tkinter_scripts.TkinterDialog import TkinterDialog, Selections
+from benbiohelpers.TkWrappers.TkinterDialog import TkinterDialog, Selections
 from mutperiodpy.helper_scripts.UsefulFileSystemFunctions import (Metadata, generateFilePath, generateMetadata, getDataDirectory,
                                                                   DataTypeStr, getAcceptableChromosomes, checkDirs, getIsolatedParentDir)
 

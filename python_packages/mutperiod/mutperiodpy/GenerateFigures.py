@@ -2,8 +2,8 @@
 # some nice plots for the files and exports them to a given location.
 
 import os, subprocess, sys
-from mutperiodpy.Tkinter_scripts.TkinterDialog import TkinterDialog
-from mutperiodpy.helper_scripts.UsefulFileSystemFunctions import getDataDirectory, rScriptsDirectory, checkDirs
+from benbiohelpers.TkWrappers.TkinterDialog import TkinterDialog
+from mutperiodpy.helper_scripts.UsefulFileSystemFunctions import getDataDirectory, rScriptsDirectory
 
 
 def generateFigures(tsvFilePaths, rdaFilePaths, exportPath, omitOutliers, smoothNucGroup, 

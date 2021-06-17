@@ -2,8 +2,9 @@
 # create a bed file with an expanded tri/pentanucleotide context around the mutation.
 
 import os
-from mutperiodpy.Tkinter_scripts.TkinterDialog import TkinterDialog, Selections
-from mutperiodpy.helper_scripts.UsefulBioinformaticsFunctions import bedToFasta, FastaFileIterator
+from benbiohelpers.TkWrappers.TkinterDialog import TkinterDialog, Selections
+from benbiohelpers.FileSystemHandling.BedToFasta import bedToFasta
+from benbiohelpers.FileSystemHandling.FastaFileIterator import FastaFileIterator
 from mutperiodpy.helper_scripts.UsefulFileSystemFunctions import Metadata, generateFilePath, DataTypeStr, getContext, getDataDirectory
 
 
