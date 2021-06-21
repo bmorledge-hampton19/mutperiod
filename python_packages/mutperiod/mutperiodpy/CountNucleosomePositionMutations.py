@@ -9,25 +9,9 @@ from benbiohelpers.TkWrappers.TkinterDialog import TkinterDialog, Selections
 from mutperiodpy.helper_scripts.UsefulFileSystemFunctions import (Metadata, generateFilePath, generateMetadata, getDataDirectory,
                                                                   DataTypeStr, getAcceptableChromosomes, checkDirs, getIsolatedParentDir)
 
-
 from benbiohelpers.CountThisInThat.Counter import ThisInThatCounter
-from benbiohelpers.CountThisInThat.InputDataStructures import EncompassingData, EncompassedData
-from benbiohelpers.CountThisInThat.OutputDataStratifiers import StrandComparisonODS
+from benbiohelpers.CountThisInThat.InputDataStructures import EncompassedDataDefaultStrand, EncompassingDataDefaultStrand
 from benbiohelpers.CountThisInThat.CounterOutputDataHandler import AmbiguityHandling, CounterOutputDataHandler
-
-
-class EncompassingNucleosomeData(EncompassingData):
-
-    def setLocationData(self, acceptableChromosomes):
-        super().setLocationData(acceptableChromosomes)
-        self.strand = '+'
-
-
-class EncompassedNucleosomeData(EncompassedData):
-
-    def setLocationData(self, acceptableChromosomes):
-        super().setLocationData(acceptableChromosomes)
-        self.strand = '+'
 
 
 class NucleosomeCODH(CounterOutputDataHandler):
@@ -49,8 +33,8 @@ class MutationsInNucleosomesCounter(ThisInThatCounter):
                                                              outputName = "Dyad_Position")
         self.outputDataHandler.addStrandComparisonStratifier(strandAmbiguityHandling = AmbiguityHandling.tolerate)
 
-    def constructEncompassingFeature(self, line) -> EncompassingNucleosomeData:
-        return EncompassingNucleosomeData(line, self.acceptableChromosomes)
+    def constructEncompassingFeature(self, line) -> EncompassingDataDefaultStrand:
+        return EncompassingDataDefaultStrand(line, self.acceptableChromosomes)
 
     def writeResults(self):
         return super().writeResults(customStratifyingNames=(None, {True:"Plus_Strand_Counts", False:"Minus_Strand_Counts"}))
@@ -58,8 +42,8 @@ class MutationsInNucleosomesCounter(ThisInThatCounter):
 
 class NucleosomesInNucleosomesCounter(MutationsInNucleosomesCounter):
 
-    def constructEncompassedFeature(self, line) -> EncompassedNucleosomeData:
-        return EncompassedNucleosomeData(line, self.acceptableChromosomes)
+    def constructEncompassedFeature(self, line) -> EncompassedDataDefaultStrand:
+        return EncompassedDataDefaultStrand(line, self.acceptableChromosomes)
 
 
 def countNucleosomePositionMutations(mutationFilePaths, nucleosomeMapNames, countSingleNuc, countNucGroup, linkerOffset):
