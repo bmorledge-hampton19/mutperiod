@@ -180,8 +180,8 @@ stratifiedCountsData = rbindlist(lapply(dataSetNames[!isTranslationalDataSets & 
 
 ggplot(stratifiedCountsData,
        aes_string("Dyad_Position", dataCol, color = "Domain")) +
-  scale_color_manual(values = c("BLACK" = "black", "BLUE" = "blue", "GREEN" = "green",
-                                "RED" = "red", "YELLOW" = "gold"), guide = FALSE) +
+  scale_color_manual(values = c("BLACK" = "black", "BLUE" = "blue", "GREEN" = "forestgreen",
+                                "RED" = "red", "YELLOW" = "gold2"), guide = FALSE) +
   geom_line() +
   labs(title = title, x = "Position Relative to Dyad (bp)", y = yAxisLabel) +
   facet_grid(factor(Timepoint, levels = expectedTimepoints)~Domain) +
