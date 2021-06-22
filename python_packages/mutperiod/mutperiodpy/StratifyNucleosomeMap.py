@@ -5,15 +5,13 @@
 
 import os
 from typing import List
-from benbiohelpers.TkWrappers.TkinterDialog import TkinterDialog, Selections
-from mutperiodpy.helper_scripts.UsefulFileSystemFunctions import (Metadata, generateFilePath, generateMetadata, getDataDirectory,
-                                                                  DataTypeStr, getAcceptableChromosomes, checkDirs, getIsolatedParentDir)
+from benbiohelpers.TkWrappers.TkinterDialog import TkinterDialog
+from mutperiodpy.helper_scripts.UsefulFileSystemFunctions import (getDataDirectory, checkDirs)
 
 from benbiohelpers.FileSystemHandling.DirectoryHandling import checkDirs
 from benbiohelpers.CountThisInThat.Counter import ThisInThatCounter
 from benbiohelpers.CountThisInThat.InputDataStructures import EncompassedDataDefaultStrand, EncompassingDataDefaultStrand
-from benbiohelpers.CountThisInThat.CounterOutputDataHandler import AmbiguityHandling, CounterOutputDataHandler
-from benbiohelpers.CountThisInThat.OutputDataStratifiers import sortPositionIDs
+from benbiohelpers.CountThisInThat.CounterOutputDataHandler import CounterOutputDataHandler
 
 class NucleosomeStratifier(ThisInThatCounter):
 
