@@ -209,7 +209,28 @@ lines(data$Dyad_Position, data$Minus_Strand_Counts, type = 'l',
       lwd = 3, col = "light green")
 
 
-# Create grouped comparison figure
+# Plot nucleosome self-counts...
+data[Dyad_Position == 0, Both_Strands_Counts := 0]
+data[,Counts_Per_Thousand_Total := Both_Strands_Counts/sum(data$Both_Strands_Counts) * 1000]
+
+# ... With base R plotting
+plot(data$Dyad_Position, data$Counts_Per_Thousand_Total, type = 'l', main = title,
+     ylab = yAxisLabel, xlab = "Position Relative to Dyad (bp)",
+     cex.lab = 2, cex.main = 1.75, cex.axis = 1.5, lwd = 1.5, col = "black", ylim = ylim)
+lines(data$Dyad_Position, data$Counts_Per_Thousand_Total, lwd = 1.5, col = "gold2")
+
+#... With ggplot
+ggplot(data, aes_string("Dyad_Position", dataCol, color = "Color")) +
+  scale_color_manual(values = c("BLACK" = "black", "BLUE" = "blue", "GREEN" = "forestgreen",
+                                "RED" = "red", "YELLOW" = "gold2"), guide = FALSE) +
+  geom_line() +
+  labs(title = title, x = "Position Relative to Dyad (bp)", y = yAxisLabel) +
+  coord_cartesian(ylim = ylim) +
+  theme(plot.title = element_text(size = 20, hjust = 0.5),
+        axis.title = element_text(size = 15), axis.text = element_text(size = 12),
+        strip.text = element_text(size = 15))
+
+### Create grouped comparison figure
 
 group1DataSetNames = sapply(strsplit(basename(mutperiodData$group1Inputs),"_nucleosome"), function(x) x[1])
 group2DataSetNames = sapply(strsplit(basename(mutperiodData$group2Inputs),"_nucleosome"), function(x) x[1])
@@ -235,7 +256,7 @@ ggplot(groupedSNRs, aes(group, SNR)) +
   stat_summary(fun = median, geom = "crossbar", width = 0.5, fatten = 2, colour = "red") +
   labs(title = "Translational Periodicity SNR Values",
        x = "Microsatellite Stability", y = "SNR") +
-  scale_y_continuous(trans = "log10", breaks = c(10,100,1000)) + annotation_logticks(sides = 'l') +
+  scale_y_continuous(trans = "log10", breaks = c(1,10,100,1000)) + annotation_logticks(sides = 'l') +
   theme(plot.title = element_text(size = 20, hjust = 0.5), axis.title = element_text(size = 15),
         axis.text.x = element_text(size = 15), axis.title.x = element_blank())
 
@@ -245,6 +266,7 @@ ggplot(groupedSNRs, aes(group, SNR)) +
   stat_summary(fun = median, geom = "crossbar", width = 0.5, fatten = 2, colour = "red") +
   labs(title = "Peak Translational Periodicity Values",
        x = "Microsatellite Stability", y = "Peak Periodicity") +
+  coord_cartesian(ylim = c(1,1000)) +
   theme(plot.title = element_text(size = 20, hjust = 0.5), axis.title = element_text(size = 15),
         axis.text.x = element_text(size = 15), axis.title.x = element_blank())
 
