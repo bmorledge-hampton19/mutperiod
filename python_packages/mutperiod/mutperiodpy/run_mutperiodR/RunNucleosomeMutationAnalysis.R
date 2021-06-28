@@ -42,31 +42,31 @@ if (length(args) == 1) {
   close(inputFile)
   
   # Call the function to generate the mutperiodData object based on the inputs in the given file.
-  if (length(inputs) == 4) {
+  if (length(inputs) == 5) {
     
-    # Four inputs should mean that the input file contains a string of mutation counts file paths separated by '$'
-    # followed by the path to the output file, whether or not to override the peak periodicity, and a string of
-    # expected counts seperated by '$'.
+    # Five inputs runs the analysis without grouped comparison.
     mutperiodData = generateMutperiodData(unlist(strsplit(inputs[1],'$',fixed = TRUE)),
-                                          as.numeric(unlist(strsplit(inputs[4],'$',fixed = TRUE))), 
+                                          expectedPeakPeriodicities = 
+                                            as.numeric(unlist(strsplit(inputs[4],'$',fixed = TRUE))), 
                                           enforceInputNamingConventions = TRUE, 
-                                          overridePeakPeriodicityWithExpectedPeak = as.logical(inputs[3]))
+                                          overridePeakPeriodicityWithExpectedPeak = as.logical(inputs[3]),
+                                          alignStrands = as.logical(inputs[5]))
     
-  } else if (length(inputs) == 6) {
+  } else if (length(inputs) == 7) {
     
-    # Five inputs should mean that the input file contains the counts file paths and the output file path
-    # along with 2 file path groups for comparison and the default relevant periodicity (in that order).
+    # Seven inputs runs the analysis with grouped comparison.
     mutperiodData = generateMutperiodData(unlist(strsplit(inputs[1],'$',fixed = TRUE)),
-                                          as.numeric(unlist(strsplit(inputs[6],'$',fixed = TRUE))),
-                                          unlist(strsplit(inputs[3],'$',fixed = TRUE)),
-                                          unlist(strsplit(inputs[4],'$',fixed = TRUE)),
+                                          expectedPeakPeriodicities = 
+                                            as.numeric(unlist(strsplit(inputs[6],'$',fixed = TRUE))), 
+                                          filePathGroup1 = unlist(strsplit(inputs[3],'$',fixed = TRUE)),
+                                          filePathGroup2 = (strsplit(inputs[4],'$',fixed = TRUE)),
                                           enforceInputNamingConventions = TRUE,
-                                          overridePeakPeriodicityWithExpectedPeak = as.logical(inputs[5]))
+                                          overridePeakPeriodicityWithExpectedPeak = as.logical(inputs[5]),
+                                          alignStrands = as.logical(inputs[7]))
     
   } else {
-    stop("Invalid number of arguments in input file.  Expected 4 argument for mutation counts, output path, 
-         and information on expected counts, or 6 arguments for mutation counts, output path,
-         2 file path groups for comparison, and information on expected counts.")
+    stop("Invalid number of arguments in input file.  Expected 5 argument for analysis without grouped comparison, 
+         or 7 for analysis with grouped comparison.")
   }
   
   writeResults(mutperiodData, inputs[2])
