@@ -6,7 +6,7 @@ from benbiohelpers.TkWrappers.TkinterDialog import TkinterDialog, Selections
 from benbiohelpers.DNA_SequenceHandling import reverseCompliment
 from benbiohelpers.FileSystemHandling.BedToFasta import bedToFasta
 from benbiohelpers.FileSystemHandling.FastaFileIterator import FastaFileIterator
-from mutperiodpy.helper_scripts.UsefulFileSystemFunctions import (getContext, getIsolatedParentDir, Metadata, 
+from mutperiodpy.helper_scripts.UsefulFileSystemFunctions import (getContext, getIsolatedParentDir, Metadata, checkDirs,
                                                                   generateFilePath, DataTypeStr, getDataDirectory)
 
 
@@ -17,13 +17,17 @@ from mutperiodpy.helper_scripts.UsefulFileSystemFunctions import (getContext, ge
 # Returns the file path to the fasta file.
 def generateNucleosomeFasta(baseNucPosFilePath, genomeFilePath, dyadRadius, linkerOffset):
 
+    # Ensure that an intermediate files directory exists for the current nucleosome map.
+    intermediateFilesDir = os.path.join(os.path.dirname(baseNucPosFilePath), "intermediate_files")
+    checkDirs(intermediateFilesDir)
+
     # Generate a path to the fasta file of nucleosome sequences (Potentially including linker DNA).
     if dyadRadius == 73:
-        nucPosFastaFilePath = generateFilePath(directory = os.path.dirname(baseNucPosFilePath),
+        nucPosFastaFilePath = generateFilePath(directory = intermediateFilesDir,
                                                dataGroup = os.path.basename(baseNucPosFilePath).rsplit('.',1)[0],
                                                linkerOffset = linkerOffset, fileExtension = ".fa") 
     elif dyadRadius == 1000:
-        nucPosFastaFilePath = generateFilePath(directory = os.path.dirname(baseNucPosFilePath),
+        nucPosFastaFilePath = generateFilePath(directory = intermediateFilesDir,
                                                dataGroup = os.path.basename(baseNucPosFilePath).rsplit('.',1)[0],
                                                usesNucGroup = True, fileExtension = ".fa") 
     else: raise ValueError("Invalid counting radius: " + str(dyadRadius))
@@ -35,7 +39,7 @@ def generateNucleosomeFasta(baseNucPosFilePath, genomeFilePath, dyadRadius, link
     else: print("Nucleosome fasta file not found at: ",nucPosFastaFilePath,"\nGenerating...", sep = '')
 
     # Generate the (temporary) expanded file path.
-    expandedNucPosBedFilePath = generateFilePath(directory = os.path.dirname(baseNucPosFilePath),
+    expandedNucPosBedFilePath = generateFilePath(directory = intermediateFilesDir,
                                                  dataGroup = os.path.basename(baseNucPosFilePath).rsplit('.',1)[0],
                                                  dataType = "expanded", fileExtension = ".bed")
 
