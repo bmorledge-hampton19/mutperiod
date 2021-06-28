@@ -75,7 +75,7 @@ def getFilePathGroup(potentialFilePaths, normalizationMethods: List[int], single
 
 
 def runNucleosomeMutationAnalysis(nucleosomeMutationCountsFilePaths: List[str], outputFilePath: str, overridePeakPeriodicityWithExpected,
-                                  filePathGroup1: List[str] = list(), filePathGroup2: List[str] = list()):
+                                  alignStrands, filePathGroup1: List[str] = list(), filePathGroup2: List[str] = list()):
 
     # Check for valid input.
     assert (len(filePathGroup1) == 0) == (len(filePathGroup2) == 0), (
@@ -96,14 +96,16 @@ def runNucleosomeMutationAnalysis(nucleosomeMutationCountsFilePaths: List[str], 
             print("Generating inputs to run analysis without grouped comparison...")
             inputsFile.write('\n'.join(('$'.join(nucleosomeMutationCountsFilePaths), outputFilePath, 
                                         str(overridePeakPeriodicityWithExpected), 
-                                        '$'.join(expectedPeriods))) + '\n')
+                                        '$'.join(expectedPeriods),
+                                        str(alignStrands))) + '\n')
             
         else:
             print("Generating inputs to run analysis with grouped comparison...")
             inputsFile.write('\n'.join(('$'.join(nucleosomeMutationCountsFilePaths), outputFilePath,
                                         '$'.join(filePathGroup1), '$'.join(filePathGroup2), 
                                         str(overridePeakPeriodicityWithExpected),
-                                        '$'.join(expectedPeriods))) + '\n')
+                                        '$'.join(expectedPeriods),
+                                        str(alignStrands))) + '\n')
 
     # Call the R script
     print("Calling R script...")
@@ -137,7 +139,7 @@ def parseArgs(args):
         for filePath in filePathGroups[i]:
             if filePath not in filePathGroups[0]: filePathGroups[0].append(filePath)
 
-    runNucleosomeMutationAnalysis(filePathGroups[0], args.output_file_path,
+    runNucleosomeMutationAnalysis(filePathGroups[0], args.output_file_path, args.use_expected_periodicity, args.align_strands,
                                   filePathGroups[1], filePathGroups[2])
 
 
@@ -151,13 +153,15 @@ def main():
     dialog.createFileSelector("Output File", 1, ("R Data File", ".rda"), ("Tab Separated Values File", ".tsv"), newFile = True)
     
     dialog.createCheckbox("Use expected periodicity from nucleosome maps instead of peak periodicity", 2, 0)
+    dialog.createCheckbox("Align both DNA strands to run 5' to 3' before running the analysis", 3, 0)
+    dialog.createLabel('', 4, 0)
 
-    mainGroupSearchRefine = dialog.createDynamicSelector(3, 0)
+    mainGroupSearchRefine = dialog.createDynamicSelector(5, 0)
     mainGroupSearchRefine.initCheckboxController("Filter counts files")
     mainGroupSearchRefine.initDisplay(True).createNucMutGroupSubDialog("MainGroup", 0)
     mainGroupSearchRefine.initDisplayState()
 
-    periodicityComparison = dialog.createDynamicSelector(4, 0)
+    periodicityComparison = dialog.createDynamicSelector(6, 0)
     periodicityComparison.initCheckboxController("Compare periodicities between two groups")
     periodicityGroupType = periodicityComparison.initDisplay(True,"periodicityGroupType")
 
@@ -197,7 +201,8 @@ def main():
     outputFilePath = list(selections.getIndividualFilePaths())[0]
 
     # Get the default periodicity value, testing the string to see if it is a valid float, if necessary.
-    overridePeakPeriodWithExpected = bool(dialog.selections.getToggleStates()[0])
+    overridePeakPeriodWithExpected = bool(selections.getToggleStates()[0])
+    alignStrands = bool(selections.getToggleStates()[1])
 
     # If group comparisons were requested, get the respective groups.
     filePathGroups:List[list] = list()
@@ -278,7 +283,7 @@ def main():
         #If this is the first pass through the loop, set the file paths list to the newly filtered list.
         if i == 0: nucleosomeMutationCountsFilePaths = filePathGroups[0]
 
-    runNucleosomeMutationAnalysis(filePathGroups[0], outputFilePath, overridePeakPeriodWithExpected,
+    runNucleosomeMutationAnalysis(filePathGroups[0], outputFilePath, overridePeakPeriodWithExpected, alignStrands,
                                   filePathGroups[1], filePathGroups[2])
 
 if __name__ == "__main__": main()
