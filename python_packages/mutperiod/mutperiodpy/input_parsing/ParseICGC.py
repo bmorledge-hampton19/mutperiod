@@ -161,7 +161,6 @@ def parseArgs(args):
     
     # Otherwise, check to make sure valid arguments were passed:
     assert args.genome_file is not None, "No genome file was given."
-    assert args.nuc_pos_file is not None, "No nucleosome positions file was given."
 
     # Get the ICGC files from the given paths, searching directories if necessary.
     finalICGCPaths = list()
@@ -173,7 +172,7 @@ def parseArgs(args):
     assert len(finalICGCPaths) > 0, "No ICGC files were found to parse."
 
     # Run the parser.
-    parseICGC(finalICGCPaths, args.genome_file, args.nuc_pos_file, args.stratify_by_donors, 
+    parseICGC(list(set(finalICGCPaths)), args.genome_file, args.stratify_by_donors, 
               args.stratify_by_Microsatellite, args.stratify_by_Mut_Sigs)
 
 

@@ -91,7 +91,7 @@ def equivalentEntries(fastaEntry: FastaFileIterator.FastaEntry, choppedUpLine):
 # Checks each line for errors and auto acquire bases/strand designations where requested. 
 # Overwrites the original bed file if auto-acquiring occurred.
 # Also returns the numerical nucleotide context of the features.
-def autoAcquireAndQACheck(bedInputFilePath: str, genomeFilePath, autoAcquiredFilePath, onlySinglenuc, includeIndels):
+def autoAcquireAndQACheck(bedInputFilePath: str, genomeFilePath, autoAcquiredFilePath, onlySingleBaseSubs, includeIndels):
 
     print("Checking custom bed file for formatting and auto-acquire requests...")
 
@@ -103,7 +103,7 @@ def autoAcquireAndQACheck(bedInputFilePath: str, genomeFilePath, autoAcquiredFil
 
     # Unless indels are included, determine the context of the feqtures in the file.
     if includeIndels: context = 0
-    elif onlySinglenuc: context = 1
+    elif onlySingleBaseSubs: context = 1
     else: context = None
 
     # Get the list of acceptable chromosomes
@@ -167,7 +167,7 @@ def autoAcquireAndQACheck(bedInputFilePath: str, genomeFilePath, autoAcquiredFil
 
                 # Determine the sequence context of the line and whether or not it matches the sequence context for other.
                 # Skip this if the file is "mixed", if only single nucleotide context will be used, or if this line is an indel.
-                if not context == 0 and not onlySinglenuc and not (choppedUpLine[3] == '*' or choppedUpLine[4] == '*'):
+                if not context == 0 and not onlySingleBaseSubs and not (choppedUpLine[3] == '*' or choppedUpLine[4] == '*'):
 
                     sequenceLength = int(choppedUpLine[2]) - int(choppedUpLine[1])
                     if context is None: context = sequenceLength
@@ -188,7 +188,7 @@ def autoAcquireAndQACheck(bedInputFilePath: str, genomeFilePath, autoAcquiredFil
     
 
 # Converts the custom bed input into the singlenuc context format acceptable for analysis further down the pipeline.
-def convertToStandardInput(bedInputFilePath, writeManager: WriteManager, onlySinglenuc, includeIndels):
+def convertToStandardInput(bedInputFilePath, writeManager: WriteManager, onlySingleBaseSubs, includeIndels):
 
     print("Converting custom bed file to standard bed input...")
 
@@ -212,8 +212,7 @@ def convertToStandardInput(bedInputFilePath, writeManager: WriteManager, onlySin
 
             # Is this a single nucleotide feature, and if not, are those included?
             if int(choppedUpLine[2]) - int(choppedUpLine[1]) > 1:
-
-                if onlySinglenuc: continue
+                if onlySingleBaseSubs: continue
 
                 # Center features greater than a single nucleotide so that they occur at a single nucleotide position (or half position)
                 else: 
@@ -290,9 +289,9 @@ def setUpForMutSigStratification(writeManager: WriteManager, bedInputFilePath):
 
 # Handles the scripts main functionality.
 def parseCustomBed(bedInputFilePaths, genomeFilePath, stratifyByMS, 
-                   stratifyByMutSig, separateIndividualCohorts, onlySinglenuc = False, includeIndels = False):
+                   stratifyByMutSig, separateIndividualCohorts, onlySingleBaseSubs = False, includeIndels = False):
 
-    assert not (onlySinglenuc and includeIndels), "Indels are incompatible with single nucleotide features."
+    assert not (onlySingleBaseSubs and includeIndels), "Indels are incompatible with single nucleotide substitutions."
 
     for bedInputFilePath in bedInputFilePaths:
 
@@ -312,10 +311,10 @@ def parseCustomBed(bedInputFilePaths, genomeFilePath, stratifyByMS,
         checkDirs(intermediateFilesDir)
         autoAcquiredFilePath = os.path.join(intermediateFilesDir,"auto_acquire.fa")
 
-        strand = autoAcquireAndQACheck(bedInputFilePath, genomeFilePath, autoAcquiredFilePath, onlySinglenuc, includeIndels)
+        context = autoAcquireAndQACheck(bedInputFilePath, genomeFilePath, autoAcquiredFilePath, onlySingleBaseSubs, includeIndels)
 
         # Create an instance of the WriteManager to handle writing.
-        with WriteManager(dataDirectory, strand) as writeManager:
+        with WriteManager(dataDirectory, context) as writeManager:
 
             # Check to see if cohort designations are present to see if preparations need to be made.
             optionalArgument = tuple()
@@ -348,7 +347,7 @@ def parseCustomBed(bedInputFilePaths, genomeFilePath, stratifyByMS,
                 setUpForMutSigStratification(writeManager, bedInputFilePath)
 
             # Go, go, go!
-            convertToStandardInput(bedInputFilePath, writeManager, onlySinglenuc, includeIndels)
+            convertToStandardInput(bedInputFilePath, writeManager, onlySingleBaseSubs, includeIndels)
 
 
 # Given a namespace resulting from an argparser object (constructed in mutperiodpy.Main),
@@ -361,7 +360,6 @@ def parseArgs(args):
 
     # Otherwise, check to make sure valid arguments were passed:
     assert args.genome_file is not None, "No genome file was given."
-    assert args.nuc_pos_file is not None, "No nucleosome positions file was given."
 
     # Get the custom bed files from the given paths, searching directories if necessary.
     finalCustomBedPaths = list()
@@ -373,8 +371,8 @@ def parseArgs(args):
     assert len(finalCustomBedPaths) > 0, "No custom bed files were found to parse."
 
     # Run the parser.
-    parseCustomBed(finalCustomBedPaths, args.genome_file, args.nuc_pos_file, args.stratify_by_Microsatellite, 
-                   args.stratify_by_Mut_Sigs, args.stratify_by_cohorts, args.only_singlenuc, args.include_indels)
+    parseCustomBed(list(set(finalCustomBedPaths)), args.genome_file, args.stratify_by_Microsatellite, 
+                   args.stratify_by_Mut_Sigs, args.stratify_by_cohorts, args.only_sbs, args.include_indels)
 
 
 def main():
