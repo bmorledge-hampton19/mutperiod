@@ -1,6 +1,6 @@
 # This script contains various functions that I think will often be useful when managing filesystems for projects.
 
-import os, datetime
+import os, datetime, subprocess
 from enum import Enum
 from benbiohelpers.FileSystemHandling.DirectoryHandling import checkDirs, getIsolatedParentDir
 
@@ -159,7 +159,7 @@ def getLinkerOffset(filePath: str):
 
 # Returns the number of mutations that fall within nucleosomes (positions -73 to 73)
 # Input can be either a directory or the actual raw nucleosome counts file.
-# Only runs on raw nucleosome mutation counts files
+# Only runs on raw nucleosome mutation counts files.
 # Returns None if no such file was found. 
 # Only counts positions where the absolute value of their dyad position is less than or equal to
 # the given dyadPosCutoff.
@@ -201,6 +201,35 @@ def checkForNucGroup(filePath: str):
 
     # Check for the "nuc-group" identifier.
     return "nuc-group" in fileName
+
+
+# Retrieve the expected periods for each of the given counts files, generating them as necessary.
+def getExpectedPeriod(nucleosomeMutationCountsFilePath):
+
+    # If this file uses a nuc-group radius (1000bp) the expected period must be determined empirically from the nucleosome map
+    if checkForNucGroup(nucleosomeMutationCountsFilePath):
+
+        nucMapFilePath = Metadata(nucleosomeMutationCountsFilePath).baseNucPosFilePath
+        nucMapRepeatLengthFilePath = nucMapFilePath.rsplit('.',1)[0] + "_repeat_length.txt"
+
+        # If the file containing the nucleosome repeat length has not been generated, generate it!
+        if not os.path.exists(nucMapRepeatLengthFilePath):
+
+            # Import the counting function here.  (Importing at the top of the script creates a circular reference)
+            from mutperiodpy.CountNucleosomePositionMutations import countNucleosomePositionMutations
+
+            print("No repeat length file found for nucleosome map ",os.path.basename(nucMapFilePath),".  Generating...", sep = '')
+            nucMapSelfCountsFilePath = countNucleosomePositionMutations((nucMapFilePath,), (getIsolatedParentDir(nucMapFilePath),),
+                                                                        None, None, None)[0]
+            subprocess.run(("Rscript",os.path.join(rScriptsDirectory,"GetNucleosomeRepeatLength.R"),
+                            nucMapSelfCountsFilePath, nucMapRepeatLengthFilePath), check = True)
+
+        # Retrieve the repeat length for the nucleosome map.
+        with open(nucMapRepeatLengthFilePath, 'r') as nucMapRepeatLengthFile:
+            return float(nucMapRepeatLengthFile.readline().strip())
+            
+    # Otherwise, this file uses a single nucleosome radius, and the expected period is simply 10.2
+    else: return 10.2
 
 
 # Generates a file path in standardized format based on given information about the file.

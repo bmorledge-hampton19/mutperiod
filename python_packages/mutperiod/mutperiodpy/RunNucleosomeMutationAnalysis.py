@@ -4,7 +4,7 @@
 import os, subprocess, sys
 from typing import List
 from mutperiodpy.helper_scripts.UsefulFileSystemFunctions import (DataTypeStr, getDataDirectory, Metadata, getIsolatedParentDir,
-                                                                  rScriptsDirectory, getContext, checkForNucGroup)
+                                                                  rScriptsDirectory, getContext, checkForNucGroup, getExpectedPeriod)
 from benbiohelpers.FileSystemHandling.DirectoryHandling import getFilesInDirectory
 from mutperiodpy.CountNucleosomePositionMutations import countNucleosomePositionMutations
 from benbiohelpers.TkWrappers.TkinterDialog import TkinterDialog, Selections
@@ -85,31 +85,8 @@ def runNucleosomeMutationAnalysis(nucleosomeMutationCountsFilePaths: List[str], 
     assert outputFilePath.endswith(".rda") or outputFilePath.endswith(".tsv"), (
         "Output file should end with \".rda\" or \".tsv\".")
 
-    # Retrieve the expected periods for each of the given counts files, generating them as necessary.
-    expectedPeriods = list()
-    for nucleosomeMutationCountsFilePath in nucleosomeMutationCountsFilePaths:
-
-        # If this file uses a nuc-group radius (1000bp) the expected peak must be determined empirically from the nucleosome map
-        if checkForNucGroup(nucleosomeMutationCountsFilePath):
-
-            nucMapFilePath = Metadata(nucleosomeMutationCountsFilePath).baseNucPosFilePath
-            nucMapRepeatLengthFilePath = nucMapFilePath.rsplit('.',1)[0] + "_repeat_length.txt"
-
-            # If the file containing the nucleosome repeat length has not been generated, generate it!
-            if not os.path.exists(nucMapRepeatLengthFilePath):
-
-                print("No repeat length file found for nucleosome map ",os.path.basename(nucMapFilePath),".  Generating...", sep = '')
-                nucMapSelfCountsFilePath = countNucleosomePositionMutations((nucMapFilePath,), (getIsolatedParentDir(nucMapFilePath),),
-                                                                            None, None, None)[0]
-                subprocess.run(("Rscript",os.path.join(rScriptsDirectory,"GetNucleosomeRepeatLength.R"),
-                                nucMapSelfCountsFilePath, nucMapRepeatLengthFilePath), check = True)
-
-            # Retrieve the repeat length for the nucleosome map.
-            with open(nucMapRepeatLengthFilePath, 'r') as nucMapRepeatLengthFile:
-                expectedPeriods.append(nucMapRepeatLengthFile.readline().strip())
-                
-        # Otherwise, this file uses a single nucleosome radius, and the expected peak is simply 10.2
-        else: expectedPeriods.append("10.2")
+    # Retrieve the expected periods for each of the given counts files.
+    expectedPeriods = [str(getExpectedPeriod(nucleosomeMutationCountsFilePath)) for nucleosomeMutationCountsFilePath in nucleosomeMutationCountsFilePaths]
 
     # Write the inputs to a temporary file to be read by the R script
     inputsFilePath = os.path.join(os.getenv("HOME"), ".mutperiod","R_inputs.txt")
