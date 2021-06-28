@@ -83,7 +83,7 @@ plottingSuite = function(dataSetName) {
   rotational = FALSE
   rotationalPlus = FALSE
   translational = FALSE
-  if (min(countsData$Dyad_Position) >= -72) { 
+  if (min(countsData$Dyad_Position) >= -73) { 
     rotational = TRUE
   } else if (min(countsData$Dyad_Position) > -999) {
     rotational = TRUE
