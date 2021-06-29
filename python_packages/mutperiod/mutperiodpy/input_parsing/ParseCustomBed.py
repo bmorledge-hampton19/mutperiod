@@ -17,6 +17,7 @@
 # The file is then converted to a format suitable for the rest of the package's analysis scripts.
 
 import os, subprocess, sys
+from posixpath import abspath
 from typing import List
 from benbiohelpers.TkWrappers.TkinterDialog import TkinterDialog, Selections
 from mutperiodpy.helper_scripts.UsefulFileSystemFunctions import (getDataDirectory, getIsolatedParentDir, generateMetadata, checkDirs, 
@@ -360,18 +361,19 @@ def parseArgs(args):
 
     # Otherwise, check to make sure valid arguments were passed:
     assert args.genome_file is not None, "No genome file was given."
+    genomeFilePath = os.path.abspath(args.genome_file)
 
     # Get the custom bed files from the given paths, searching directories if necessary.
     finalCustomBedPaths = list()
     for bedFilePath in args.bedFilePaths:
         if os.path.isdir(bedFilePath):
-            finalCustomBedPaths += getFilesInDirectory(bedFilePath, "custom_input.bed")
-        else: finalCustomBedPaths.append(bedFilePath)
+            finalCustomBedPaths += [os.path.abspath(filePath) for filePath in getFilesInDirectory(bedFilePath, "custom_input.bed")]
+        else: finalCustomBedPaths.append(os.path.abspath(bedFilePath))
 
     assert len(finalCustomBedPaths) > 0, "No custom bed files were found to parse."
 
     # Run the parser.
-    parseCustomBed(list(set(finalCustomBedPaths)), args.genome_file, args.stratify_by_Microsatellite, 
+    parseCustomBed(list(set(finalCustomBedPaths)), genomeFilePath, args.stratify_by_Microsatellite, 
                    args.stratify_by_Mut_Sigs, args.stratify_by_cohorts, args.only_sbs, args.include_indels)
 
 

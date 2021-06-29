@@ -65,19 +65,19 @@ def parseArgs(args):
     if args.tsv_paths is not None:
         for tsvFilePath in args.tsv_paths:
             if os.path.isdir(tsvFilePath):
-                tsvFilePaths += getFilesInDirectory(tsvFilePath, DataTypeStr.generalNucCounts + ".tsv")
-            else: tsvFilePaths.append(tsvFilePath)
+                tsvFilePaths += [os.path.abspath(filePath) for filePath in getFilesInDirectory(tsvFilePath, DataTypeStr.generalNucCounts + ".tsv")]
+            else: tsvFilePaths.append(os.path.abspath(tsvFilePath))
     
     # Get valid rda paths from the given input.
     rdaFilePaths = list()
     if args.rda_paths is not None:
         for rdaFilePath in args.rda_paths:
             if os.path.isdir(rdaFilePath):
-                rdaFilePaths += getFilesInDirectory(rdaFilePath, ".rda")
-            else: rdaFilePaths.append(rdaFilePath)
+                rdaFilePaths += [os.path.abspath(filePath) for filePath in getFilesInDirectory(rdaFilePath, ".rda")]
+            else: rdaFilePaths.append(os.path.abspath(rdaFilePath))
 
-    if args.output_directory is not None: exportPath = args.output_directory
-    elif args.output_file is not None: exportPath = args.output_file
+    if args.output_directory is not None: exportPath = os.path.abspath(args.output_directory)
+    elif args.output_file is not None: exportPath = os.path.abspath(args.output_file)
     else: raise ValueError("No output path given.")
 
     # Pass the given commands to the generateFigures function

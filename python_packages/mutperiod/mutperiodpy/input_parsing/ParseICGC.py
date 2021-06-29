@@ -110,7 +110,7 @@ def parseICGC(ICGCFilePaths, genomeFilePath, separateDonors,
 
         if not str(ICGCFilePath).endswith(".gz"):
             raise ValueError("Error:  Expected ICGC file to be gzipped (.gz file format).")
-        if not "simple_somatic_mutation" in os.path.split(ICGCFilePath)[1]:
+        if not "simple_somatic_mutation" in os.path.basename(ICGCFilePath):
             raise ValueError("Error:  Expected ICGC file with \"simple_somatic_mutation\" in the name.\n" +
                             "Note: if a directory was specified to search for ICGC input files, all files ending in .tsv.gz\
                             are selected.")
@@ -161,18 +161,19 @@ def parseArgs(args):
     
     # Otherwise, check to make sure valid arguments were passed:
     assert args.genome_file is not None, "No genome file was given."
+    genomeFilePath = os.path.abspath(args.genome_file)
 
     # Get the ICGC files from the given paths, searching directories if necessary.
     finalICGCPaths = list()
     for ICGCFilePath in args.ICGCFilePaths:
         if os.path.isdir(ICGCFilePath):
-            finalICGCPaths += getFilesInDirectory(ICGCFilePath, ".tsv.gz")
-        else: finalICGCPaths.append(ICGCFilePath)
+            finalICGCPaths += [os.path.abspath(filePath) for filePath in getFilesInDirectory(ICGCFilePath, ".tsv.gz")]
+        else: finalICGCPaths.append(os.path.abspath(ICGCFilePath))
 
     assert len(finalICGCPaths) > 0, "No ICGC files were found to parse."
 
     # Run the parser.
-    parseICGC(list(set(finalICGCPaths)), args.genome_file, args.stratify_by_donors, 
+    parseICGC(list(set(finalICGCPaths)), genomeFilePath, args.stratify_by_donors, 
               args.stratify_by_Microsatellite, args.stratify_by_Mut_Sigs)
 
 

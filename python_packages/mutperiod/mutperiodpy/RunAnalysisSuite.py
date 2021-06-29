@@ -105,15 +105,15 @@ def parseArgs(args):
     finalBedMutationPaths = list()
     for mutationFilePath in args.mutationFilePaths:
         if os.path.isdir(mutationFilePath):
-            finalBedMutationPaths += getFilesInDirectory(mutationFilePath, DataTypeStr.mutations + ".bed")
-        else: finalBedMutationPaths.append(mutationFilePath)
+            finalBedMutationPaths += [os.path.abspath(filePath) for filePath in getFilesInDirectory(mutationFilePath, DataTypeStr.mutations + ".bed")]
+        else: finalBedMutationPaths.append(os.path.abspath(mutationFilePath))
 
     assert len(finalBedMutationPaths) > 0, "No bed mutation files were found."
 
     nucleosomeMapNames = list()
     for nucleosomeMapPath in args.nucleosome_maps:
         if os.path.isdir(nucleosomeMapPath): nucleosomeMapNames.append(os.path.basename(nucleosomeMapPath))
-        else: nucleosomeMapNames.append(getIsolatedParentDir(nucleosomeMapPath))
+        else: nucleosomeMapNames.append(getIsolatedParentDir(os.path.abspath(nucleosomeMapPath)))
 
     assert len(nucleosomeMapNames) > 0, "No nucleosome maps were found."
 
@@ -124,8 +124,8 @@ def parseArgs(args):
     elif args.context_normalization == 5 or args.context_normalization == 6: normalizationMethod = "Pentanuc/Hexanuc"
     elif args.background is not None: 
         normalizationMethod = "Custom Background"
-        if os.path.isdir(args.background): customBackgroundDir = args.background
-        else: customBackgroundDir = os.path.dirname(args.background)
+        if os.path.isdir(args.background): customBackgroundDir = os.path.abspath(args.background)
+        else: customBackgroundDir = os.path.dirname(os.path.abspath(args.background))
         if args.generate_background_immediately:
             generateCustomBackground(customBackgroundDir, nucleosomeMapNames, args.singlenuc_radius, 
                                      args.add_linker, args.nuc_group_radius)
