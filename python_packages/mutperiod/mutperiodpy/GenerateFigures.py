@@ -3,17 +3,31 @@
 
 import os, subprocess, sys
 from benbiohelpers.TkWrappers.TkinterDialog import TkinterDialog
-from mutperiodpy.helper_scripts.UsefulFileSystemFunctions import getDataDirectory, rScriptsDirectory
+from benbiohelpers.FileSystemHandling.DirectoryHandling import getFilesInDirectory
+from mutperiodpy.helper_scripts.UsefulFileSystemFunctions import getDataDirectory, getExpectedPeriod, rScriptsDirectory, DataTypeStr
 
 
-def generateFigures(tsvFilePaths, rdaFilePaths, exportPath, omitOutliers, smoothNucGroup, 
-                    includeNorm, includeRaw, strandAlign):
+def generateFigures(tsvFilePaths, rdaFilePaths, exportPath, omitOutliers, smoothNucGroup, strandAlign):
 
     # Check for invalid arguments.
-    assert len(rdaFilePaths) == 0 or (includeNorm or includeRaw), ("at least one rda file was included, but " +
-                                                                    "neither normalized nor raw counts are chosen to be used.")
+    assert len(rdaFilePaths) + len(tsvFilePaths) == 0, ("No files were found to generate graphs from.")
 
     assert os.path.isdir(exportPath) or exportPath.endswith(".pdf"), ("The export path: " + exportPath + " is neither a directory nor a pdf file.")
+
+    for tsvFilePath in tsvFilePaths:
+        assert tsvFilePath.endswith(DataTypeStr.generalNucCounts + ".tsv"), (
+            "Nucleosome counts tsv files should end with \"" + DataTypeStr.generalNucCounts + ".tsv\", "
+            "but the file " + tsvFilePath + "does not."
+        )
+
+    for rdaFilePath in rdaFilePaths:
+        assert rdaFilePath.endswith(".rda"), (
+            "Output rda files from periodicity analysis should end with \".rda\", "
+            "but the file " + rdaFilePath + "does not."
+        )
+
+    # Retrieve the expected periods for each of the given tsv counts files.
+    tsvExpectedPeriods = [str(getExpectedPeriod(tsvFilePath)) for tsvFilePath in tsvFilePaths]
 
     # Determine whether the export path is a directory or file and set variables accordingly.
     if os.path.isdir(exportPath):
@@ -29,6 +43,7 @@ def generateFigures(tsvFilePaths, rdaFilePaths, exportPath, omitOutliers, smooth
     # Write the inputs
     with open(inputsFilePath, 'w') as inputsFile:
         inputsFile.write('$'.join(tsvFilePaths) + '\n')
+        inputsFile.write('$'.join(tsvExpectedPeriods) + '\n')
         inputsFile.write('$'.join(rdaFilePaths) + '\n')
         inputsFile.write(exportDir + '\n')
         inputsFile.write(exportFileName + '\n')
@@ -36,7 +51,7 @@ def generateFigures(tsvFilePaths, rdaFilePaths, exportPath, omitOutliers, smooth
     # Call the R script to generate the figures.
     print("Calling R script...")
     subprocess.run(("Rscript",os.path.join(rScriptsDirectory,"GenerateFigures.R"),inputsFilePath, str(omitOutliers),
-                    str(smoothNucGroup), str(includeNorm), str(includeRaw), str(strandAlign)), check = True)
+                    str(smoothNucGroup), str(strandAlign)), check = True)
 
 
 def parseArgs(args):
@@ -45,17 +60,28 @@ def parseArgs(args):
     if len(sys.argv) == 2: 
         main(); return
 
-    # Format the arguments.
-    if args.tsv_paths is None: args.tsv_paths = list()
-    if args.rda_paths is None: args.rda_paths = list()
+    # Get valid tsv paths from the given input.
+    tsvFilePaths = list()
+    if args.tsv_paths is not None:
+        for tsvFilePath in args.tsv_paths:
+            if os.path.isdir(tsvFilePath):
+                tsvFilePaths += getFilesInDirectory(tsvFilePath, DataTypeStr.generalNucCounts + ".tsv")
+            else: tsvFilePaths.append(tsvFilePath)
+    
+    # Get valid rda paths from the given input.
+    rdaFilePaths = list()
+    if args.rda_paths is not None:
+        for rdaFilePath in args.rda_paths:
+            if os.path.isdir(rdaFilePath):
+                rdaFilePaths += getFilesInDirectory(rdaFilePath, ".rda")
+            else: rdaFilePaths.append(rdaFilePath)
 
     if args.output_directory is not None: exportPath = args.output_directory
     elif args.output_file is not None: exportPath = args.output_file
     else: raise ValueError("No output path given.")
 
     # Pass the given commands to the generateFigures function
-    generateFigures(args.tsv_paths, args.rda_paths, exportPath, args.omit_outliers, args.smooth_nuc_group,
-                    args.include_normalized, args.include_raw, args.align_strands)
+    generateFigures(list(set(tsvFilePaths)), list(set(rdaFilePaths)), exportPath, args.omit_outliers, args.smooth_nuc_group, args.align_strands)
 
 
 def main():
@@ -63,7 +89,7 @@ def main():
     #Create the Tkinter UI
     dialog = TkinterDialog(workingDirectory=getDataDirectory())
     dialog.createMultipleFileSelector("Nucleosome Counts Files:",0,
-                                      "nucleosome_mutation_counts.tsv",("tsv files",".tsv"))
+                                      DataTypeStr.generalNucCounts + ".tsv",("tsv files",".tsv"))
     dialog.createMultipleFileSelector("R Nucleosome Mutation Analysis Files:",1,
                                       ".rda",("rda files",".rda"))
 
@@ -96,11 +122,9 @@ def main():
 
     omitOutliers = bool(selections.getToggleStates()[0])
     smoothNucGroup = bool(selections.getToggleStates()[1])
-    includeNorm = bool(selections.getToggleStates()[2])
-    includeRaw = bool(selections.getToggleStates()[3])
     strandAlign = bool(selections.getToggleStates()[4])
 
     generateFigures(tsvFilePaths, rdaFilePaths, exportPath, omitOutliers, smoothNucGroup, 
-                    includeNorm, includeRaw, strandAlign)
+                    strandAlign)
 
 if __name__ == "__main__": main()
