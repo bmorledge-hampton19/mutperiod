@@ -182,14 +182,14 @@ generateMutperiodData = function(mutationCountsFilePaths, expectedPeakPeriodicit
   if (alignStrands) {
     strandPositioning = "Aligned"
   } else {
-    strandPositioning = "Adjacent"
+    strandPositioning = "Antiparallel"
   }
 
   # Create the data object to return
   mutperiodData = list(normalizedNucleosomeCountsTables = normalizedNucleosomeCountsTables,
                        rawNucleosomeCountsTables = rawNucleosomeCountsTables,
                        periodicityUsedForPowerAnalysis = periodicityUsedForPowerAnalysis,
-                       strandPositioning = strandPositioning
+                       strandPositioning = strandPositioning,
                        periodicityResults = periodicityResults)
 
   # Add the group comparison results if requested.
