@@ -2,10 +2,9 @@ library(data.table)
 
 # Creates figures for the given data and exports them to one or many pdf files.
 # Files can be given in tsv form, or as an rda file containing a mutperiodData object.
-generateFigures = function(tsvFilePaths = list(), rdaFilePaths = list(), exportDir = getwd(), 
-                           exportFileName = "plots.pdf", oneFile = TRUE, omitOutliers = TRUE,
-                           smoothNucGroup = TRUE, includeNorm = TRUE, includeRaw = FALSE,
-                           useAlignedStrands = FALSE) {
+generateFigures = function(tsvFilePaths = list(), tsvExpectedPeriods = list(), rdaFilePaths = list(), 
+                           exportDir = getwd(), exportFileName = "plots.pdf", oneFile = TRUE, 
+                           omitOutliers = TRUE, smoothNucGroup = TRUE, useAlignedStrands = FALSE) {
   
   ### Set up the positions for coloring periodic positions
   # Minor in vs. out positions from Cui and Zhurkin, with 1 added to each side and internal half-base positions included.
@@ -14,18 +13,13 @@ generateFigures = function(tsvFilePaths = list(), rdaFilePaths = list(), exportD
   minorOutPositions = list(9:14-74, 20:24-74, 31:35-74, 41:46-74 ,51:56-74, 61:66-74,
                            10:14-74.5, 21:24-74.5, 32:35-74.5, 42:46-74.5, 52:56-74.5, 62:66-74.5)
   
-  # Nucleosome vs. Linker Positions (half-base positions included):
-  nucleosomePositions = append(lapply(1:10, function(x) return( append((-73+x*192):(73+x*192), 
-                                                                       (-72.5+x*192):(72.5+x*192)))),
-                               list(0:73, 0.5:72.5))
-  linkerPositions = lapply(0:8, function(x) return( append((73+x*192):(119+x*192), (72.5+x*192):(119.5+x*192))))
-  
   # Retrieve and name a list of data tables from any given tsv files.
   if (length(tsvFilePaths) > 0) {
     
     tsvDerivedTables = lapply(tsvFilePaths, fread)
     names(tsvDerivedTables) = lapply(tsvFilePaths, function(x) strsplit(basename(x), 
                                                                         "_nucleosome_mutation_counts")[[1]][1])
+    names(tsvExpectedPeriods) = names(tsvDerivedTables)
     
   } else tsvDerivedTables = list()
   
@@ -36,18 +30,14 @@ generateFigures = function(tsvFilePaths = list(), rdaFilePaths = list(), exportD
     retrieveRDATables = function(rdaFilePath) {
       
       if (load(rdaFilePath) != "mutperiodData") {
-        stop("rda file does not contain a mutperiodData object.")
+        stop(paste("rda file", basename(rdaFilePath), "does not contain a mutperiodData object."))
       }
-      
-      normTables = list()
-      if (includeNorm) {
-        normTables = mutperiodData$normalizedNucleosomeCountsTables
-      }
-      
-      rawTables = list()
-      if (includeRaw) {
-        rawTables = mutperiodData$rawNucleosomeCountsTables
-      }
+
+      normTables = mutperiodData$normalizedNucleosomeCountsTables
+
+      rawTablesInAnalysis = names(mutperiodData$rawNucleosomeCountsTables) %in% 
+                              mutperiodData$periodicityResults$Data_Set
+      rawTables = mutperiodData$rawNucleosomeCountsTables[rawTablesInAnalysis]
       
       return(c(normTables,rawTables))
       
@@ -56,10 +46,26 @@ generateFigures = function(tsvFilePaths = list(), rdaFilePaths = list(), exportD
     # Apply the above function to the given file paths and combine them into one list.
     rdaDerivedTables = do.call(c, lapply(rdaFilePaths,retrieveRDATables))
     
-  } else rdaDerivedTables = list()
+    # Make another function for retrieving the expected periods from the given files...
+    retrieveRDAExpectedPeriods = function(rdaFilePath) {
+      
+      load(rdaFilePath)
+      return(setNames(mutperiodData$periodicityResults$Expected_Peak_Periodicity,
+                      mutperiodData$periodicityResults$Data_Set))
+      
+    }
+    
+    # ...and apply it!
+    rdaExpectedPeriods = do.call(c, lapply(rdaFilePaths,retrieveRDAExpectedPeriods))
+    
+  } else {
+    rdaDerivedTables = list()
+    rdaExpectedPeriods = list()
+  }
  
-  # Combine all the retrieved tables.
+  # Combine all the retrieved tables and expected periods
   countsTables = c(tsvDerivedTables, rdaDerivedTables)
+  expectedPeriods = c(tsvExpectedPeriods, rdaExpectedPeriods)
   
   # Set up the export of the files for a single file if requested.
   if (oneFile) pdf(file = file.path(exportDir,exportFileName), width = 10.8)
@@ -91,7 +97,10 @@ generateFigures = function(tsvFilePaths = list(), rdaFilePaths = list(), exportD
   
   # Takes a single counts table and title and plots it!
   # If requested, opens up a new pdf stream and omits outliers
-  plotCounts = function(countsTable, title) {
+  plotCounts = function(dataSetName, title) {
+    
+    # Retrieve the counts table using the data set name.
+    countsTable = countsTables[[dataSetName]]
     
     # Open a new stream if the user requested multiple export files.
     if (!oneFile) pdf(file = file.path(exportDir,paste0(title,".pdf")), width = 10.8)
@@ -163,6 +172,16 @@ generateFigures = function(tsvFilePaths = list(), rdaFilePaths = list(), exportD
       captureOutput = sapply(minorOutPositions, colorInRange, data = countsTable, 
                              color = "light green", dataCol = dataCol)
     } else {
+      
+      # For translational coloring, get the linker and nucleosome positions based on the expected period.
+      nucRepLen = round(expectedPeriods[[dataSetName]])
+      
+      nucleosomePositions = lapply(1:10, function(x) return(append((-73+x*nucRepLen):(73+x*nucRepLen), 
+                                                                   (-72.5+x*nucRepLen):(72.5+x*nucRepLen))))
+      nucleosomePositions = append(nucleosomePositions, list(0:73, 0.5:72.5))
+      linkerPositions = lapply(0:8, function(x) return( append((73+x*nucRepLen):(-73+(x+1)*nucRepLen), 
+                                                               (72.5+x*nucRepLen):(-72.5+(x+1)*nucRepLen))))
+      
       captureOutput = sapply(linkerPositions, colorInRange, data = countsTable, 
                              color = "blue", dataCol = dataCol)
       captureOutput = sapply(nucleosomePositions, colorInRange, data = countsTable, 
@@ -197,9 +216,9 @@ generateFigures = function(tsvFilePaths = list(), rdaFilePaths = list(), exportD
 # prompted to select rda files manually instead.
 args = commandArgs(trailingOnly = T)
 
-# If there are any inputs, there should be six total, one with the path to the file with information on input and 
-# output files and five to set other parameters of the graphing process.
-if (length(args) == 6) {
+# If there are any inputs, there should be four total, one with the path to the file with information on input and 
+# output files and three to set other parameters of the graphing process.
+if (length(args) == 4) {
   
   # Read in inputs from the given file path.
   inputFile = file(args[1],'r')
@@ -207,29 +226,30 @@ if (length(args) == 6) {
   close(inputFile)
   
   # Retrieve information for the function from the inputs file.
-  if (length(fileInputs) == 4) {
+  if (length(fileInputs) == 5) {
     
     tsvFilePaths = strsplit(fileInputs[1],'$',fixed = TRUE)[[1]]
-    rdaFilePaths = strsplit(fileInputs[2],'$',fixed = TRUE)[[1]]
+    tsvExpectedPeriods = as.numeric(strsplit(fileInputs[2],'$',fixed = TRUE)[[1]])
+    rdaFilePaths = strsplit(fileInputs[3],'$',fixed = TRUE)[[1]]
     
-    exportDir = fileInputs[3]
+    exportDir = fileInputs[4]
     
-    # The presence of a file name on line 4 indicates that all graphs are to be exported to that one file.
-    if (fileInputs[4] != '') {
+    # The presence of a file name on line 5 indicates that all graphs are to be exported to that one file.
+    if (fileInputs[5] != '') {
       oneFile = TRUE
-      exportFileName = fileInputs[4]
+      exportFileName = fileInputs[5]
     } else {
       oneFile = FALSE
       exportFileName = NA
     }
     
   } else {
-    stop(paste("Invalid number of arguments in input file.  Expected 4 argument for tsv file paths, rda file paths,",
-          "output file directory, and output file name."))
+    stop(paste("Invalid number of arguments in input file.  Expected 5 argument for tsv file paths,",
+          "expected tsv periods, rda file paths, output file directory, and output file name."))
   }
   
-  generateFigures(tsvFilePaths, rdaFilePaths, exportDir, exportFileName, oneFile, as.logical(args[2]),
-                  as.logical(args[3]), as.logical(args[4]), as.logical(args[5]), as.logical(args[6]))
+  generateFigures(tsvFilePaths, tsvExpectedPeriods, rdaFilePaths, exportDir, exportFileName, oneFile, 
+                  as.logical(args[2]), as.logical(args[3]), as.logical(args[4]))
   
 } else if (length(args) == 0) {
   generateFigures(rdaFilePaths = choose.files(multi = TRUE, caption = "Select mutperiod Result files",
