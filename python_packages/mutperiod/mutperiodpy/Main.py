@@ -108,13 +108,20 @@ def formatPeriodicityAnalysisParser(periodicityAnalysisParser: ArgumentParser):
                                                   "output the periodicity results.  The analysis process will attempt to create "
                                                   "the file if it does not already exist.").complete = fileCompletion
 
+    periodicityAnalysisParser.add_argument("-e", "--use-expected-periodicity", action = "store_true",
+                                           help = "Use the expected periodicity instead of the peak periodicity when calculating "
+                                                  "statistics such as the power of the periodicity or signal-to-noise ratio.")   
+    periodicityAnalysisParser.add_argument("-a", "--align-strands", action = "store_true",
+                                           help = "Align the strands in the counts data so that they both run 5' to 3'.  "
+                                                  "By default, the strand data is interpreted in the context of the double helix, "
+                                                  "with the two strands running antiparallel to one another.")
+
     groupComparison = periodicityAnalysisParser.add_argument_group("Periodicity Comparison")
     groupComparison.add_argument("--group-1", nargs = '*',
                                  help = "One or more nucleosome file paths, similar to the nucleosomeMutationFilePaths argument.  "
                                         "The periodicities of this group are compared to the periodicities in the --group-2 "
                                         "argument using a Wilcoxon rank sum test.  They are also added to the regular analysis, "
-                                        "so it is not necessary to duplicate the file paths passed as a part of the "
-                                        "nucleosomeMutationFilePaths argument.").complete = fileCompletion
+                                        "so it is not necessary to include them in the nucleosomeMutationFilePaths argument as well.").complete = fileCompletion
     groupComparison.add_argument("--group-2", nargs = '*',
                                        help = "The counterpart to --group-1").complete = fileCompletion
 
@@ -124,21 +131,23 @@ def formatGenerateFiguresParser(generateFiguresParser: ArgumentParser):
     generateFiguresParser.set_defaults(func = GenerateFigures.parseArgs)
 
     generateFiguresParser.add_argument("--rda-paths", nargs = '*',
-                                        help = "One or more paths to .rda files resulting from the periodicity analysis.").complete = fileCompletion
+                                        help = "One or more paths to .rda files resulting from the periodicity analysis "
+                                               "or directories to recursively search for those files.").complete = fileCompletion
     generateFiguresParser.add_argument("--tsv-paths", nargs = '*',
-                                       help = "One or more paths to .tsv nucleosome counts files.").complete = fileCompletion
+                                       help = "One or more paths to .tsv nucleosome counts files or directories to "
+                                              "recursively search for those files.").complete = fileCompletion
 
     outputGroup = generateFiguresParser.add_mutually_exclusive_group()
 
-    outputGroup.add_argument("--output-file",
+    outputGroup.add_argument("-f", "--output-file",
                                        help = "A single output file to send all generated figures to.  "
                                               "Should be a single pdf file.").complete = fileCompletion
 
-    outputGroup.add_argument("--output-directory",
+    outputGroup.add_argument("-d", "--output-directory",
                                        help = "A directory to to send each of the generated figures to.  "
                                               "Each figure is sent to a separate pdf file.").complete = fileCompletion
 
-    generateFiguresParser.add_argument("--omit-outliers", action = "store_true",
+    generateFiguresParser.add_argument("-r", "--remove-outliers", action = "store_true",
                                        help = "Remove any statistical outliers from the data before figure generation.")
 
     generateFiguresParser.add_argument("-s", "--smooth-nuc-group", action = "store_true",
@@ -148,12 +157,6 @@ def formatGenerateFiguresParser(generateFiguresParser: ArgumentParser):
     generateFiguresParser.add_argument("-a", "--align-strands", action = "store_true",
                                        help = "Invert counts on the minus strand so that counts for each strand "
                                               "run 5' to 3'.")
-
-    generateFiguresParser.add_argument("-n", "--include-normalized", action = "store_true",
-                                       help = "For .rda input, use normalized counts tables to generate figures.")
-
-    generateFiguresParser.add_argument("-r", "--include-raw", action = "store_true",
-                                       help = "For .rda input, use raw counts tables to generate figures.")
     
 
 def getMainParser():
