@@ -134,7 +134,7 @@ def parseArgs(args):
                     filePathGroups[i] += [os.path.abspath(filePath) for filePath in getFilesInDirectory(filePath, DataTypeStr.generalNucCounts + ".tsv")]
                 else: filePathGroups[i].append(os.path.abspath(filePath))
             
-            filePathGroups[i] = set(filePaths)
+        filePathGroups[i] = set(filePathGroups[i])
 
     # Make sure that any file paths passed to group 1 or group 2 are present in the default group.
     filePathGroups[0] = filePathGroups[0] | filePathGroups[1] | filePathGroups[2]

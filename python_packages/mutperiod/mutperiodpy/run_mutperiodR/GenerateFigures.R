@@ -97,13 +97,13 @@ generateFigures = function(tsvFilePaths = list(), tsvExpectedPeriods = list(), r
   
   # Takes a single counts table and title and plots it!
   # If requested, opens up a new pdf stream and omits outliers
-  plotCounts = function(dataSetName, title) {
+  plotCounts = function(dataSetName) {
     
     # Retrieve the counts table using the data set name.
     countsTable = countsTables[[dataSetName]]
     
     # Open a new stream if the user requested multiple export files.
-    if (!oneFile) pdf(file = file.path(exportDir,paste0(title,".pdf")), width = 10.8)
+    if (!oneFile) pdf(file = file.path(exportDir,paste0(dataSetName,".pdf")), width = 10.8)
     
     # Set up plot margins.
     par(mar = c(5,5,4,1))
@@ -124,7 +124,7 @@ generateFigures = function(tsvFilePaths = list(), tsvExpectedPeriods = list(), r
       } else if ("Both_Strands_Counts" %in% colnames(countsTable)) {
         dataCol = "Both_Strands_Counts"
         ylab = "Raw Counts"
-      } else stop(paste("Counts table for",title,"does not have the expected data columns.",
+      } else stop(paste("Counts table for",dataSetName,"does not have the expected data columns.",
                         "Expected a column titled \"Normalized_Both_Strands\" or \"Both_Strands_Counts\""))
       
     } else {
@@ -137,7 +137,7 @@ generateFigures = function(tsvFilePaths = list(), tsvExpectedPeriods = list(), r
       } else if ("Aligned_Strands_Counts" %in% colnames(countsTable)) {
         dataCol = "Aligned_Strands_Counts"
         ylab = "Raw Counts"
-      } else stop(paste("Counts table for",title,"does not have the expected data columns.",
+      } else stop(paste("Counts table for",dataSetName,"does not have the expected data columns.",
                         "Expected a column titled \"Normalized_Aligned_Strands\" or \"Aligned_Strands_Counts\""))
       
     }
@@ -160,8 +160,8 @@ generateFigures = function(tsvFilePaths = list(), tsvExpectedPeriods = list(), r
     }
     
     # Plot it!
-    print(paste("Generating plot for",title))
-    plot(countsTable$Dyad_Position, countsTable[[dataCol]], type = 'l', main = title,
+    print(paste("Generating plot for",dataSetName))
+    plot(countsTable$Dyad_Position, countsTable[[dataCol]], type = 'l', main = dataSetName,
          ylab = ylab, xlab = xlab,
          cex.lab = 2, cex.main = 1.75, lwd = 2, col = "black")
     
@@ -203,10 +203,10 @@ generateFigures = function(tsvFilePaths = list(), tsvExpectedPeriods = list(), r
   }
   
   # Pass the counts tables and their names to the plotting function
-  captureOutput = mapply(plotCounts,countsTables,names(countsTables))
+  captureOutput = sapply(sort(names(countsTables)), plotCounts)
   
   # Close the "oneFile" pdf stream if its open.
-  if (oneFile) dev.off()
+  if (oneFile) captureOutput = dev.off()
    
 }
 

@@ -103,7 +103,8 @@ def parseArgs(args):
 
     # Get the bed mutation files from the given paths, searching directories if necessary.
     finalBedMutationPaths = list()
-    for mutationFilePath in args.mutationFilePaths:
+    assert args.mutation_file_paths is not None, "No mutation file paths were given."
+    for mutationFilePath in args.mutation_file_paths:
         if os.path.isdir(mutationFilePath):
             finalBedMutationPaths += [os.path.abspath(filePath) for filePath in getFilesInDirectory(mutationFilePath, DataTypeStr.mutations + ".bed")]
         else: finalBedMutationPaths.append(os.path.abspath(mutationFilePath))
@@ -111,6 +112,7 @@ def parseArgs(args):
     assert len(finalBedMutationPaths) > 0, "No bed mutation files were found."
 
     nucleosomeMapNames = list()
+    assert args.nucleosome_maps is not None, "No nucleosome maps were given."
     for nucleosomeMapPath in args.nucleosome_maps:
         if os.path.isdir(nucleosomeMapPath): nucleosomeMapNames.append(os.path.basename(nucleosomeMapPath))
         else: nucleosomeMapNames.append(getIsolatedParentDir(os.path.abspath(nucleosomeMapPath)))
@@ -119,6 +121,7 @@ def parseArgs(args):
 
     # Determine what normalization method was selected.
     normalizationMethod = "No Normalization"
+    customBackgroundDir = None
     if args.context_normalization == 1 or args.context_normalization == 2: normalizationMethod = "Singlenuc/Dinuc"
     elif args.context_normalization == 3 or args.context_normalization == 4: normalizationMethod = "Trinuc/Quadrunuc"
     elif args.context_normalization == 5 or args.context_normalization == 6: normalizationMethod = "Pentanuc/Hexanuc"

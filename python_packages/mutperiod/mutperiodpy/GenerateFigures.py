@@ -10,7 +10,7 @@ from mutperiodpy.helper_scripts.UsefulFileSystemFunctions import getDataDirector
 def generateFigures(tsvFilePaths, rdaFilePaths, exportPath, omitOutliers, smoothNucGroup, strandAlign):
 
     # Check for invalid arguments.
-    assert len(rdaFilePaths) + len(tsvFilePaths) == 0, ("No files were found to generate graphs from.")
+    assert len(rdaFilePaths) + len(tsvFilePaths) > 0, ("No files were found to generate graphs from.")
 
     assert os.path.isdir(exportPath) or exportPath.endswith(".pdf"), ("The export path: " + exportPath + " is neither a directory nor a pdf file.")
 
@@ -81,7 +81,7 @@ def parseArgs(args):
     else: raise ValueError("No output path given.")
 
     # Pass the given commands to the generateFigures function
-    generateFigures(list(set(tsvFilePaths)), list(set(rdaFilePaths)), exportPath, args.omit_outliers, args.smooth_nuc_group, args.align_strands)
+    generateFigures(list(set(tsvFilePaths)), list(set(rdaFilePaths)), exportPath, args.remove_outliers, args.smooth_nuc_group, args.align_strands)
 
 
 def main():
