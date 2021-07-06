@@ -338,7 +338,7 @@ def parseCustomBed(bedInputFilePaths, genomeFilePath, stratifyByMS,
 
             # Sort the input data (should also ensure that the output data is sorted)
             subprocess.run(("sort",) + optionalArgument + 
-                            ("-k1,1","-k2,3n",bedInputFilePath,"-o",bedInputFilePath), check = True)
+                            ("sort","-k1,1","-k2,2n", "-k3,3n",bedInputFilePath,"-o",bedInputFilePath), check = True)
 
             # If requested, also prepare for stratification by microsatellite stability.
             if stratifyByMS:             
