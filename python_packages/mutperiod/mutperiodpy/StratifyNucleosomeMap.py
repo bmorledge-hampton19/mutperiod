@@ -3,7 +3,7 @@
 # NOTE:  Both input files must be sorted for this script to run properly. 
 #        (Sorted first by chromosome (string) and then by nucleotide position (numeric))
 
-import os
+import os, sys
 from typing import List
 from benbiohelpers.TkWrappers.TkinterDialog import TkinterDialog
 from mutperiodpy.helper_scripts.UsefulFileSystemFunctions import (getDataDirectory, checkDirs)
@@ -36,7 +36,7 @@ def matchesBedEntry(chromosome, startPos, bedEntry: str):
 
 # Takes a nucleosome map and files with ranges to check for overlap to stratify by.
 # The stratifying features files should each be present within their own nucleosome map directory.
-def StratifyNucleosomeMap(nucleosomeMapDir, stratifyingFeaturesMapFilePaths):
+def stratifyNucleosomeMap(nucleosomeMapDir, stratifyingFeaturesMapFilePaths):
 
     for stratifyingFeaturesMapFilePath in stratifyingFeaturesMapFilePaths:
 
@@ -92,6 +92,25 @@ def StratifyNucleosomeMap(nucleosomeMapDir, stratifyingFeaturesMapFilePaths):
                                                " using " + os.path.basename(stratifyingFeaturesMapFilePath) + ".\n")
 
 
+def parseArgs(args):
+    
+    # If only the subcommand was given, run the UI.
+    if len(sys.argv) == 2: 
+        main(); return
+
+    stratifyingFeaturesFilePaths = set()
+    for stratifyingFeaturesFilePath in args.stratifyingFeatures:
+        assert not os.path.isdir(stratifyingFeaturesFilePath), (
+            "Directory was given for stratifying features where file was expected.")
+        stratifyingFeaturesFilePaths.add(os.path.abspath(stratifyingFeaturesFilePath))
+
+    if os.path.isfile(args.base_nucleosome_map): 
+        baseNucleosomeMap = os.path.dirname(os.path.abspath(args.base_nucleosome_map))
+    else: baseNucleosomeMap = os.path.abspath(args.base_nucleosome_map)
+
+    stratifyNucleosomeMap(baseNucleosomeMap, list(stratifyingFeaturesFilePaths))
+
+
 def main():
 
     # Create the Tkinter UI
@@ -106,7 +125,7 @@ def main():
     # If no input was received (i.e. the UI was terminated prematurely), then quit!
     if dialog.selections is None: quit()
 
-    StratifyNucleosomeMap(dialog.selections.getIndividualFilePaths()[0], dialog.selections.getFilePathGroups()[0])
+    stratifyNucleosomeMap(dialog.selections.getIndividualFilePaths()[0], dialog.selections.getFilePathGroups()[0])
 
 
 if __name__ == "__main__": main()

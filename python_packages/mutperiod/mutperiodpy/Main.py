@@ -1,7 +1,7 @@
 # This script will be called from the command line to execute other scripts.
 from argparse import ArgumentParser
-from mutperiodpy import (RunNucleosomeMutationAnalysis, RunAnalysisSuite, GenerateFigures)
-from mutperiodpy.input_parsing import (ParseCustomBed, ParseICGC)
+from mutperiodpy import RunNucleosomeMutationAnalysis, RunAnalysisSuite, GenerateFigures, StratifyNucleosomeMap
+from mutperiodpy.input_parsing import ParseCustomBed, ParseICGC
 from mutperiodpy.helper_scripts.UsefulFileSystemFunctions import DataTypeStr
 import argparse, importlib.util
 if importlib.util.find_spec("shtab") is not None: 
@@ -157,7 +157,20 @@ def formatGenerateFiguresParser(generateFiguresParser: ArgumentParser):
     generateFiguresParser.add_argument("-a", "--align-strands", action = "store_true",
                                        help = "Invert counts on the minus strand so that counts for each strand "
                                               "run 5' to 3'.")
-    
+
+
+def formatNucStratifierParser(nucStratifierParser: ArgumentParser):
+
+    nucStratifierParser.set_defaults(func = StratifyNucleosomeMap.parseArgs)
+
+    nucStratifierParser.add_argument("stratifyingFeatures", nargs = '*',
+                                     help = "One or more paths to files containing bed coordinates for features to stratify by.  "
+                                            "Each stratifying file should be present in its own, new nucleosome map directory.").complete = fileCompletion
+
+    nucStratifierParser.add_argument("-n", "--base-nucleosome-map", 
+                                     help = "The directory containing the nucleosome map to stratify "
+                                            "using the given stratifying features.").complete = fileCompletion
+
 
 def getMainParser():
 
@@ -198,8 +211,14 @@ def getMainParser():
     # For GenerateFigures...
     generateFiguresParser = subparsers.add_parser("generateFigures", description = "Generates figures from nucleosome counts data or "
                                                                                    "the output from the periodicity analysis.")
-    formatGenerateFiguresParser(generateFiguresParser)                                                                                
+    formatGenerateFiguresParser(generateFiguresParser)
 
+
+    # For Stratifying Nucleosome Maps...
+    nucStratifierParser = subparsers.add_parser("stratifyNucMap", description = "Stratify the nucleosome in a nucleosome map based on "
+                                                                                "some feature encompassing the nucleosomes.")
+    formatNucStratifierParser(nucStratifierParser)
+    
 
     return parser
 
