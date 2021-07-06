@@ -68,7 +68,7 @@ colorInRange = function(range, color, data, dataCol, includeNegative = TRUE) {
 }
 
 
-plottingSuite = function(dataSetName) {
+plottingSuite = function(dataSetName, smoothTranslational = TRUE, fixedNRL = NA) {
   
   # Get the relevant counts and periodicity data for the given data set name.
   if (dataSetName %in% names(mutperiodData$normalizedNucleosomeCountsTables)) {
@@ -95,8 +95,8 @@ plottingSuite = function(dataSetName) {
     countsData = countsData[Dyad_Position >= -rotationalOnlyCutoff & Dyad_Position <= rotationalOnlyCutoff]
   }
   
-  # Smooth if translational
-  if (translational) {
+  # Smooth if translational and requested
+  if (translational && smoothTranslational) {
     countsData = copy(countsData)
     countsData[, (dataCol) := sapply(countsData$Dyad_Position, smoothValues, data = countsData, dataCol = dataCol)]
   }
@@ -123,7 +123,11 @@ plottingSuite = function(dataSetName) {
   if (translational) {
     
     # Derive linker and nucleosome positions from the expected period of the data.
-    nucRepLen = round(periodicityData$Expected_Peak_Periodicity)
+    if (is.na(fixedNRL)) {
+      nucRepLen = round(periodicityData$Expected_Peak_Periodicity)
+    } else {
+      nucRepLen = fixedNRL
+    }
     
     nucleosomePositions = lapply(1:10, function(x) return(append((-73+x*nucRepLen):(73+x*nucRepLen), 
                                                                  (-72.5+x*nucRepLen):(72.5+x*nucRepLen))))
