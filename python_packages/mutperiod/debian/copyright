@@ -1,14 +1,14 @@
 Format: http://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
 Upstream-Name: mutperiod
 Upstream-Contact: Ben Morledge-Hampton <b.morledge-hampton@wsu.edu>
-Source: https://github.com/bmorledge-hampton19/Nucleosome-Mutation-Analysis
+Source: https://github.com/bmorledge-hampton19/mutperiod
 
 Files: *
-Copyright: Copyright 1998 Ben Morledge-Hampton <b.morledge-hampton@wsu.edu>
+Copyright: Copyright 2021 Ben Morledge-Hampton <b.morledge-hampton@wsu.edu>
 License: GPL-2+
 
 Files: debian/*
-Copyright: Copyright 1998 Ben Morledge-Hampton <b.morledge-hampton@wsu.edu>
+Copyright: Copyright 2021 Ben Morledge-Hampton <b.morledge-hampton@wsu.edu>
 License: GPL-2+
 
 License: GPL-2+

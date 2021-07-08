@@ -9,4 +9,4 @@ X-Python3-Version: >= 3.7
 Package: mutperiod
 Architecture: all
 Description: Examine mutational periodicity about nucleosomes.
-Depends: ${python3:Depends}, ${misc:Depends}, python3-tk, mutperiodr, bedtools
+Depends: ${python3:Depends}, ${misc:Depends}, mutperiodr, bedtools, python3-benbiohelpers

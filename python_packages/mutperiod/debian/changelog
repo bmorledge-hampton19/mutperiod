@@ -1,3 +1,20 @@
+mutperiod (0.7.0-0ubuntu2) focal; urgency=low
+
+  * Removed test file which was causing issues with the build process
+
+ -- Ben Morledge-Hampton <b.morledge-hampton@wsu.edu>  Thu, 08 Jul 2021 09:19:12 -0700
+
+mutperiod (0.7.0-0ubuntu1) focal; urgency=low
+
+  * Next major mutperiod iteration.
+  * Added nucleosome stratification.
+  * Lots of functionality offloaded to benbiohelpers
+  * Added additional ways to stratify and select counts files for periodicity analysis
+  * Expected translational period is no longer locked at 191 bp and is instead derived from the peak period of the nucleosome map.
+  * Expanded mutperiod object to contain information on expected period, and whether aligned or antiparallel strands were used
+
+ -- Ben Morledge-Hampton <b.morledge-hampton@wsu.edu>  Wed, 07 Jul 2021 18:25:10 -0700
+
 mutperiod (0.6.3-0ubuntu1) focal; urgency=low
 
   * Small fix involving generateMutperiodData being mistakenly named generatemutperiodData (Capitalization)
