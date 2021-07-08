@@ -1,3 +1,15 @@
+mutperiod (0.7.1-0ubuntu1) focal; urgency=low
+
+  * Fixed sorting bug in custom bed parser
+
+ -- Ben Morledge-Hampton <b.morledge-hampton@wsu.edu>  Thu, 08 Jul 2021 14:36:04 -0700
+
+mutperiod (0.7.0-0ubuntu3) focal; urgency=low
+
+  * Removed test tube image from package_data in setup.py
+
+ -- Ben Morledge-Hampton <b.morledge-hampton@wsu.edu>  Thu, 08 Jul 2021 12:33:08 -0700
+
 mutperiod (0.7.0-0ubuntu2) focal; urgency=low
 
   * Removed test file which was causing issues with the build process
