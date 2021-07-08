@@ -14,8 +14,7 @@ setup(
     license='MIT',
     python_requires='>=3.7',
     packages=find_packages(),
-    package_data={"mutperiodpy": ["run_mutperiodR/*.r", "run_mutperiodR/*.R", "Tkinter_scripts/test_tube.png",
-                  "input_parsing/*.tsv"]},
+    package_data={"mutperiodpy": ["run_mutperiodR/*.r", "run_mutperiodR/*.R", "input_parsing/*.tsv"]},
     entry_points=dict(
         console_scripts=['mutperiod=mutperiodpy.Main:main']
     ),
