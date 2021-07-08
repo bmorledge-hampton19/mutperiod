@@ -70,9 +70,9 @@ class WriteManager:
         aggregateMSIDirectory = os.path.join(aggregateMSDirectory,"MSI")
         checkDirs(aggregateMSSDirectory, aggregateMSIDirectory)
 
-        generateMetadata("MSS_" + self.rootMetadata.dataGroupName, self.rootMetadata.genomeName, self.rootMetadata.nucPosName,
+        generateMetadata("MSS_" + self.rootMetadata.dataGroupName, self.rootMetadata.genomeName,
                          os.path.join('..','..',self.rootMetadata.localParentDataPath), self.rootMetadata.inputFormat, aggregateMSSDirectory, "MSS")
-        generateMetadata("MSI_" + self.rootMetadata.dataGroupName, self.rootMetadata.genomeName, self.rootMetadata.nucPosName,
+        generateMetadata("MSI_" + self.rootMetadata.dataGroupName, self.rootMetadata.genomeName,
                          os.path.join('..','..',self.rootMetadata.localParentDataPath), self.rootMetadata.inputFormat, aggregateMSIDirectory, "MSI")
         self.aggregateMSSMutCounts = 0
         self.aggregateMSIMutCounts = 0
@@ -120,7 +120,7 @@ class WriteManager:
             checkDirs(thisMutSigDirectory)
 
             # Metadata
-            generateMetadata(thisMutSigDataGroup, self.rootMetadata.genomeName, self.rootMetadata.nucPosName,
+            generateMetadata(thisMutSigDataGroup, self.rootMetadata.genomeName,
                              os.path.join('..','..',self.rootMetadata.localParentDataPath), 
                              self.rootMetadata.inputFormat, thisMutSigDirectory, "mutSig" + mutSig)
 
@@ -182,7 +182,7 @@ class WriteManager:
         self.individualCohortFilePath = generateFilePath(directory = individualCohortDirectory, dataGroup = individualCohortDataGroup, 
                                                          context = self.context, dataType = DataTypeStr.mutations, fileExtension = ".bed")
         self.currentIndividualCohortFile = open(self.individualCohortFilePath, 'w')
-        generateMetadata(individualCohortDataGroup, self.rootMetadata.genomeName, self.rootMetadata.nucPosName,
+        generateMetadata(individualCohortDataGroup, self.rootMetadata.genomeName,
                          os.path.join("..",self.rootMetadata.localParentDataPath),
                          self.rootMetadata.inputFormat, individualCohortDirectory, *cohortMembership)
         self.currentIndividualCohortMutCounts = 0
