@@ -1,3 +1,9 @@
+mutperiod (0.7.2-0ubuntu1) focal; urgency=low
+
+  * Fixed bug involving inappropriate calls to nucleosome map names during initial input parsing
+
+ -- Ben Morledge-Hampton <b.morledge-hampton@wsu.edu>  Thu, 08 Jul 2021 15:54:23 -0700
+
 mutperiod (0.7.1-0ubuntu1) focal; urgency=low
 
   * Fixed sorting bug in custom bed parser
