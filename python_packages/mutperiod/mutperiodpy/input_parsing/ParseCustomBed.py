@@ -32,52 +32,69 @@ from mutperiodpy.input_parsing.WriteManager import WriteManager
 # Checks for common errors in a line of input.
 def checkForErrors(choppedUpLine: List[str], cohortDesignationPresent, acceptableChromosomes, acceptableChromosomesFilePath):
 
+    regionLength = int(choppedUpLine[2]) - int(choppedUpLine[1])
+
     if len(choppedUpLine) < 6 or len(choppedUpLine) > 7:
-        raise ValueError("Entry given with invalid number of arguments (" + str(len(choppedUpLine)) + ").  " +
+        raise ValueError("Entry given with invalid number of arguments (" + str(len(choppedUpLine)) + ").  "
                          "Each entry should contain either 6 tab separated arguments or 7 (if a cohort designation is present.")
 
     if choppedUpLine[0] not in acceptableChromosomes:
-        raise ValueError("Invalid chromosome identifier \"" + choppedUpLine[0] + "\" found.  " + 
+        raise ValueError("Invalid chromosome identifier \"" + choppedUpLine[0] + "\" found.  "
                          "Expected chromosome in the set at: " + acceptableChromosomesFilePath)
 
     if not (choppedUpLine[1].isnumeric() and choppedUpLine[2].isnumeric()) or int(choppedUpLine[1]) >= int(choppedUpLine[2]):
-        raise ValueError("Base positions should be integers and specify a minimum range of 1 base.  " +
-                         "The first base coordinate should be 0-based and the second should be 1-based (inclusive).  " +
-                         "The given coordinate pair, " + choppedUpLine[1] + ", " + choppedUpLine[2] + ' ' +
+        raise ValueError("Base positions should be integers and specify a minimum range of 1 base.  "
+                         "The first base coordinate should be 0-based and the second should be 1-based (inclusive).  " 
+                         "The given coordinate pair, " + choppedUpLine[1] + ", " + choppedUpLine[2] + ' '
                          "does not satisfy these conditions.")
 
-    if choppedUpLine[3] == '*' and choppedUpLine[4] == '*':
-        raise ValueError("The reference base and mutation columns are both set to \"*\".  " + 
-                         "(Entry cannot be insertion and deletion simultaneously)")
-
     if not {'A','C','G','T','N'}.issuperset(choppedUpLine[3]) and not choppedUpLine[3] in ('*','.'):
-        raise ValueError("Invalid reference base(s): \"" + choppedUpLine[3] + "\".  Should be a string made up of the four DNA bases " + 
+        raise ValueError("Invalid reference base(s): \"" + choppedUpLine[3] + "\".  Should be a string made up of the four DNA bases "
                          "or \".\" to auto acquire the base(s) from the corresponding genome, or \"*\" to denote an insertion.")
 
-    if choppedUpLine[3] == '*' and int(choppedUpLine[2]) - int(choppedUpLine[1]) != 2:
-        raise ValueError("Reference column indicates an insertion, but the genome positions don't exactly flank the insertion site.  " +
-                         "(Indicated region should span exactly 2 bases.)")
+    # Cases where insertion...
+    if choppedUpLine[3] == '*':
+
+        if choppedUpLine[4] == '*':
+            raise ValueError("The reference base and mutation columns are both set to \"*\".  "
+                             "(Entry cannot be insertion and deletion simultaneously)")
+
+        if regionLength != 2:
+            raise ValueError("Reference column indicates an insertion, but the genome positions don't exactly flank the insertion site.  "
+                             "(Indicated region should span exactly 2 bases.)")
+
+    # Cases where not insertion...
+    else:
+
+        if len(choppedUpLine[3]) < regionLength:
+            raise ValueError("References base(s): \"" + choppedUpLine[3] + "\" do not at least span the given region from "
+                             "positions " + choppedUpLine[1] + " to " + choppedUpLine[2] + '.')
+
+        if len(choppedUpLine[3]) % 2 != regionLength % 2:
+            raise ValueError("References base(s): \"" + choppedUpLine[3] + "\" cannot be centered on the given region from "
+                             "positions " + choppedUpLine[1] + " to " + choppedUpLine[2] + ".  Make sure both ranges are odd or " 
+                             "both are even.")
 
     if not {'A','C','G','T'}.issuperset(choppedUpLine[4]) and not choppedUpLine[4] in ('*',"OTHER"):
-        raise ValueError("Invalid mutation designation: \"" + choppedUpLine[3] + "\".  Should be a string made up of the four DNA bases " + 
+        raise ValueError("Invalid mutation designation: \"" + choppedUpLine[3] + "\".  Should be a string made up of the four DNA bases "
                          "or \"*\" to denote a deletion, or \"OTHER\" to denote an some other alteration.")
 
     if choppedUpLine[5] not in ('+','-','.'):
-        raise ValueError("Invalid strand designation: \"" + choppedUpLine[5] + "\".  Should be \"+\" or \"-\", or \".\" " + 
+        raise ValueError("Invalid strand designation: \"" + choppedUpLine[5] + "\".  Should be \"+\" or \"-\", or \".\" "
                          "to auto acquire the base if possible.")
 
     if cohortDesignationPresent and len(choppedUpLine) == 6:
-        raise ValueError("A cohort designation was given for previous entries, but an entry was found without one.  " + 
-                         "The designation should either be always present or always absent in the input file.  " +
+        raise ValueError("A cohort designation was given for previous entries, but an entry was found without one.  "
+                         "The designation should either be always present or always absent in the input file.  "
                          "Use \".\" to denote an entry that does not belong to a cohort.")
 
     if cohortDesignationPresent and len(choppedUpLine[6].strip()) == 0:
-        raise ValueError("Cohort designations should contain at least one non-whitespace character.  Use \".\" to denote " + 
+        raise ValueError("Cohort designations should contain at least one non-whitespace character.  Use \".\" to denote "
                          "an entry that does not belong to a cohort.")
 
     if not cohortDesignationPresent and len(choppedUpLine) == 7:
-        raise ValueError("No cohort designation was given for previous entries, but an entry was found with one.  " + 
-                         "The designation should either be always present or always absent in the input file.  " +
+        raise ValueError("No cohort designation was given for previous entries, but an entry was found with one.  "
+                         "The designation should either be always present or always absent in the input file.  "
                          "Use \".\" to denote an entry that does not belong to a cohort.")
 
 
@@ -88,6 +105,9 @@ def equivalentEntries(fastaEntry: FastaFileIterator.FastaEntry, choppedUpLine):
            fastaEntry.endPos == choppedUpLine[2] and
            fastaEntry.strand == choppedUpLine[5])
 
+
+def isSingleBaseSubstitution(choppedUpLine):
+    return int(choppedUpLine[2]) - int(choppedUpLine[1]) == 1 and len(choppedUpLine[4]) == 1
 
 # Checks each line for errors and auto acquire bases/strand designations where requested. 
 # Overwrites the original bed file if auto-acquiring occurred.
@@ -104,7 +124,6 @@ def autoAcquireAndQACheck(bedInputFilePath: str, genomeFilePath, autoAcquiredFil
 
     # Unless indels are included, determine the context of the feqtures in the file.
     if includeIndels: context = 0
-    elif onlySingleBaseSubs: context = 1
     else: context = None
 
     # Get the list of acceptable chromosomes
@@ -167,12 +186,14 @@ def autoAcquireAndQACheck(bedInputFilePath: str, genomeFilePath, autoAcquiredFil
                                         "does not match the corresponding sequence in the given genome, or its reverse compliment.")
 
                 # Determine the sequence context of the line and whether or not it matches the sequence context for other.
-                # Skip this if the file is "mixed", if only single nucleotide context will be used, or if this line is an indel.
-                if not context == 0 and not onlySingleBaseSubs and not (choppedUpLine[3] == '*' or choppedUpLine[4] == '*'):
+                # Skip this if the file is "mixed", this line is an indel, or only single base substitutions are allowed and this line isn't one.
+                if (not context == 0 and 
+                    not (choppedUpLine[3] == '*' or choppedUpLine[4] == '*') and 
+                    (not onlySingleBaseSubs or isSingleBaseSubstitution(choppedUpLine))):
 
-                    sequenceLength = int(choppedUpLine[2]) - int(choppedUpLine[1])
-                    if context is None: context = sequenceLength
-                    elif sequenceLength != context: context = 0
+                    thisContext = len(choppedUpLine[3])
+                    if context is None: context = thisContext
+                    elif thisContext != context: context = 0
 
                 # Write the current line to the temporary bed file.
                 temporaryBedFile.write('\t'.join(choppedUpLine) + '\n')
@@ -211,8 +232,8 @@ def convertToStandardInput(bedInputFilePath, writeManager: WriteManager, onlySin
             if choppedUpLine[3] == '*' or choppedUpLine[4] == '*':
                 if not includeIndels: continue
 
-            # Is this a single nucleotide feature, and if not, are those included?
-            if int(choppedUpLine[2]) - int(choppedUpLine[1]) > 1:
+            # Is this a single base substitution, and if not, are those included?
+            if not isSingleBaseSubstitution(choppedUpLine):
                 if onlySingleBaseSubs: continue
 
                 # Center features greater than a single nucleotide so that they occur at a single nucleotide position (or half position)
@@ -386,7 +407,7 @@ def main():
     dialog.createCheckbox("Stratify data by microsatellite stability?", 2, 0)
     dialog.createCheckbox("Stratify by mutation signature?", 2, 1)
     dialog.createCheckbox("Separate individual cohorts?", 3, 0)
-    dialog.createCheckbox("Only use single nucleotide features?", 4, 0)
+    dialog.createCheckbox("Only use single nucleotide substitutions?", 4, 0)
     dialog.createCheckbox("Include indels in output?", 4, 1)
 
     # Run the UI
@@ -402,11 +423,11 @@ def main():
     stratifyByMS = selections.getToggleStates()[0]
     stratifyByMutSig = selections.getToggleStates()[1]
     separateIndividualCohorts = selections.getToggleStates()[2]
-    onlySinglenuc = selections.getToggleStates()[3]
+    onlySingleBaseSubs = selections.getToggleStates()[3]
     includeIndels = selections.getToggleStates()[4]
 
 
     parseCustomBed(bedInputFilePaths, genomeFilePath, stratifyByMS, 
-                   stratifyByMutSig, separateIndividualCohorts, onlySinglenuc, includeIndels)
+                   stratifyByMutSig, separateIndividualCohorts, onlySingleBaseSubs, includeIndels)
 
 if __name__ == "__main__": main()
