@@ -139,10 +139,8 @@ def main():
 
     # Create the Tkinter dialog.
     dialog = TkinterDialog(workingDirectory=getDataDirectory())
-    dialog.createLabel("Note: Either single-base or trinuc context bed files will suffice.  Both are not necessary.",0,0,2)
-    dialog.createMultipleFileSelector("Single-Base Bed File:",1,"singlenuc_" + DataTypeStr.mutations + ".bed",("Bed Files",".bed"))
-    dialog.createMultipleFileSelector("Trinuc Context Bed File:",2,"trinuc_" + DataTypeStr.mutations + ".bed",("Bed Files",".bed"))
-    dialog.createDropdown("Expansion Context",3,0,("Trinuc/Quadrunuc", "Pentanuc/Hexanuc"))
+    dialog.createMultipleFileSelector("Bed Mutation File:",0,"singlenuc_" + DataTypeStr.mutations + ".bed",("Bed Files",".bed"))
+    dialog.createDropdown("Expansion Context",1,0,("Trinuc/Quadrunuc", "Pentanuc/Hexanuc"))
 
     # Run the UI
     dialog.mainloop()
@@ -153,7 +151,6 @@ def main():
     # Get the user's input from the dialog.
     selections: Selections = dialog.selections
     inputBedFilePaths = list(selections.getFilePathGroups())[0] # A list of paths to original bed mutation files
-    trinucContextBedFilePaths = list(selections.getFilePathGroups())[1] # A list of paths to trinuc context bed mutation files
     expansionContext = list(selections.getDropdownSelections())[0] # What context the file should be expanded to.
 
     if expansionContext == "Trinuc/Quadrunuc":
@@ -162,6 +159,6 @@ def main():
         expansionContextNum = 5
     else: raise ValueError("Matching strings is hard.")
 
-    expandContext(inputBedFilePaths + trinucContextBedFilePaths, expansionContextNum)
+    expandContext(inputBedFilePaths, expansionContextNum)
 
 if __name__ == "__main__": main()
