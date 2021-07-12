@@ -258,21 +258,37 @@ ggplot(groupedSNRs, aes(group, SNR)) +
 ggplot(groupedSNRs, aes(group, SNR)) + 
   geom_jitter(width = 0.2, height = 0, shape = 1, size = 2) + 
   stat_summary(fun = median, geom = "crossbar", width = 0.5, fatten = 2, colour = "red") +
-  labs(title = "Translational Periodicity SNR Values",
-       x = "Microsatellite Stability", y = "SNR") +
+  labs(title = title, x = xAxisLabel, y = yAxisLabel) +
   scale_y_continuous(trans = "log10", breaks = c(1,10,100,1000)) + annotation_logticks(sides = 'l') +
+  coord_cartesian(ylim = ylim) +
   theme(plot.title = element_text(size = 20, hjust = 0.5), axis.title = element_text(size = 15),
-        axis.text.x = element_text(size = 15), axis.title.x = element_blank())
+        axis.text.x = element_text(size = 15), axis.title.x = element_blank(), 
+        axis.text.y = element_text(size = 14))
 
 # ggplot jittered scatter plot (Linear scale)
 ggplot(groupedSNRs, aes(group, SNR)) + 
-  geom_jitter(width = 0.2, shape = 1, size = 2) + 
+  geom_jitter(width = 0.2, height = 0, shape = 1, size = 2) + 
   stat_summary(fun = median, geom = "crossbar", width = 0.5, fatten = 2, colour = "red") +
-  labs(title = "Peak Translational Periodicity Values",
-       x = "Microsatellite Stability", y = "Peak Periodicity") +
-  coord_cartesian(ylim = c(1,1000)) +
+  labs(title = title, x = xAxisLabel, y = yAxisLabel) +
+  coord_cartesian(ylim = ylim) +
   theme(plot.title = element_text(size = 20, hjust = 0.5), axis.title = element_text(size = 15),
-        axis.text.x = element_text(size = 15), axis.title.x = element_blank())
+        axis.text.x = element_text(size = 15), axis.title.x = element_blank(), 
+        axis.text.y = element_text(size = 14))
+
+# ggplot jittered scatter plot (Linear scale) separated by colors.
+ggplot(groupedSNRs, aes(1, SNR, color = group)) + 
+  geom_jitter(width = 0.2, height = 0, shape = 1, size = 2) + 
+  scale_color_manual(values = c("MSS" = "black", "MSI" = "red"), guide = FALSE) +
+  stat_summary(data = groupedSNRs[group == "MSS"], fun = median, geom = "crossbar", 
+               width = 0.5, fatten = 2, colour = "red") +
+  labs(title = title, x = xAxisLabel, y = yAxisLabel) +
+  coord_cartesian(ylim = ylim) +
+  theme(plot.title = element_text(size = 20, hjust = 0.5), axis.title = element_text(size = 15),
+        axis.text.x = element_text(size = 15), axis.title.x = element_blank(), 
+        axis.text.y = element_text(size = 14))
+
+# ggplot jittered scatter plot (linear scale) for difference between MSI and MSS SNR's.
+
 
 # base r boxplot
 boxplot(group1SNR, group2SNR, main = "SNR distribution for rotational mutation data",
