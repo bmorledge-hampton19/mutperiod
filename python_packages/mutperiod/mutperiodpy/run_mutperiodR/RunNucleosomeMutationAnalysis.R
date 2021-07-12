@@ -47,7 +47,7 @@ if (length(args) == 1) {
     # Five inputs runs the analysis without grouped comparison.
     mutperiodData = generateMutperiodData(unlist(strsplit(inputs[1],'$',fixed = TRUE)),
                                           expectedPeakPeriodicities = 
-                                            as.numeric(unlist(strsplit(inputs[4],'$',fixed = TRUE))), 
+                                            as.numeric(strsplit(inputs[4],'$',fixed = TRUE)[[1]]), 
                                           enforceInputNamingConventions = TRUE, 
                                           overridePeakPeriodicityWithExpectedPeak = as.logical(inputs[3]),
                                           alignStrands = as.logical(inputs[5]))
@@ -58,8 +58,8 @@ if (length(args) == 1) {
     mutperiodData = generateMutperiodData(unlist(strsplit(inputs[1],'$',fixed = TRUE)),
                                           expectedPeakPeriodicities = 
                                             as.numeric(unlist(strsplit(inputs[6],'$',fixed = TRUE))), 
-                                          filePathGroup1 = unlist(strsplit(inputs[3],'$',fixed = TRUE)),
-                                          filePathGroup2 = (strsplit(inputs[4],'$',fixed = TRUE)),
+                                          filePathGroup1 = strsplit(inputs[3],'$',fixed = TRUE)[[1]],
+                                          filePathGroup2 = strsplit(inputs[4],'$',fixed = TRUE)[[1]],
                                           enforceInputNamingConventions = TRUE,
                                           overridePeakPeriodicityWithExpectedPeak = as.logical(inputs[5]),
                                           alignStrands = as.logical(inputs[7]))

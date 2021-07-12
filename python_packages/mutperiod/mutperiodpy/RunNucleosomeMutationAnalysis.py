@@ -217,12 +217,15 @@ def main():
 
         # Was filtering even requested for the main group?
         if i == 0 and not mainGroupSearchRefine.getControllerVar():
-            filePathGroups[i] = nucleosomeMutationCountsFilePaths
+            filePathGroups[0] = nucleosomeMutationCountsFilePaths
             continue
 
         # If we are examining the secondary group, check to see if filtering was even requested.
         if dialogID == "Secondary Group" and not secondaryPeriodicityGroupSearchRefine.getControllerVar():
-            filePathGroups[i] = secondaryNucMutCountsFilePaths
+            assert i == 1, "Secondary group encountered on unexpected iteration of for loop: " + str(i)
+            filePathGroups[2] = secondaryNucMutCountsFilePaths
+            filePathGroups[1] = filePathGroups[0].copy()
+            filePathGroups[0] += filePathGroups[2]
             continue
 
         # Determine what normalization methods were requested
@@ -273,12 +276,13 @@ def main():
                                                   acceptableMSCohorts, acceptableMutSigCohorts, acceptableCustomCohorts,
                                                   acceptableNucleosomeMaps)
         else: 
-            filePathGroups[i] += getFilePathGroup(secondaryNucMutCountsFilePaths, normalizationMethods, 
+            assert i == 1, "Secondary group encountered on unexpected iteration of for loop: " + str(i)
+            filePathGroups[2] += getFilePathGroup(secondaryNucMutCountsFilePaths, normalizationMethods, 
                                                   selections.getToggleStates(dialogID)[5], selections.getToggleStates(dialogID)[6],
                                                   acceptableMSCohorts, acceptableMutSigCohorts, acceptableCustomCohorts,
                                                   acceptableNucleosomeMaps)
-            filePathGroups[2] = filePathGroups[0].copy()
-            filePathGroups[0] += filePathGroups[1]
+            filePathGroups[1] = filePathGroups[0].copy()
+            filePathGroups[0] += filePathGroups[2]
 
         #If this is the first pass through the loop, set the file paths list to the newly filtered list.
         if i == 0: nucleosomeMutationCountsFilePaths = filePathGroups[0]
