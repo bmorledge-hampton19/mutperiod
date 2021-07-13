@@ -1,3 +1,15 @@
+mutperiod (0.7.3-0ubuntu2) focal; urgency=low
+
+  * Removed hg19_repeats.rda  (Why is this even here??)
+
+ -- Ben Morledge-Hampton <b.morledge-hampton@wsu.edu>  Tue, 13 Jul 2021 11:21:54 -0700
+
+mutperiod (0.7.3-0ubuntu1) focal; urgency=low
+
+  * Fixed bugs involving grouped periodicity analysis
+
+ -- Ben Morledge-Hampton <b.morledge-hampton@wsu.edu>  Tue, 13 Jul 2021 11:16:18 -0700
+
 mutperiod (0.7.2-0ubuntu1) focal; urgency=low
 
   * Fixed bug involving inappropriate calls to nucleosome map names during initial input parsing
