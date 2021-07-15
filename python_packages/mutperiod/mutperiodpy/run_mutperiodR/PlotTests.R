@@ -288,7 +288,13 @@ ggplot(groupedSNRs, aes(1, SNR, color = group)) +
         axis.text.y = element_text(size = 14))
 
 # ggplot jittered scatter plot (linear scale) for difference between MSI and MSS SNR's.
+# For use in permutation test.
 
+
+
+# ggplot histogram for bootstrap results
+ggplot(groupedSNRs[group == "MSS"], aes(SNR)) +
+  geom_histogram(binwidth = 25)
 
 # base r boxplot
 boxplot(group1SNR, group2SNR, main = "SNR distribution for rotational mutation data",
