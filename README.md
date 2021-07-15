@@ -221,6 +221,7 @@ The dialog was filled out as follows to quantify the periodicities of the groupe
 In addition, the command was run again and the dialog was filled out as follows to compare the translational periodicities of MSS vs MSI cohorts.  
 ![mutperiod individual periodicityAnalysis Dialog1](readme_images/microsatellite_translational_periodicity_analysis_1.png)  
 ![mutperiod individual periodicityAnalysis Dialog2](readme_images/microsatellite_translational_periodicity_analysis_2.png)
+![mutperiod individual periodicityAnalysis Dialog3](readme_images/microsatellite_translational_periodicity_analysis_3.png)
 
 The Wilcoxon Rank Sum test produced the following results:  
 ![mutperiod periodicityAnalysis Result](readme_images/microsatellite_translational_periodicity_result.png)
