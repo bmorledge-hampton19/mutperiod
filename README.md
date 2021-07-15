@@ -226,7 +226,7 @@ The Wilcoxon Rank Sum test produced the following results:
 ![mutperiod periodicityAnalysis Result](readme_images/microsatellite_translational_periodicity_result.png)
 
 #### Visualizing the results
-The following mutperiod command was used to order to visualize the results:  
+The following mutperiod command was used in order to visualize the results:  
   `mutperiod generateFigures`  
 The dialog was filled out as follows to view graphs of the normalized and grouped MSS and MSI data with results smoothed to suppress the individual nucleosome periodicity in the nucleosome group data.  
 ![mutperiod generateFigures Dialog](readme_images/generateFigures.png)
