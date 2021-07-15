@@ -51,8 +51,8 @@ generateMutperiodData = function(mutationCountsFilePaths, expectedPeakPeriodicit
   # Prep for group comparison if the respective file path lists were given.
   compareGroups = (filePathGroup1 != '' && filePathGroup2 != '')
   if (compareGroups) {
-    group1DataSetNames = sapply(strsplit(basename(filePathGroup1),"_nucleosome"), function(x) x[1])
-    group2DataSetNames = sapply(strsplit(basename(filePathGroup2),"_nucleosome"), function(x) x[1])
+    group1DataSetNames = sort(sapply(strsplit(basename(filePathGroup1),"_nucleosome"), function(x) x[1]))
+    group2DataSetNames = sort(sapply(strsplit(basename(filePathGroup2),"_nucleosome"), function(x) x[1]))
   }
 
   # Determine which of the valid file paths are normalized and initialize the associated lists.
