@@ -85,8 +85,8 @@ generateMutperiodData = function(mutationCountsFilePaths, expectedPeakPeriodicit
       lombTo = 250
     } else {
       dyadPosCutoff = nucleosomeDyadPosCutoff
-      lombFrom = 7
-      lombTo = 20
+      lombFrom = 5
+      lombTo = 25
     }
 
     # Determine whether or not the current data is normalized or not, and
