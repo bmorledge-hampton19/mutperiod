@@ -289,8 +289,20 @@ ggplot(groupedSNRs, aes(1, SNR, color = group)) +
 
 # ggplot jittered scatter plot (linear scale) for difference between MSI and MSS SNR's.
 # For use in permutation test.
+controlPos = NA
+groupedSNRs = data.table(SNR_Diff = group1SNR-group2SNR, Control = rep(FALSE, length(group1SNR)))
+groupedSNRs[controlPos, Control := TRUE]
 
-
+ggplot(groupedSNRs, aes(1, SNR_Diff, color = Control)) + 
+  geom_jitter(width = 0.2, height = 0, shape = 1, size = 2) + 
+  scale_color_manual(values = c("FALSE" = "black", "TRUE" = "red"), guide = FALSE) +
+  stat_summary(data = groupedSNRs[!(Control)], fun = median, geom = "crossbar", 
+               width = 0.5, fatten = 2, colour = "red") +
+  labs(title = title, y = yAxisLabel) +
+  coord_cartesian(ylim = ylim) +
+  theme(plot.title = element_text(size = 20, hjust = 0.5), axis.title = element_text(size = 15),
+        axis.text.x = element_text(size = 15), axis.title.x = element_blank(), 
+        axis.text.y = element_text(size = 14))
 
 # ggplot histogram for bootstrap results
 ggplot(groupedSNRs[group == "MSS"], aes(SNR)) +
