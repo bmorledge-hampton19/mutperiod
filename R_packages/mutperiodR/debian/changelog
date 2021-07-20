@@ -1,3 +1,15 @@
+mutperiodr (0.7.1-0ubuntu2) focal; urgency=low
+
+  * Changed version number in R DESCRIPTION file
+
+ -- Ben Morledge-Hampton <b.morledge-hampton@wsu.edu>  Mon, 19 Jul 2021 15:12:26 -0700
+
+mutperiodr (0.7.1-0ubuntu1) focal; urgency=low
+
+  * Changed range of rotational periods analyzed
+
+ -- Ben Morledge-Hampton <b.morledge-hampton@wsu.edu>  Mon, 19 Jul 2021 12:18:09 -0700
+
 mutperiodr (0.7.0-0ubuntu1) focal; urgency=low
 
   * Update alongside mutperiod 0.7.0

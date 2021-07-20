@@ -1,3 +1,10 @@
+mutperiod (0.7.4-0ubuntu1) focal; urgency=low
+
+  * More intelligent context determination for custom bed parsing
+  * Updated UI for expand context
+
+ -- Ben Morledge-Hampton <b.morledge-hampton@wsu.edu>  Mon, 19 Jul 2021 12:28:08 -0700
+
 mutperiod (0.7.3-0ubuntu2) focal; urgency=low
 
   * Removed hg19_repeats.rda  (Why is this even here??)
