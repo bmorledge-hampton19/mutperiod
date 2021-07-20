@@ -93,6 +93,11 @@ All genome information should be given in standard fasta format with chromosome 
 #### Nucleosome Positioning Data
 All nucleosome positioning data should be in bed format.  Only the first three columns, containing the chromosome identifiers, 0-based start positions, and 1-based start positions are used.  Other columns may be included after these first three, but they will be ignored.
 
+##### Stratifying Nucleosome Positioning Data
+Mutperiod supports stratification of nucleosome maps using any bed file of genome positions (e.g. Gene positions, regions with specific histone modifications, etc.).  The following command is used to perform this stratification:
+  `mutperiod stratifyNucMap`
+When running this command, the bed file of genome positions for stratification should be directly within the directory for the new nucleosome map.  The new nucleosome map will be named after this directory, not the bed file of genome positions.  For example, if the "mutperiod_data\\\_\_external_data\\hg19\\MNase_nuc_pos\\MNase_nuc_pos.bed" nucleosome map is stratified using "mutperiod_data\\\_\_external_data\\hg19\\H3K36me3_MNase_nuc_pos\\H3K36me3_regions.bed", the resulting nucleosome map can be found at "mutperiod_data\\\_\_external_data\\hg19\\H3K36me3_MNase_nuc_pos\\H3K36me3_MNase_nuc_pos.bed".
+
 #### Mutation Data
 mutperiod supports two primary input formats for mutation data:  
 First, "simple\_somatic\_mutation" data downloaded directly from the [ICGC data portal](https://dcc.icgc.org/releases) can be easily parsed using the following terminal command:  
