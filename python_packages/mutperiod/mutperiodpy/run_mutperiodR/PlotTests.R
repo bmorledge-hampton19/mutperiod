@@ -281,10 +281,10 @@ ggplot(groupedSNRs, aes(1, SNR, color = group)) +
   scale_color_manual(values = c("MSS" = "black", "MSI" = "red"), guide = FALSE) +
   stat_summary(data = groupedSNRs[group == "MSS"], fun = median, geom = "crossbar", 
                width = 0.5, fatten = 2, colour = "red") +
-  labs(title = title, x = xAxisLabel, y = yAxisLabel) +
+  labs(title = title, y = yAxisLabel) +
   coord_cartesian(ylim = ylim) +
   theme(plot.title = element_text(size = 20, hjust = 0.5), axis.title = element_text(size = 15),
-        axis.text.x = element_text(size = 15), axis.title.x = element_blank(), 
+        axis.text.x = element_blank(), axis.title.x = element_blank(), axis.ticks.x = element_blank(),
         axis.text.y = element_text(size = 14))
 
 # ggplot jittered scatter plot (linear scale) for difference between MSI and MSS SNR's.
@@ -301,7 +301,7 @@ ggplot(groupedSNRs, aes(1, SNR_Diff, color = Control)) +
   labs(title = title, y = yAxisLabel) +
   coord_cartesian(ylim = ylim) +
   theme(plot.title = element_text(size = 20, hjust = 0.5), axis.title = element_text(size = 15),
-        axis.text.x = element_blank(), axis.title.x = element_blank(), 
+        axis.text.x = element_blank(), axis.title.x = element_blank(), axis.ticks.x = element_blank(),
         axis.text.y = element_text(size = 14))
 
 # ggplot histogram for bootstrap results
