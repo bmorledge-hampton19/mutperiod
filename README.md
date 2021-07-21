@@ -98,6 +98,9 @@ Mutperiod supports stratification of nucleosome maps using any bed file of genom
   `mutperiod stratifyNucMap`
 When running this command, the bed file of genome positions for stratification should be directly within the directory for the new nucleosome map.  The new nucleosome map will be named after this directory, not the bed file of genome positions.  For example, if the "mutperiod_data\\\_\_external_data\\hg19\\MNase_nuc_pos\\MNase_nuc_pos.bed" nucleosome map is stratified using "mutperiod_data\\\_\_external_data\\hg19\\H3K36me3_MNase_nuc_pos\\H3K36me3_regions.bed", the resulting nucleosome map can be found at "mutperiod_data\\\_\_external_data\\hg19\\H3K36me3_MNase_nuc_pos\\H3K36me3_MNase_nuc_pos.bed".
 
+##### Altering Output File Names Based On Nucleosome Positioning Data
+When working with multiple nucleosome maps in the same data directory, it may be desirable to differentiate output file names based on the relevant nucleosome map.  To accomplish this, a text file named "append_to_data_name.txt" should be placed in the nucleosome map directory and contain a single line of text which will be appended to the data group name for output files using the nucleosome map.  If this file is not present, nothing is appended to the data group name.
+
 #### Mutation Data
 mutperiod supports two primary input formats for mutation data:  
 First, "simple\_somatic\_mutation" data downloaded directly from the [ICGC data portal](https://dcc.icgc.org/releases) can be easily parsed using the following terminal command:  
@@ -107,28 +110,28 @@ Data from any other format should be converted to the specialized bed format rec
   `mutperiod parseBed`  
 This format is a variation on the standardized bed format and contains 6-7 tab separated data columns (with the 7th being optional).  The columns should be formatted as follows:  
 ##### Column 1
-- Chromosome identifier.  (e.g. "chr1")  
-- Should match the identifiers used in the corresponding genome fasta file.
+- Chromosome identifier (e.g. "chr1")  
+- Should match the identifiers used in the corresponding genome fasta file
 ##### Column 2
 - 0 based mutation start position
 ##### Column 3
 - 1 based mutation end position
 ##### Column 4
-- The base(s) in the reference genome at this position.  
-- If set to ".", the base(s) will be auto-acquired using the genome fasta file.  
-- Use the "\*" character to indicate an insertion between the two bases given in columns 2 and 3. 
+- The base(s) in the reference genome at this position
+- If set to ".", the base(s) will be auto-acquired using the genome fasta file
+- Use the "\*" character to indicate an insertion between the two bases given in columns 2 and 3.
 ##### Column 5
-- The base(s) that the position(s) were mutated to.  
-- Use the "\*" character indicates a deletion of the base(s) given in columns 2 and 3  
-- Use the string "OTHER" to indicate any other lesion or feature  
+- The base(s) that the position(s) were mutated to
+- Use the "\*" character indicates a deletion of the base(s) given in columns 2 and 3.
+- Use the string "OTHER" to indicate any other lesion or feature.
 ##### Column 6
-- The strand the mutation/alteration occurred in.  
+- The strand the mutation/alteration occurred in
 - Single-base substitution mutations are flipped if necessary so that they occur in the pyrimidine-containing strand.  
 - If set to ".", the strand is determined from the genome file, if possible (not an insertion).
 ##### Column 7
-- The chort the tumor belongs to.  e.g. a donor ID or tumor type.  
-- This column is technically optional but is required for stratifying data in future steps.  
-- If any cohort designations are given, ALL entries must have designations.  
+- The chort the tumor belongs to (e.g. a donor ID or tumor type)
+- This column is technically optional but is required for stratifying data in future steps.
+- If any cohort designations are given, ALL entries must have designations.
 - Use the "." character in this column to used to avoid assigning an entry to another cohort without breaking the above rule.
 
 #### Example Bed Mutation Data
