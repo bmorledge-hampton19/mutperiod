@@ -1,3 +1,9 @@
+mutperiod (0.7.4-0ubuntu2) focal; urgency=low
+
+  * Updated completions
+
+ -- Ben Morledge-Hampton <b.morledge-hampton@wsu.edu>  Thu, 22 Jul 2021 14:47:27 -0700
+
 mutperiod (0.7.4-0ubuntu1) focal; urgency=low
 
   * More intelligent context determination for custom bed parsing
