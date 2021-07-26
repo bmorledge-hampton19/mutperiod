@@ -38,7 +38,7 @@ Use the following steps to set up the necessary background data needed for analy
 Go to the [ICGC data portal](https://dcc.icgc.org/releases) to obtain mutation data for use in mutperiod.  Download any "simple_somatic_mutation" file with whole genome sequencing data.  Place the gzipped file into a new directory (other than the "\_\_external_data" directory) within the "mutperiod_data" directory.  
 *Careful:  mutperiod only maps mutations originating from whole genome sequencing data.  Exome sequencing data will not be carried through the pipeline, potentially resulting in blank output files.*  
 
-*Note:  Alternatively, you may use any bed formatted mutation data for analysis, but you must may need to alter the data format slightly to be recognized by mutperiod as a CustomBed formatted file, as detailed in [Section 3](#input-files-and-formats)*
+*Note:  Alternatively, you may use any bed formatted mutation data for analysis, but you may need to alter the data format slightly to be recognized by mutperiod as a CustomBed formatted file, as detailed in [Section 3](#input-files-and-formats)*
 
 #### 5. Parse Input Data
 If using data from ICGC, run the following command:  
