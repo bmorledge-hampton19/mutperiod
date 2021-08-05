@@ -21,7 +21,7 @@ Install mutperiod through apt using the following two commands (available on Ubu
 #### 2. Set up the Data Directory
 After installing, run the following command:  
   `mutperiod parseICGC`  
-This should open up a dialog to choose a directory to store data files in.  Choose a directory.  After choosing a directory, you should quit out of the following dialog to obtain the necessary data to run your analysis  
+This should open up a dialog to choose a directory to store data files in.  Choose a directory and click "Go".  After progressing past this dialog, a second dialog will pop up.  You should quit out of this dialog to obtain the necessary data to run your analysis  
 
 #### 3. Obtain Genome and Nucleosome Positioning Data
 Use the following steps to set up the necessary background data needed for analysis:  
