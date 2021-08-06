@@ -45,7 +45,7 @@ If using data from ICGC, run the following command:
   `mutperiod parseICGC`  
 Otherwise, if you are using custom bed input, run this command:  
   `mutperiod parseBed`  
-Fill out the resulting dialogs using genome fasta file from step 3 and the mutation data file from step 4.
+Fill out the resulting dialogs using the genome fasta file from step 3 and the mutation data file from step 4.
 
 #### 6. Perform Periodicity Analysis
 Run the following command:
