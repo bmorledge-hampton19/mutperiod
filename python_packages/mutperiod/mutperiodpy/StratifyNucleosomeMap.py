@@ -10,15 +10,16 @@ from mutperiodpy.helper_scripts.UsefulFileSystemFunctions import (getDataDirecto
 
 from benbiohelpers.FileSystemHandling.DirectoryHandling import checkDirs
 from benbiohelpers.CountThisInThat.Counter import ThisInThatCounter
-from benbiohelpers.CountThisInThat.InputDataStructures import EncompassedDataDefaultStrand, EncompassingDataDefaultStrand
+from benbiohelpers.CountThisInThat.InputDataStructures import EncompassedDataDefaultStrand, EncompassingDataDefaultStrand, ENCOMPASSED_DATA
 from benbiohelpers.CountThisInThat.CounterOutputDataHandler import CounterOutputDataHandler
 
 class NucleosomeStratifier(ThisInThatCounter):
 
     def setUpOutputDataHandler(self):
-        self.outputDataHandler = CounterOutputDataHandler()
+        self.outputDataHandler = CounterOutputDataHandler(self.writeIncrementally)
         self.outputDataHandler.addEncompassedFeatureStratifier(outputName = "Nucleosome")
         self.outputDataHandler.addPlaceholderStratifier()
+        self.outputDataHandler.createOutputDataWriter(self.outputFilePath, oDSSubs = (None, -1))
 
     def constructEncompassingFeature(self, line) -> EncompassingDataDefaultStrand:
         return EncompassingDataDefaultStrand(line, self.acceptableChromosomes)
@@ -51,40 +52,10 @@ def stratifyNucleosomeMap(nucleosomeMapDir, stratifyingFeaturesMapFilePaths):
         stratifiedNucMapFilePath = os.path.join(stratifiedNucMapDir, os.path.basename(stratifiedNucMapDir) + ".bed")
         stratificationConditionsFilePath = os.path.join(stratifiedNucMapDir, "stratification_conditions.txt")
 
-        # Get the path to the intermediate file of encompassment counts.
-        intermediateDir = os.path.join(stratifiedNucMapDir,"intermediate_files")
-        encompassmentCountsFilePath = os.path.join(intermediateDir, os.path.basename(stratifiedNucMapDir) + "_encompassment_counts.tsv")
-        checkDirs(intermediateDir)
-
-        stratifier = NucleosomeStratifier(originalNucMapFilePath, stratifyingFeaturesMapFilePath, encompassmentCountsFilePath)
+        # Perform the stratification, writing the results as they are determined.
+        stratifier = NucleosomeStratifier(originalNucMapFilePath, stratifyingFeaturesMapFilePath, 
+                                          stratifiedNucMapFilePath, writeIncrementally = ENCOMPASSED_DATA)
         stratifier.count()
-        stratifier.writeResults((None,{None:"Encompassing_Feature_Counts"}))
-
-        # Create a list of nucleosome position IDs from the newly written file.
-        nucPosIDs: List[str] = list()
-        with open(encompassmentCountsFilePath, 'r') as encompassmentCountsFile:
-
-            encompassmentCountsFile.readline() # Headers: Get rid of 'em!
-
-            for line in encompassmentCountsFile:
-                if line.split()[1] != "0": nucPosIDs.append(line.strip())
-
-        # Look for the positionIDs in the original nucleosome map, and write matching entries to the new map.
-        print("Writing results to new nucleosome map...")
-        with open(originalNucMapFilePath, 'r') as originalNucMapFile:
-            with open(stratifiedNucMapFilePath, 'w') as stratifiedNucMapFile:
-
-                for nucPosID in nucPosIDs:
-                    
-                    bedEntry = originalNucMapFile.readline()
-                    chromosome, theRest = nucPosID.split(':')
-                    startPos = float(theRest.split('(')[0])
-
-                    while not matchesBedEntry(chromosome, startPos, bedEntry): 
-                        bedEntry = originalNucMapFile.readline()
-                        assert bedEntry, "Match not found for " + nucPosID
-
-                    stratifiedNucMapFile.write(bedEntry)
 
         # Finally, record the conditions of the stratification
         with open(stratificationConditionsFilePath, 'w') as stratificationConditionsFile:

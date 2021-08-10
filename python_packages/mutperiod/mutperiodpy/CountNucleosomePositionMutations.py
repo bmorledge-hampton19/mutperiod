@@ -4,40 +4,36 @@
 #        (Sorted first by chromosome (string) and then by nucleotide position (numeric))
 
 import os
-from typing import List
 from benbiohelpers.TkWrappers.TkinterDialog import TkinterDialog, Selections
 from mutperiodpy.helper_scripts.UsefulFileSystemFunctions import (Metadata, generateFilePath, generateMetadata, getDataDirectory,
                                                                   DataTypeStr, getAcceptableChromosomes, checkDirs, getIsolatedParentDir)
 
 from benbiohelpers.CountThisInThat.Counter import ThisInThatCounter
 from benbiohelpers.CountThisInThat.InputDataStructures import EncompassedDataDefaultStrand, EncompassingDataDefaultStrand
-from benbiohelpers.CountThisInThat.CounterOutputDataHandler import AmbiguityHandling, CounterOutputDataHandler
+from benbiohelpers.CountThisInThat.CounterOutputDataHandler import AmbiguityHandling, OutputDataWriter
 
 
-class NucleosomeCODH(CounterOutputDataHandler):
-
-    def getCountDerivatives(self, previousKeys, getHeaders = False) -> List[str]:
-        if getHeaders: return ["Both_Strands_Counts", "Aligned_Strands_Counts"]
-        else:
-            thisPlusCounts = self.outputDataStructure[previousKeys[0]][True]
-            thisMinusCounts = self.outputDataStructure[previousKeys[0]][False]
-            oppositeMinusCounts = self.outputDataStructure[-previousKeys[0]][False]
-            return [str(thisPlusCounts+thisMinusCounts),str(thisPlusCounts+oppositeMinusCounts)]
+def getCountDerivatives(outputDataWriter: OutputDataWriter, getHeaders):
+    if getHeaders: return ["Both_Strands_Counts", "Aligned_Strands_Counts"]
+    else:
+        thisPlusCounts = outputDataWriter.outputDataStructure[outputDataWriter.previousKeys[0]][True]
+        thisMinusCounts = outputDataWriter.outputDataStructure[outputDataWriter.previousKeys[0]][False]
+        oppositeMinusCounts = outputDataWriter.outputDataStructure[-outputDataWriter.previousKeys[0]][False]
+        return [str(thisPlusCounts+thisMinusCounts),str(thisPlusCounts+oppositeMinusCounts)]
 
 
 class MutationsInNucleosomesCounter(ThisInThatCounter):
 
     def setUpOutputDataHandler(self):
-        self.outputDataHandler = NucleosomeCODH()
+        super().setUpOutputDataHandler()
         self.outputDataHandler.addRelativePositionStratifier(self.currentEncompassingFeature, extraRangeRadius = self.encompassingFeatureExtraRadius,
                                                              outputName = "Dyad_Position")
         self.outputDataHandler.addStrandComparisonStratifier(strandAmbiguityHandling = AmbiguityHandling.tolerate)
+        self.outputDataHandler.createOutputDataWriter(self.outputFilePath, customStratifyingNames=(None, {True:"Plus_Strand_Counts", False:"Minus_Strand_Counts"}),
+                                                      getCountDerivatives = getCountDerivatives)
 
     def constructEncompassingFeature(self, line) -> EncompassingDataDefaultStrand:
         return EncompassingDataDefaultStrand(line, self.acceptableChromosomes)
-
-    def writeResults(self):
-        return super().writeResults(customStratifyingNames=(None, {True:"Plus_Strand_Counts", False:"Minus_Strand_Counts"}))
 
 
 class NucleosomesInNucleosomesCounter(MutationsInNucleosomesCounter):
@@ -65,7 +61,6 @@ def countNucleosomePositionMutations(mutationFilePaths, nucleosomeMapNames, coun
         counter = NucleosomesInNucleosomesCounter(nucleosomeMapFilePath, nucleosomeMapFilePath, countsFilePath, 
                                                   encompassingFeatureExtraRadius=1000, acceptableChromosomes=acceptableChromosomes)
         counter.count()
-        counter.writeResults()
 
         return [countsFilePath]
 
@@ -134,7 +129,6 @@ def countNucleosomePositionMutations(mutationFilePaths, nucleosomeMapNames, coun
                                                         encompassingFeatureExtraRadius=73 + linkerOffset, acceptableChromosomes=acceptableChromosomes,
                                                         checkForSortedFiles = (True, not nucleosomeMapSortingChecked))
                 counter.count()
-                counter.writeResults()
 
                 nucleosomeMutationCountsFilePaths.append(nucleosomeMutationCountsFilePath)
 
@@ -152,7 +146,6 @@ def countNucleosomePositionMutations(mutationFilePaths, nucleosomeMapNames, coun
                                                         encompassingFeatureExtraRadius=1000, acceptableChromosomes=acceptableChromosomes,
                                                         checkForSortedFiles = (True, not nucleosomeMapSortingChecked))
                 counter.count()
-                counter.writeResults()
 
                 nucleosomeMutationCountsFilePaths.append(nucleosomeMutationCountsFilePath)
 
