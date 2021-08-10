@@ -95,7 +95,7 @@ def getAcceptableChromosomes(genomeFilePath: str, returnFilePathInstead = False)
     # Make sure we were given a reasonable file path.
     assert getIsolatedParentDir(genomeFilePath) in genomeFilePath and genomeFilePath.endswith(".fa"), \
         "Given file path does not appear to be a genome file path internal to mutperiod.  Make sure to \
-         choose a .fa file within the mutperiod_data/__external_data/[genome_name] directory or the genome directory itself."
+         choose a .fa file within the mutperiod_data/__external_data/[genome_name] directory or choose the genome directory itself."
 
     # Parse the path to the acceptable cohromosomes file from the given path.
     acceptableChromosomesFilePath = genomeFilePath.rsplit(".fa",1)[0] + "_acceptable_chromosomes.txt"
@@ -109,11 +109,12 @@ def getAcceptableChromosomes(genomeFilePath: str, returnFilePathInstead = False)
 
                 for line in genomeFile:
                     if line.startswith('>'):
-                        chromosomeName = line[1:].strip()
+                        chromosomeName = line[1:].split(maxsplit = 1)[0]
                         print("Found chromosome:", chromosomeName)
                         acceptableChromosomesFile.write(chromosomeName + '\n')
         
-        print("If these chromosome designations seem incorrect, check that the genome fasta file headers are formatted correctly.")
+        print("If these chromosome designations seem incorrect, check that the genome fasta file headers are formatted correctly.  "
+              "Chromosome names are defined as the string before the first whitespace character and after the '>' in each header line.")
 
     # Create a list of acceptable chromosome strings from the acceptable chromosomes file and return it.
     # Or, if requested, return the path to the acceptable chromosomes file instead.
