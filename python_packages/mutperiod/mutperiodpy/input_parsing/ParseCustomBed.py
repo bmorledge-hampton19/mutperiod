@@ -185,7 +185,7 @@ def autoAcquireAndQACheck(bedInputFilePath: str, genomeFilePath, autoAcquiredFil
                                         "does not match the corresponding sequence in the given genome, or its reverse compliment.")
 
                 # Change any '.' characters in the "altered to" column to "OTHER"
-                if choppedUpLine[4] == '.': choppedUpLine[4] == "OTHER"
+                if choppedUpLine[4] == '.': choppedUpLine[4] = "OTHER"
 
                 # Determine the sequence context of the line and whether or not it matches the sequence context for other.
                 # Skip this if the file is "mixed", this line is an indel, or only single base substitutions are allowed and this line isn't one.
