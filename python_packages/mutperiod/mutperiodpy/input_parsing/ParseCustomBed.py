@@ -147,7 +147,8 @@ def autoAcquireAndQACheck(bedInputFilePath: str, genomeFilePath, autoAcquiredFil
                 checkForErrors(choppedUpLine, cohortDesignationPresent, acceptableChromosomes, acceptableChromosomesFilePath)
 
                 # If this is the first entry requiring auto-acquiring, generate the required fasta file.
-                if not autoAcquiring and (choppedUpLine[3] == '.' or (choppedUpLine[5] == '.' and choppedUpLine[3] != '*')):
+                if (not autoAcquiring and (choppedUpLine[3] == '.' or choppedUpLine[4] == '.' or 
+                    (choppedUpLine[5] == '.' and choppedUpLine[3] != '*'))):
                     print("Found line with auto-acquire requested.  Generating fasta...")
                     autoAcquiring = True
                     bedToFasta(bedInputFilePath, genomeFilePath, autoAcquiredFilePath)
