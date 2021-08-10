@@ -7,7 +7,7 @@
 #          "*" indicates an insertion between the two given bases.
 #   Col 4: The base(s) that the position(s) were mutated to.
 #          "*" indicates a deletion of the given base
-#          OTHER: Any other lesion or feature
+#          Use "OTHER" for any other lesion or feature ("." will be coerced to "OTHER")
 #   Col 5: The strand the mutation/alteration occurred in.  Single-base mutations are flipped so that they occur in 
 #          the pyrimidine-containing strand if necessary.  
 #          If set to ".", the strand is first determined from the genome file, if possible (not an insertion).
@@ -17,7 +17,6 @@
 # The file is then converted to a format suitable for the rest of the package's analysis scripts.
 
 import os, subprocess, sys
-from posixpath import abspath
 from typing import List
 from benbiohelpers.TkWrappers.TkinterDialog import TkinterDialog, Selections
 from mutperiodpy.helper_scripts.UsefulFileSystemFunctions import (getDataDirectory, getIsolatedParentDir, generateMetadata, checkDirs, 
@@ -75,9 +74,9 @@ def checkForErrors(choppedUpLine: List[str], cohortDesignationPresent, acceptabl
                              "positions " + choppedUpLine[1] + " to " + choppedUpLine[2] + ".  Make sure both ranges are odd or " 
                              "both are even.")
 
-    if not {'A','C','G','T'}.issuperset(choppedUpLine[4]) and not choppedUpLine[4] in ('*',"OTHER"):
+    if not {'A','C','G','T'}.issuperset(choppedUpLine[4]) and not choppedUpLine[4] in ('*',"OTHER", '.'):
         raise ValueError("Invalid mutation designation: \"" + choppedUpLine[3] + "\".  Should be a string made up of the four DNA bases "
-                         "or \"*\" to denote a deletion, or \"OTHER\" to denote an some other alteration.")
+                         "or \"*\" to denote a deletion, or \"OTHER\" or \'.\' to denote an some other alteration.")
 
     if choppedUpLine[5] not in ('+','-','.'):
         raise ValueError("Invalid strand designation: \"" + choppedUpLine[5] + "\".  Should be \"+\" or \"-\", or \".\" "
@@ -184,6 +183,9 @@ def autoAcquireAndQACheck(bedInputFilePath: str, genomeFilePath, autoAcquiredFil
                     elif fastaEntry.sequence == reverseCompliment(choppedUpLine[3]): choppedUpLine[5] = '-'
                     else: raise ValueError("The given sequence " + choppedUpLine[3] + " for location " + fastaEntry.sequenceName + ' ' +
                                         "does not match the corresponding sequence in the given genome, or its reverse compliment.")
+
+                # Change any '.' characters in the "altered to" column to "OTHER"
+                if choppedUpLine[4] == '.': choppedUpLine[4] == "OTHER"
 
                 # Determine the sequence context of the line and whether or not it matches the sequence context for other.
                 # Skip this if the file is "mixed", this line is an indel, or only single base substitutions are allowed and this line isn't one.
