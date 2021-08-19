@@ -3,5 +3,6 @@
 export(findMSIDonors)
 export(generateMutperiodData)
 export(getMutSigs)
+export(getNRL)
 export(normalizeNucleosomeMutationCounts)
 import(data.table)
