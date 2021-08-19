@@ -242,6 +242,7 @@ def convertToStandardInput(bedInputFilePath, writeManager: WriteManager, onlySin
                 # Center features greater than a single nucleotide so that they occur at a single nucleotide position (or half position)
                 else: 
                     center = (int(choppedUpLine[1])+int(choppedUpLine[2])-1)/2
+                    if int(center) == center: center = int(center) # Remove the decimal from the float if possible.
                     choppedUpLine[1] = str(center)
                     choppedUpLine[2] = str(center + 1)
             
