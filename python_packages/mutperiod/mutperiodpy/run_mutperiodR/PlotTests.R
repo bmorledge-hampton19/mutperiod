@@ -68,7 +68,8 @@ colorInRange = function(range, color, data, dataCol, includeNegative = TRUE) {
 }
 
 
-plottingSuite = function(dataSetName, smoothTranslational = TRUE, fixedNRL = NA) {
+plottingSuite = function(dataSetName, smoothTranslational = TRUE, fixedNRL = NA,
+                         dataCol = "Normalized_Both_Strands") {
   
   # Get the relevant counts and periodicity data for the given data set name.
   if (dataSetName %in% names(mutperiodData$normalizedNucleosomeCountsTables)) {
@@ -216,12 +217,18 @@ lines(data$Dyad_Position, data$Minus_Strand_Counts, type = 'l',
 # Plot nucleosome self-counts...
 data[Dyad_Position == 0, Both_Strands_Counts := 0]
 data[,Counts_Per_Thousand_Total := Both_Strands_Counts/sum(data$Both_Strands_Counts) * 1000]
+data[, Counts_Per_Thousand_Total := sapply(data$Dyad_Position, smoothValues, 
+                                           data = data, dataCol = "Counts_Per_Thousand_Total")]
 
 # ... With base R plotting
 plot(data$Dyad_Position, data$Counts_Per_Thousand_Total, type = 'l', main = title,
      ylab = yAxisLabel, xlab = "Position Relative to Dyad (bp)",
-     cex.lab = 2, cex.main = 1.75, cex.axis = 1.5, lwd = 1.5, col = "black", ylim = ylim)
-lines(data$Dyad_Position, data$Counts_Per_Thousand_Total, lwd = 1.5, col = "gold2")
+     cex.lab = 1.5, cex.main = 1.75, cex.axis = 1.5, lwd = 1.0, col = "black", 
+     ylim = range(data[Dyad_Position > 5 | Dyad_Position < -5, Counts_Per_Thousand_Total]))
+lines(data$Dyad_Position, data$Counts_Per_Thousand_Total, lwd = 1.0, col = "gold2")
+lines(data$Dyad_Position, data$Counts_Per_Thousand_Total, lwd = 1.0, col = "red")
+lines(data$Dyad_Position, data$Counts_Per_Thousand_Total, lwd = 1.0, col = "forestgreen")
+lines(data$Dyad_Position, data$Counts_Per_Thousand_Total, lwd = 1.0, col = "blue")
 
 #... With ggplot
 ggplot(data, aes_string("Dyad_Position", dataCol, color = "Color")) +
