@@ -276,9 +276,6 @@ def generateNucleosomeMutationBackground(mutationBackgroundFilePaths, nucleosome
                     dyadRadius = 73
                     currentLinkerOffset = linkerOffset
 
-                # Make sure we have a fasta file for strongly positioned nucleosome coordinates
-                nucPosFastaFilePath = generateNucleosomeFasta(metadata.baseNucPosFilePath, metadata.genomeFilePath, dyadRadius, currentLinkerOffset)
-
                 # Generate the path to the tsv file of dyad position context counts
                 dyadPosContextCountsFilePath = generateFilePath(directory = os.path.dirname(metadata.baseNucPosFilePath),
                                                                 dataGroup = metadata.nucPosName,
@@ -290,6 +287,8 @@ def generateNucleosomeMutationBackground(mutationBackgroundFilePaths, nucleosome
                 if not os.path.exists(dyadPosContextCountsFilePath): 
                     print("Dyad position " + contextText + " counts file not found at",dyadPosContextCountsFilePath)
                     print("Generating genome wide dyad position " + contextText + " counts file...")
+                    # Make sure we have a fasta file for strongly positioned nucleosome coordinates
+                    nucPosFastaFilePath = generateNucleosomeFasta(metadata.baseNucPosFilePath, metadata.genomeFilePath, dyadRadius, currentLinkerOffset)
                     generateDyadPosContextCounts(nucPosFastaFilePath, dyadPosContextCountsFilePath,
                                                 contextNum, dyadRadius, currentLinkerOffset)
 
