@@ -200,7 +200,7 @@ ggplot(stratifiedCountsData,
 # Plot Plus and minus strands on the same graph (normalized).
 plot(data$Dyad_Position, data$Normalized_Plus_Strand, type = 'l', 
      main = "Plus (blue) vs. Minus (green)",
-     ylab = "Normalized Repair Read Counts", xlab = "Position Relative to Dyad (bp)",
+     ylab = "Normalized Repair Reads", xlab = "Position Relative to Dyad (bp)",
      cex.lab = 2, cex.main = 1.75, lwd = 3, col = "blue")
 lines(data$Dyad_Position, data$Normalized_Minus_Strand, type = 'l',
       lwd = 3, col = "light green")
@@ -209,7 +209,7 @@ lines(data$Dyad_Position, data$Normalized_Minus_Strand, type = 'l',
 plot(data$Dyad_Position, data$Plus_Strand_Counts, type = 'l', 
      main = "Plus (blue) vs. Minus (green)",
      ylab = "Raw Repair Read Counts", xlab = "Position Relative to Dyad (bp)",
-     cex.lab = 2, cex.main = 1.75, lwd = 3, col = "blue")
+     cex.lab = 2, cex.main = 1.75, cex.axis = 1.5, lwd = 3, col = "blue")
 lines(data$Dyad_Position, data$Minus_Strand_Counts, type = 'l',
       lwd = 3, col = "light green")
 
