@@ -16,11 +16,11 @@
 #          in this column can be used to avoid assigning an entry to another cohort without breaking this rule.
 # The file is then converted to a format suitable for the rest of the package's analysis scripts.
 
-import os, subprocess, sys
+import os, subprocess, sys, shutil
 from typing import List
 from benbiohelpers.TkWrappers.TkinterDialog import TkinterDialog, Selections
 from mutperiodpy.helper_scripts.UsefulFileSystemFunctions import (getDataDirectory, getIsolatedParentDir, generateMetadata, checkDirs, 
-                                                                  InputFormat, getAcceptableChromosomes)
+                                                                  DataTypeStr, InputFormat, getAcceptableChromosomes, generateFilePath)
 from benbiohelpers.FileSystemHandling.DirectoryHandling import getFilesInDirectory
 from benbiohelpers.FileSystemHandling.BedToFasta import bedToFasta
 from benbiohelpers.FileSystemHandling.FastaFileIterator import FastaFileIterator
@@ -31,8 +31,6 @@ from mutperiodpy.input_parsing.WriteManager import WriteManager
 # Checks for common errors in a line of input.
 def checkForErrors(choppedUpLine: List[str], cohortDesignationPresent, acceptableChromosomes, acceptableChromosomesFilePath):
 
-    regionLength = int(choppedUpLine[2]) - int(choppedUpLine[1])
-
     if len(choppedUpLine) < 6 or len(choppedUpLine) > 7:
         raise ValueError("Entry given with invalid number of arguments (" + str(len(choppedUpLine)) + ").  "
                          "Each entry should contain either 6 tab separated arguments or 7 (if a cohort designation is present.")
@@ -41,15 +39,25 @@ def checkForErrors(choppedUpLine: List[str], cohortDesignationPresent, acceptabl
         raise ValueError("Invalid chromosome identifier \"" + choppedUpLine[0] + "\" found.  "
                          "Expected chromosome in the set at: " + acceptableChromosomesFilePath)
 
-    if not (choppedUpLine[1].isnumeric() and choppedUpLine[2].isnumeric()) or int(choppedUpLine[1]) >= int(choppedUpLine[2]):
-        raise ValueError("Base positions should be integers and specify a minimum range of 1 base.  "
-                         "The first base coordinate should be 0-based and the second should be 1-based (inclusive).  " 
+    try:
+        float(choppedUpLine[1])
+        float(choppedUpLine[2])
+    except ValueError:
+        raise ValueError("Base positions should be numeric values.  "
+                         "The given coordinate pair, " + choppedUpLine[1] + ", " + choppedUpLine[2] + ' '
+                         "does not satisfy this condition.")
+
+    if float(choppedUpLine[2]) - float(choppedUpLine[1]) < 1:
+        raise ValueError("Base positions should specify a minimum range of 1 base.  "
+                         "The first base coordinate should be 0-based and the second should be 1-based.  " 
                          "The given coordinate pair, " + choppedUpLine[1] + ", " + choppedUpLine[2] + ' '
                          "does not satisfy these conditions.")
 
     if not {'A','C','G','T','N'}.issuperset(choppedUpLine[3]) and not choppedUpLine[3] in ('*','.'):
         raise ValueError("Invalid reference base(s): \"" + choppedUpLine[3] + "\".  Should be a string made up of the four DNA bases "
                          "or \".\" to auto acquire the base(s) from the corresponding genome, or \"*\" to denote an insertion.")
+
+    regionLength = float(choppedUpLine[2]) - float(choppedUpLine[1])
 
     # Cases where insertion...
     if choppedUpLine[3] == '*':
@@ -68,11 +76,6 @@ def checkForErrors(choppedUpLine: List[str], cohortDesignationPresent, acceptabl
         if len(choppedUpLine[3]) < regionLength:
             raise ValueError("References base(s): \"" + choppedUpLine[3] + "\" do not at least span the given region from "
                              "positions " + choppedUpLine[1] + " to " + choppedUpLine[2] + '.')
-
-        if len(choppedUpLine[3]) % 2 != regionLength % 2:
-            raise ValueError("References base(s): \"" + choppedUpLine[3] + "\" cannot be centered on the given region from "
-                             "positions " + choppedUpLine[1] + " to " + choppedUpLine[2] + ".  Make sure both ranges are odd or " 
-                             "both are even.")
 
     if not {'A','C','G','T'}.issuperset(choppedUpLine[4]) and not choppedUpLine[4] in ('*',"OTHER", '.'):
         raise ValueError("Invalid mutation designation: \"" + choppedUpLine[3] + "\".  Should be a string made up of the four DNA bases "
@@ -106,7 +109,7 @@ def equivalentEntries(fastaEntry: FastaFileIterator.FastaEntry, choppedUpLine):
 
 
 def isSingleBaseSubstitution(choppedUpLine):
-    return int(choppedUpLine[2]) - int(choppedUpLine[1]) == 1 and len(choppedUpLine[4]) == 1
+    return float(choppedUpLine[2]) - float(choppedUpLine[1]) == 1 and choppedUpLine[4] in ('A','C','G','T')
 
 # Checks each line for errors and auto acquire bases/strand designations where requested. 
 # Overwrites the original bed file if auto-acquiring occurred.
@@ -235,13 +238,13 @@ def convertToStandardInput(bedInputFilePath, writeManager: WriteManager, onlySin
             if choppedUpLine[3] == '*' or choppedUpLine[4] == '*':
                 if not includeIndels: continue
 
-            # Is this a single base substitution, and if not, are those included?
+            # Is this a single base substitution, and if not, should it even be included?
             if not isSingleBaseSubstitution(choppedUpLine):
                 if onlySingleBaseSubs: continue
 
                 # Center features greater than a single nucleotide so that they occur at a single nucleotide position (or half position)
                 else: 
-                    center = (int(choppedUpLine[1])+int(choppedUpLine[2])-1)/2
+                    center = (float(choppedUpLine[1])+float(choppedUpLine[2])-1)/2
                     if int(center) == center: center = int(center) # Remove the decimal from the float if possible.
                     choppedUpLine[1] = str(center)
                     choppedUpLine[2] = str(center + 1)
@@ -339,6 +342,17 @@ def parseCustomBed(bedInputFilePaths, genomeFilePath, stratifyByMS,
 
         context = autoAcquireAndQACheck(bedInputFilePath, genomeFilePath, autoAcquiredFilePath, onlySingleBaseSubs, includeIndels)
 
+        # Make sure the input file is not named the same as what will become the output file.  If it is, it needs to be copied
+        # to the intermediate_files directory so it is available to be read from as the new output file is being written.
+        expectedOutputFilePath = generateFilePath(directory = dataDirectory, dataGroup = os.path.basename(dataDirectory),
+                                                  context = context, dataType = DataTypeStr.mutations, fileExtension = ".bed")
+        if bedInputFilePath == expectedOutputFilePath:
+            inputFilePathCopy = os.path.join(intermediateFilesDir,os.path.basename(bedInputFilePath))
+            print("Input file path is identical to generated output file path and will be overwritten. ",
+                  "Creating a copy of the input file at:", inputFilePathCopy, "to use for reading.")
+            shutil.copy2(bedInputFilePath, inputFilePathCopy)
+            bedInputFilePath = inputFilePathCopy
+
         # Create an instance of the WriteManager to handle writing.
         with WriteManager(dataDirectory, context) as writeManager:
 
@@ -363,7 +377,7 @@ def parseCustomBed(bedInputFilePaths, genomeFilePath, stratifyByMS,
 
             # Sort the input data (should also ensure that the output data is sorted)
             subprocess.run(("sort",) + optionalArgument + 
-                            ("-k1,1","-k2,2n", "-k3,3n",bedInputFilePath,"-o",bedInputFilePath), check = True)
+                            ("-k1,1","-k2,2n", "-k3,3n",bedInputFilePath,"-s","-o",bedInputFilePath), check = True)
 
             # If requested, also prepare for stratification by microsatellite stability.
             if stratifyByMS:             
