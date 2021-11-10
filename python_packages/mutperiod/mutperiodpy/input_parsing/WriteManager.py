@@ -151,7 +151,7 @@ class WriteManager:
         # If this isn't the first opened cohort file, close and sort the last one.
         if self.currentIndividualCohortFile is not None: 
             self.currentIndividualCohortFile.close()
-            subprocess.run(("sort","-k1,1","-k2,2n",self.individualCohortFilePath,"-o",self.individualCohortFilePath), check = True)
+            subprocess.run(("sort","-k1,1","-k2,2n",self.individualCohortFilePath,"-s","-o",self.individualCohortFilePath), check = True)
             Metadata(self.individualCohortFilePath).addMetadata(Metadata.AddableKeys.mutCounts, self.currentIndividualCohortMutCounts)
 
         # Make sure this is actually a new cohort.
@@ -264,25 +264,25 @@ class WriteManager:
     def cleanupAndSort(self):
 
         self.rootOutputFile.close()
-        subprocess.run(("sort","-k1,1","-k2,2n",self.rootOutputFilePath,"-o",self.rootOutputFilePath), check = True)
+        subprocess.run(("sort","-k1,1","-k2,2n",self.rootOutputFilePath,"-s","-o",self.rootOutputFilePath), check = True)
         Metadata(self.rootOutputFilePath).addMetadata(Metadata.AddableKeys.mutCounts, self.rootMutCounts)
         
 
         if self.stratifyByMS:
             self.aggregateMSIFile.close()
-            subprocess.run(("sort","-k1,1","-k2,2n",self.aggregateMSIFilePath,"-o",self.aggregateMSIFilePath), check = True)
+            subprocess.run(("sort","-k1,1","-k2,2n",self.aggregateMSIFilePath,"-s","-o",self.aggregateMSIFilePath), check = True)
             Metadata(self.aggregateMSIFilePath).addMetadata(Metadata.AddableKeys.mutCounts, self.aggregateMSIMutCounts)
             self.aggregateMSSFile.close()
-            subprocess.run(("sort","-k1,1","-k2,2n",self.aggregateMSSFilePath,"-o",self.aggregateMSSFilePath), check = True)
+            subprocess.run(("sort","-k1,1","-k2,2n",self.aggregateMSSFilePath,"-s","-o",self.aggregateMSSFilePath), check = True)
             Metadata(self.aggregateMSSFilePath).addMetadata(Metadata.AddableKeys.mutCounts, self.aggregateMSSMutCounts)
 
         if self.stratifyByMutSig:
             for mutSig in self.mutSigFiles:
                 self.mutSigFiles[mutSig].close()
-                subprocess.run(("sort","-k1,1","-k2,2n",self.mutSigFilePaths[mutSig], "-o",self.mutSigFilePaths[mutSig]), check = True)
+                subprocess.run(("sort","-k1,1","-k2,2n",self.mutSigFilePaths[mutSig],"-s","-o",self.mutSigFilePaths[mutSig]), check = True)
                 Metadata(self.mutSigFilePaths[mutSig]).addMetadata(Metadata.AddableKeys.mutCounts, self.mutSigMutCounts[mutSig])
 
         if self.stratifyByIndividualCohorts and self.currentIndividualCohortFile is not None:
             self.currentIndividualCohortFile.close()
-            subprocess.run(("sort","-k1,1","-k2,2n",self.individualCohortFilePath,"-o",self.individualCohortFilePath), check = True)
+            subprocess.run(("sort","-k1,1","-k2,2n",self.individualCohortFilePath,"-s","-o",self.individualCohortFilePath), check = True)
             Metadata(self.individualCohortFilePath).addMetadata(Metadata.AddableKeys.mutCounts, self.currentIndividualCohortMutCounts)
