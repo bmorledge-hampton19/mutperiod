@@ -4,7 +4,7 @@
 import os
 from typing import List
 from benbiohelpers.TkWrappers.TkinterDialog import TkinterDialog
-from mutperiodpy.helper_scripts.UsefulFileSystemFunctions import (getDataDirectory, getIsolatedParentDir, generateMetadata, checkDirs, 
+from mutperiodpy.helper_scripts.UsefulFileSystemFunctions import (getDataDirectory, getIsolatedParentDir, generateMetadata,
                                                                   InputFormat, DataTypeStr, getContext, getAcceptableChromosomes, InputError)
 from mutperiodpy.input_parsing.ParseCustomBed import checkForErrors
 
