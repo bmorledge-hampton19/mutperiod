@@ -2,7 +2,7 @@
 # Read in the data and produce normalized counts, writing them to a new file if specified (by default true).
 #' @export
 normalizeNucleosomeMutationCounts = function(rawCountsFilePath, backgroundCountsFilePath,
-                                             normalizedDataFilePath = NA, writeNormalizedData = TRUE) {
+                                             normalizedDataFilePath = NULL, alternativeScalingFactor = NULL) {
 
   # Read in the data
   rawCounts = data.table::fread(file = rawCountsFilePath)
@@ -46,9 +46,9 @@ normalizeNucleosomeMutationCounts = function(rawCountsFilePath, backgroundCounts
     stop("Unequal dyad positions in raw vs. background counts data.")
   }
 
-  # Compute a factor to adjust normalized values based on the ratio of total
-  # background:raw nucleosome mutation counts.
-  totalCountsAdjust = sum(backgroundCounts$Expected_Mutations_Both_Strands) /
+  # Compute a basic scaling factor from the ratio of total
+  # background:raw nucleosome mutation counts.  (Centers final normalized counts on 1)
+  scalingFactor = sum(backgroundCounts$Expected_Mutations_Both_Strands) /
                       sum(rawCounts$Both_Strands_Counts)
 
   # Create a table of normalized values from the given data
@@ -56,19 +56,31 @@ normalizeNucleosomeMutationCounts = function(rawCountsFilePath, backgroundCounts
   normalizedData[,Dyad_Position := backgroundCounts$Dyad_Position]
   normalizedData[,Normalized_Minus_Strand := mapply(normalize,rawCounts$Minus_Strand_Counts,
                                                     backgroundCounts$Expected_Mutations_Minus_Strand,
-                                                    MoreArgs = list(totalCountsAdjust = totalCountsAdjust))]
+                                                    MoreArgs = list(scalingFactor = scalingFactor))]
   normalizedData[,Normalized_Plus_Strand := mapply(normalize,rawCounts$Plus_Strand_Counts,
                                                    backgroundCounts$Expected_Mutations_Plus_Strand,
-                                                   MoreArgs = list(totalCountsAdjust = totalCountsAdjust))]
+                                                   MoreArgs = list(scalingFactor = scalingFactor))]
   normalizedData[,Normalized_Both_Strands := mapply(normalize,rawCounts$Both_Strands_Counts,
                                                     backgroundCounts$Expected_Mutations_Both_Strands,
-                                                    MoreArgs = list(totalCountsAdjust = totalCountsAdjust))]
+                                                    MoreArgs = list(scalingFactor = scalingFactor))]
   normalizedData[,Normalized_Aligned_Strands := mapply(normalize,rawCounts$Aligned_Strands_Counts,
                                                        backgroundCounts$Expected_Mutations_Aligned_Strands,
-                                                       MoreArgs = list(totalCountsAdjust = totalCountsAdjust))]
+                                                       MoreArgs = list(scalingFactor = scalingFactor))]
+
+  # If an alternative scaling factor was given, compute additional normalized values with this factor
+  if (!is.null(alternativeScalingFactor)) {
+    normalizedData[,Alternative_Normalized_Minus_Strand :=
+                     Normalized_Minus_Strand/scalingFactor*alternativeScalingFactor]
+    normalizedData[,Alternative_Normalized_Plus_Strand :=
+                     Normalized_Plus_Strand/scalingFactor*alternativeScalingFactor]
+    normalizedData[,Alternative_Normalized_Both_Strands :=
+                     Normalized_Both_Strands/scalingFactor*alternativeScalingFactor]
+    normalizedData[,Alternative_Normalized_Aligned_Strands :=
+                     Normalized_Aligned_Strands/scalingFactor*alternativeScalingFactor]
+  }
 
   # Write the normalized data to a new file. (If desired)
-  if (writeNormalizedData) {
+  if (!is.null(normalizedDataFilePath)) {
     data.table::fwrite(normalizedData, sep = '\t', file = normalizedDataFilePath)
   }
 
@@ -78,7 +90,7 @@ normalizeNucleosomeMutationCounts = function(rawCountsFilePath, backgroundCounts
 
 # Normalizes data by dividing raw by expected, except in the case where expected is 0.
 # (To avoid dividing by zero)
-normalize = function(raw, expected, totalCountsAdjust) {
+normalize = function(raw, expected, scalingFactor) {
   if (expected == 0) return(0)
-  else return(raw/expected*totalCountsAdjust)
+  else return(raw/expected*scalingFactor)
 }

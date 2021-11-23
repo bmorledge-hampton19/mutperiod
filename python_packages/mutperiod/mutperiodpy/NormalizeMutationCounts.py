@@ -47,7 +47,10 @@ def getCustomBackgroundRawPairs(customRawCountsFilePaths, customBackgroundCounts
     for customRawCountsFilePath in customRawCountsFilePaths:
 
         rawMetadata = Metadata(customRawCountsFilePath)
-        backgroundMetadata = Metadata(os.path.join(customBackgroundCountsDir,rawMetadata.nucPosName))
+        backgroundDir = os.path.join(customBackgroundCountsDir,rawMetadata.nucPosName)
+        assert os.path.exists(backgroundDir), ("Expected a directory at " + backgroundDir + " to contain the "
+                                               "background for " + customRawCountsFilePath + " but it does not exist.")
+        backgroundMetadata = Metadata(backgroundDir)
 
         customBackgroundCountsFilePath = generateFilePath(
             directory = backgroundMetadata.directory, dataGroup = backgroundMetadata.dataGroupName,
@@ -64,7 +67,16 @@ def getCustomBackgroundRawPairs(customRawCountsFilePaths, customBackgroundCounts
     return customBackgroundRawPairs
 
 
-def normalizeCounts(backgroundCountsFilePaths: List[str], customRawCountsFilePaths: List[str] = list(), customBackgroundCountsDir = None):
+# Given a file path, use its metadata to determine how many 
+# features (mutations, repair reads, etc.) are present in its parent data set.
+def getParentDataFeatureCounts(filePath):
+    counts = Metadata(os.path.dirname(Metadata(filePath).parentDataFilePath)).mutationCounts
+    assert counts is not None, "Feature counts were never recorded for the parent data from: " + filePath
+    return(counts)
+
+
+def normalizeCounts(backgroundCountsFilePaths: List[str], customRawCountsFilePaths: List[str] = list(), 
+                    customBackgroundCountsDir = None, includeAlternativeScaling = False):
 
     normalizedCountsFilePaths = list()
 
@@ -93,10 +105,24 @@ def normalizeCounts(backgroundCountsFilePaths: List[str], customRawCountsFilePat
                                                         usesNucGroup = checkForNucGroup(backgroundCountsFilePath),
                                                         dataType = DataTypeStr.normNucCounts, fileExtension = ".tsv")
 
+            # Prepare the arguments to the subprocess call.
+            args = ["Rscript",os.path.join(rScriptsDirectory,"NormalizeNucleosomeMutationCounts.R"),
+                    rawCountsFilePath,backgroundCountsFilePath,normalizedCountsFilePath]
+
+            # If alternative scaling is requested, determine the appropriate scaling factor and add it to the arguments
+            if includeAlternativeScaling:
+
+                # If we are normalizing by sequence context, just revert the automatic scaling.
+                if customBackgroundCountsDir is None: args.append(1)
+
+                # If we are normalizing by a custom context, scale based on the relative sizes of the parent background and raw data sets.
+                else:
+                    args.append(str(getParentDataFeatureCounts(backgroundCountsFilePath) /
+                                    getParentDataFeatureCounts(rawCountsFilePath)))                    
+
             # Pass the file paths to the R script to generate the normalized counts file.
             print("Calling R script to generate normalized counts...")
-            subprocess.run(("Rscript",os.path.join(rScriptsDirectory,"NormalizeNucleosomeMutationCounts.R"),
-                            rawCountsFilePath,backgroundCountsFilePath,normalizedCountsFilePath), check = True)
+            subprocess.run(args, check = True)
 
             normalizedCountsFilePaths.append(normalizedCountsFilePath)
 
@@ -121,11 +147,14 @@ def main():
                                       DataTypeStr.nucMutBackground + ".tsv",("Tab Seperated Values Files",".tsv"))
 
     customBackgroundSelector = dialog.createDynamicSelector(1, 0)
-    customBackgroundSelector.initCheckboxController("Use another data set as custom background.")
+    customBackgroundSelector.initCheckboxController("Include files with another data set as custom background.")
     customBackgroundFileSelector = customBackgroundSelector.initDisplay(True, "customBackground")
-    customBackgroundFileSelector.createMultipleFileSelector("Raw nucleosome counts to be normalized", 0, DataTypeStr.rawNucCounts, ("TSV Files", ".tsv"))
+    customBackgroundFileSelector.createMultipleFileSelector("Raw nucleosome counts to be normalized", 0, 
+                                                            DataTypeStr.rawNucCounts + ".tsv", ("TSV Files", ".tsv"))
     customBackgroundFileSelector.createFileSelector("Data Directory for nucleosome counts to be used as background", 1, directory = True)
     customBackgroundSelector.initDisplayState()
+
+    dialog.createCheckbox("Include alternative scaling factor indepedent of nucleosome map.", 2, 0)
 
     # Run the UI
     dialog.mainloop()
@@ -144,6 +173,8 @@ def main():
         customRawCountsFilePaths = None
         customBackgroundCountsDir = None
 
-    normalizeCounts(backgroundCountsFilePaths, customRawCountsFilePaths, customBackgroundCountsDir)
+    includeAlternativeScaling = selections.getToggleStates()[0]
+
+    normalizeCounts(backgroundCountsFilePaths, customRawCountsFilePaths, customBackgroundCountsDir, includeAlternativeScaling)
 
 if __name__ == "__main__": main()

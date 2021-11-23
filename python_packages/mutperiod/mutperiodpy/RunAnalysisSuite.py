@@ -29,7 +29,7 @@ def generateCustomBackground(customBackgroundDir, nucleosomeMapNames, useSingleN
 
 
 def runAnalysisSuite(mutationFilePaths: List[str], nucleosomeMapNames: List[str], normalizationMethod, customBackgroundDir, 
-                     useSingleNucRadius, includeLinker, useNucGroupRadius):
+                     useSingleNucRadius, includeLinker, useNucGroupRadius, includeAlternativeScaling = False):
 
     # Make sure at least one radius was selected.
     if not useNucGroupRadius and not useSingleNucRadius:
@@ -92,7 +92,7 @@ def runAnalysisSuite(mutationFilePaths: List[str], nucleosomeMapNames: List[str]
 
     elif normalizationMethod == "Custom Background":
         print("\nNormalizing counts using custom background data...")
-        normalizeCounts(list(), nucleosomeMutationCountsFilePaths, customBackgroundDir)
+        normalizeCounts(list(), nucleosomeMutationCountsFilePaths, customBackgroundDir, includeAlternativeScaling)
 
 
 def parseArgs(args):
@@ -152,16 +152,18 @@ def main():
     customBackgroundFileSelector = normalizationSelector.initDisplay("Custom Background", "customBackground")
     customBackgroundFileSelector.createFileSelector("Custom Background Directory:", 0, ("Bed Files", ".bed"), directory = True)
     customBackgroundFileSelector.createCheckbox("Generate Background now", 1, 0)
-    customBackgroundFileSelector.createLabel("", 2, 0)
     normalizationSelector.initDisplayState()
 
-    selectNucleosomeDyadRadius = dialog.createDynamicSelector(3,0)
+    dialog.createCheckbox("Include alternative scaling factor indepedent of nucleosome map.", 3, 0)
+    dialog.createLabel('',4,0)
+
+    selectNucleosomeDyadRadius = dialog.createDynamicSelector(5,0)
     selectNucleosomeDyadRadius.initCheckboxController("Run analysis with a single nucleosome dyad radius (73 bp)")
     linkerSelectionDialog = selectNucleosomeDyadRadius.initDisplay(1, "singleNuc")
     linkerSelectionDialog.createCheckbox("Include 30 bp linker DNA on either side of single nucleosome dyad radius.",0,0)
     selectNucleosomeDyadRadius.initDisplayState()
 
-    dialog.createCheckbox("Count with a nucleosome group radius (1000 bp)", 4, 0)
+    dialog.createCheckbox("Count with a nucleosome group radius (1000 bp)", 6, 0)
 
     # Run the UI
     dialog.mainloop()
@@ -186,7 +188,8 @@ def main():
     if useSingleNucRadius: 
         includeLinker = selections.getToggleStates("singleNuc")[0] # Whether or not to include 30 bp linker DNA in nucleosome dyad positions
     else: includeLinker = False
-    useNucGroupRadius = selections.getToggleStates()[0] # Whether or not to generate data with a 1000 bp nuc group dyad radius
+    useNucGroupRadius = selections.getToggleStates()[1] # Whether or not to generate data with a 1000 bp nuc group dyad radius
+    includeAlternativeScaling = selections.getToggleStates()[0] # Whether or not to include scaling independent of nucleosome map
 
     # If requested, generate the background counts file(s).
     if generateCustomBackgroundNow:
@@ -194,7 +197,7 @@ def main():
                                  includeLinker, useNucGroupRadius)
 
     runAnalysisSuite(mutationFilePaths, nucleosomeMapNames, normalizationMethod, customBackgroundDir, useSingleNucRadius, 
-                     includeLinker, useNucGroupRadius)
+                     includeLinker, useNucGroupRadius, includeAlternativeScaling)
 
 
 if __name__ == "__main__": main()
