@@ -322,11 +322,17 @@ class Metadata:
     # filePath can be a path to any file in the same directory as the desired metadata or the directory itself.
     def __init__(self,filePath):
 
+        # Make sure the given file path exists. (Otherwise, the isdir call below can be EXTREMELY misleading)
+        assert os.path.exists(filePath), "Given path to retrieve metadata from does not exist: " + filePath
+
         # Get the path to the metadata file.
         if os.path.isdir(filePath):
             self.metadataFilePath = os.path.join(filePath,".metadata")
         else:
             self.metadataFilePath = os.path.join(os.path.dirname(filePath),".metadata")
+
+        # Make sure the generated metadata file path exists
+        assert os.path.exists(filePath), "Metadata not found at expected location: " + self.metadataFilePath
 
         # Read the metadata file and put its contents into and dictionary, key-value pairs in the file.
         self.metadata = dict()
@@ -385,7 +391,8 @@ class Metadata:
             self.cohorts += self.getMetadataByKey("cohorts").split(", ")
         
         # Check for addable metadata.
-        self.mutationCounts: int = self.getMetadataByKey(self.AddableKeys.mutCounts.value, False)
+        self.mutationCounts = self.getMetadataByKey(self.AddableKeys.mutCounts.value, False)
+        if self.mutationCounts is not None: self.mutationCounts = int(self.mutationCounts)
 
         ### Get file paths for useful metadata associated files.
 
