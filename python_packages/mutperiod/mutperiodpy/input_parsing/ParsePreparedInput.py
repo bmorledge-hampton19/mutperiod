@@ -1,10 +1,10 @@
 # This script is used when a file is already in an acceptable form of input for the rest of the mutperiod pipeline.
 # Metadata is generated for the file and a few checks are performed to make sure the file is actually in the appropriate format.
 
-import os
+import os, subprocess
 from typing import List
 from benbiohelpers.TkWrappers.TkinterDialog import TkinterDialog
-from mutperiodpy.helper_scripts.UsefulFileSystemFunctions import (getDataDirectory, getIsolatedParentDir, generateMetadata,
+from mutperiodpy.helper_scripts.UsefulFileSystemFunctions import (getDataDirectory, getIsolatedParentDir, generateMetadata, Metadata, 
                                                                   InputFormat, DataTypeStr, getContext, getAcceptableChromosomes, InputError)
 from mutperiodpy.input_parsing.ParseCustomBed import checkForErrors
 
@@ -51,8 +51,11 @@ def parsePreparedInput(inputFilePaths: List[str], genomeFilePath, checkEachLine 
                 raise InputError(str(assertionError))
 
         # If everything else looks good, generate the metadata.  This directory is now ready to go!
+        print("Checks passed.  Generating metadata, including mutation counts using a call to wc -l")
         generateMetadata(dataGroupName, getIsolatedParentDir(genomeFilePath), 
                          os.path.basename(inputFilePath), InputFormat.prepared,  os.path.dirname(inputFilePath))
+        featureCounts = int(subprocess.check_output(("wc", "-l", inputFilePath), encoding = "UTF-8").split()[0])
+        Metadata(inputFilePath).addMetadata(Metadata.AddableKeys.mutCounts, featureCounts)
 
 
 def main():
