@@ -73,7 +73,7 @@ def checkForErrors(choppedUpLine: List[str], cohortDesignationPresent, acceptabl
     # Cases where not insertion...
     else:
 
-        if len(choppedUpLine[3]) < regionLength:
+        if choppedUpLine[3] != '.' and len(choppedUpLine[3]) < regionLength:
             raise ValueError("References base(s): \"" + choppedUpLine[3] + "\" do not at least span the given region from "
                              "positions " + choppedUpLine[1] + " to " + choppedUpLine[2] + '.')
 
