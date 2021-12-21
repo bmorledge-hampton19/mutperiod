@@ -31,20 +31,18 @@ class MSIIdentifier:
 
         if mutType not in ("SNP","INS","DEL"):
             raise ValueError(mutType + " is not a valid mutType value. mutType should be SNP, INS, or DEL.")
+        assert not self.MSICohortsIdentified, (
+            "MSI cohorts have already been identified and the MSISeq data file is already closed!")
 
-        if not self.MSICohortsIdentified:
-            self.MSISeqInputDataFile.write('\t'.join((chromosome, startPos, endPos, mutType, cohortID)) + '\n')
-        else:
-            raise ValueError("MSI cohorts already been identified and MSISeq data file already closed!")
+        self.MSISeqInputDataFile.write('\t'.join((chromosome, startPos, endPos, mutType, cohortID)) + '\n')
 
 
     # Generates the MSI cohorts list from the given data.
     def identifyMSICohorts(self, verbose = True):
 
-        if self.MSICohortsIdentified:
-            raise ValueError("MSI cohorts have already been identified.")
-        else:
-            self.MSISeqInputDataFile.close()
+        assert not self.MSICohortsIdentified, "MSI cohorts have already been identified."
+        
+        self.MSISeqInputDataFile.close()
 
         if verbose: print("Calling MSIseq to generate MSI donor list...")
         subprocess.run(("Rscript",os.path.join(rScriptsDirectory,"FindMSIDonors.R"),

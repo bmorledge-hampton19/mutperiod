@@ -8,6 +8,7 @@ from benbiohelpers.FileSystemHandling.BedToFasta import bedToFasta
 from benbiohelpers.FileSystemHandling.FastaFileIterator import FastaFileIterator
 from mutperiodpy.helper_scripts.UsefulFileSystemFunctions import (getIsolatedParentDir, generateFilePath, getDataDirectory,
                                                                   DataTypeStr, generateMetadata, InputFormat, getAcceptableChromosomes)
+from benbiohelpers.CustomErrors import *
 from mutperiodpy.input_parsing.ParseCustomBed import parseCustomBed
 
 
@@ -69,12 +70,12 @@ def trimBedGraphXRSeqData(xRSeqBedGraphReadsFilePathPair: List[str], trimmedRead
 
                         # Make sure the conversion to actual counts produced a reasonably whole number.
                         if abs(round(counts) - counts) > roundingErrorLeniency:
-                            raise ValueError(choppedUpLine[3] + " cannot be converted to actual counts as it is not evenly divisible by" +
+                            raise UserInputError("The following line is improperly formatted: " + line + '\n' +
+                                             choppedUpLine[3] + " cannot be converted to actual counts as it is not evenly divisible by" +
                                              str(minAdjustedCountValue) + ". (Rounding error > " + str(roundingErrorLeniency) + ")")
                         
                         # Write the data
-                        # readID = choppedUpLine[0] + ':' + choppedUpLine[1] + '-' + choppedUpLine[2] + '(' + plusOrMinus + ')'
-                        for i in range(round(counts)):
+                        for _ in range(round(counts)):
                             trimmedReadsFile.write('\t'.join((choppedUpLine[0],choppedUpLine[1],choppedUpLine[2],'NA','NA',plusOrMinus)) + '\n')
 
 
@@ -108,6 +109,9 @@ def trimBedXRSeqData(xRSeqBedReadsFilePath: str, trimmedReadsFilePath, acceptabl
 #   If no end value is given, just the base at the start value is used.
 #   e.g. A start value of -3 and an end value of -1 would search the last two 
 # The function outputs a tuple of the start and end indicies for the lesion in the input sequence in bed format (0-based:1-based).
+# NOTE: Lots of assert statements here that are actually more closely related to file inputs.  
+#       If this code is ever used more publicly, maybe convert these to custom errors and also 
+#       only invoke them once when the original file is read.
 def searchForLesion(sequence, expectedLocationStart, expectedLocationEnd, acceptableBases):
 
     expectedLocationEnd += 1
@@ -176,13 +180,14 @@ def getFilePathPair(filePath: str) -> str:
     strandDesignation = filePath.rsplit('.', 1)[-2][-1]
 
     if not strandDesignation in strandReverser:
-        raise ValueError("No strand designation (\'+\' or \'-\') immediately preceding file extension for file path: " + filePath)
+        raise InvalidPathError(filePath,
+                               "Expected strand designation (\'+\' or \'-\') immediately preceding file extension for file path:")
 
     complementaryPath = (filePath.rsplit( '.'.join((strandDesignation,fileExtension)) , 1)[0] + 
                          '.'.join((strandReverser[strandDesignation],fileExtension)) )
 
     if not os.path.exists(complementaryPath):
-            raise ValueError("Complementary file path not found at " + complementaryPath)
+        raise InvalidPathError(complementaryPath, "Complementary file path not found at:")
 
     return (filePath, complementaryPath)
 
@@ -244,8 +249,8 @@ class XRSeqInputDataPipeline:
         elif self.inputDataFilePath.endswith(".bed"):
             self.bedInputFilePath = self.inputDataFilePath
 
-        else: raise ValueError("Input data file path: " + self.inputDataFilePath + " is not in an acceptable format.  " +
-                               "Expected a bigWig, bedGraph, or bed file type.")
+        else: raise InvalidPathError(self.inputDataFilePath, "Input data file path is not in an acceptable format.  " 
+                                     "Expected a bigWig, bedGraph, or bed file type but received:")
 
         self.setUpFileSystem()
 

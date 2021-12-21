@@ -2,6 +2,7 @@
 # a genome fasta file.
 
 import os
+from benbiohelpers.CustomErrors import UserInputError, InvalidPathError
 from benbiohelpers.DNA_SequenceHandling import reverseCompliment
 from benbiohelpers.FileSystemHandling.FastaFileIterator import FastaFileIterator
 from mutperiodpy.helper_scripts.UsefulFileSystemFunctions import (Metadata, DataTypeStr, generateFilePath, getContext,
@@ -130,8 +131,8 @@ def generateMutationContextFrequencyFile(mutationFilePath, mutationContextFreque
 
                 # Make sure the file has sufficient information to generate the requested context
                 if len(surroundingBases) < contextNum:
-                    raise ValueError("The given mutation file does not have enough information to produce a " + 
-                                    contextText + " context.")
+                    raise UserInputError("The given mutation file does not have enough information to produce a " + 
+                                      contextText + " context.")
 
                 middleIndex = len(surroundingBases)/2 - 0.5
                 extensionLength = contextNum/2 - 0.5
@@ -141,7 +142,7 @@ def generateMutationContextFrequencyFile(mutationFilePath, mutationContextFreque
 
             # Make sure we didn't encounter an invalid chromosome.
             if choppedUpLine[0] not in acceptableChromosomes:
-                raise ValueError(choppedUpLine[0] + " is not a valid chromosome for the mutation file.")
+                raise UserInputError("Encountered " + choppedUpLine[0] + " which is not a valid chromosome for this genome.")
 
             contextCounts.setdefault(context,0)
             contextCounts[context] += 1
@@ -244,7 +245,9 @@ def generateMutationBackground(mutationFilePaths, backgroundContextNum):
 
         print("\nWorking in:",os.path.split(mutationFilePath)[1])
         if not DataTypeStr.mutations in os.path.split(mutationFilePath)[1]:
-            raise ValueError("Error:  Expected file with \"" + DataTypeStr.mutations + "\" in the name.")
+            raise InvalidPathError(mutationFilePath, "Given mutation file does not have \"" + DataTypeStr.mutations + 
+                                   "\" in the name.",
+                                   postPathMessage = "Are you sure you inputted a file from the mutperiod pipeline?")
 
         # Generate the file path for the genome context frequency file.
         genomeContextFrequencyFilePath = generateFilePath(directory = os.path.dirname(metadata.genomeFilePath),

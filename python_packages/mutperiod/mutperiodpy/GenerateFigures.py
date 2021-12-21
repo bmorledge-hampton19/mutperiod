@@ -2,29 +2,30 @@
 # some nice plots for the files and exports them to a given location.
 
 import os, subprocess, sys
+from typing import List
+from benbiohelpers.CustomErrors import UserInputError, InvalidPathError, checkIfPathExists
 from benbiohelpers.TkWrappers.TkinterDialog import TkinterDialog
 from benbiohelpers.FileSystemHandling.DirectoryHandling import getFilesInDirectory
 from mutperiodpy.helper_scripts.UsefulFileSystemFunctions import getDataDirectory, getExpectedPeriod, rScriptsDirectory, DataTypeStr
 
 
-def generateFigures(tsvFilePaths, rdaFilePaths, exportPath, omitOutliers, smoothNucGroup, strandAlign):
+def generateFigures(tsvFilePaths: List[str], rdaFilePaths: List[str], exportPath, omitOutliers, smoothNucGroup, strandAlign):
 
     # Check for invalid arguments.
-    assert len(rdaFilePaths) + len(tsvFilePaths) > 0, ("No files were found to generate graphs from.")
+    if len(rdaFilePaths) + len(tsvFilePaths) == 0:
+        raise UserInputError("No input files were found to generate graphs from.")
 
-    assert os.path.isdir(exportPath) or exportPath.endswith(".pdf"), ("The export path: " + exportPath + " is neither a directory nor a pdf file.")
+    if not (os.path.isdir(exportPath) or exportPath.endswith(".pdf")): 
+        raise InvalidPathError("The given export path is neither a directory nor a pdf file.")
 
     for tsvFilePath in tsvFilePaths:
-        assert tsvFilePath.endswith(DataTypeStr.generalNucCounts + ".tsv"), (
-            "Nucleosome counts tsv files should end with \"" + DataTypeStr.generalNucCounts + ".tsv\", "
-            "but the file " + tsvFilePath + "does not."
-        )
+        if not tsvFilePath.endswith(DataTypeStr.generalNucCounts + ".tsv"):
+            raise InvalidPathError(tsvFilePath, "The given nucleosome counts tsv file does not end with \"" + 
+                                   DataTypeStr.generalNucCounts + ".tsv\" as expected.")
 
     for rdaFilePath in rdaFilePaths:
-        assert rdaFilePath.endswith(".rda"), (
-            "Output rda files from periodicity analysis should end with \".rda\", "
-            "but the file " + rdaFilePath + "does not."
-        )
+        if not rdaFilePath.endswith(".rda"):
+            raise InvalidPathError(rdaFilePath, "The given nucleosome counts rda file does not end with \".rda\" as expected.")
 
     # Retrieve the expected periods for each of the given tsv counts files.
     tsvExpectedPeriods = [str(getExpectedPeriod(tsvFilePath)) for tsvFilePath in tsvFilePaths]
@@ -64,6 +65,7 @@ def parseArgs(args):
     tsvFilePaths = list()
     if args.tsv_paths is not None:
         for tsvFilePath in args.tsv_paths:
+            checkIfPathExists(tsvFilePath)
             if os.path.isdir(tsvFilePath):
                 tsvFilePaths += [os.path.abspath(filePath) for filePath in getFilesInDirectory(tsvFilePath, DataTypeStr.generalNucCounts + ".tsv")]
             else: tsvFilePaths.append(os.path.abspath(tsvFilePath))
@@ -72,13 +74,14 @@ def parseArgs(args):
     rdaFilePaths = list()
     if args.rda_paths is not None:
         for rdaFilePath in args.rda_paths:
+            checkIfPathExists(rdaFilePath)
             if os.path.isdir(rdaFilePath):
                 rdaFilePaths += [os.path.abspath(filePath) for filePath in getFilesInDirectory(rdaFilePath, ".rda")]
             else: rdaFilePaths.append(os.path.abspath(rdaFilePath))
 
     if args.output_directory is not None: exportPath = os.path.abspath(args.output_directory)
     elif args.output_file is not None: exportPath = os.path.abspath(args.output_file)
-    else: raise ValueError("No output path given.")
+    else: raise UserInputError("No output path given.")
 
     # Pass the given commands to the generateFigures function
     generateFigures(list(set(tsvFilePaths)), list(set(rdaFilePaths)), exportPath, args.remove_outliers, args.smooth_nuc_group, args.align_strands)

@@ -5,8 +5,9 @@ import os, subprocess
 from typing import List
 from benbiohelpers.TkWrappers.TkinterDialog import TkinterDialog
 from mutperiodpy.helper_scripts.UsefulFileSystemFunctions import (getDataDirectory, getIsolatedParentDir, generateMetadata, Metadata, 
-                                                                  InputFormat, DataTypeStr, getContext, getAcceptableChromosomes, InputError)
+                                                                  InputFormat, DataTypeStr, getContext, getAcceptableChromosomes)
 from mutperiodpy.input_parsing.ParseCustomBed import checkForErrors
+from benbiohelpers.CustomErrors import *
 
 
 def parsePreparedInput(inputFilePaths: List[str], genomeFilePath, checkEachLine = True):
@@ -20,13 +21,16 @@ def parsePreparedInput(inputFilePaths: List[str], genomeFilePath, checkEachLine 
         inputFileBasename = os.path.basename(inputFilePath)
         inputFileContext = getContext(inputFilePath)
 
-        if inputFileContext is None: raise InputError("No context is apparent from the given prepared input file.")
+        if inputFileContext is None: raise UserInputError("No context is apparent from the given prepared input file.")
         if inputFileBasename.split('_'+inputFileContext)[0] != dataGroupName:
-            raise InputError("Prepared input file is not named as expected given the data group name generated from the "
-                             "parent directory.  Expected: \"" + dataGroupName + "\" immediately preceding the context definition")
+            raise InvalidPathError(inputFilePath, 
+                                   "Prepared input file is not named as expected given the data group name generated from the "
+                                   "parent directory.  Expected: \"" + dataGroupName + "\" immediately preceding the context definition "
+                                   "but given file path is:")
         if not inputFileBasename.endswith(DataTypeStr.mutations + ".bed"):
-            raise InputError("Prepared input file is not named properly to indicate the presence of mutation data.  "
-                             "Expected a file ending in \"" + DataTypeStr.mutations + ".bed\"")
+            raise InvalidPathError(inputFilePath,
+                                   "Prepared input file is not named properly to indicate the presence of mutation data.  "
+                                   "Expected a file ending in \"" + DataTypeStr.mutations + ".bed\" but given path is:")
 
         acceptableChromosomes = getAcceptableChromosomes(genomeFilePath)
         acceptableChromosomesFilePath = getAcceptableChromosomes(genomeFilePath, True)
@@ -34,21 +38,16 @@ def parsePreparedInput(inputFilePaths: List[str], genomeFilePath, checkEachLine 
         # Perform QA with the checkForErrors function
         print("Checking for errors in line formatting...")
         with open(inputFilePath, 'r') as inputFile:
-            try:
+            choppedUpLine = inputFile.readline().strip().split('\t')
+            cohortDesignationPresent = len(choppedUpLine) == 7
+            checkForErrors(choppedUpLine, cohortDesignationPresent, acceptableChromosomes,
+                            acceptableChromosomesFilePath)
 
-                choppedUpLine = inputFile.readline().strip().split('\t')
-                cohortDesignationPresent = len(choppedUpLine) == 7
-                checkForErrors(choppedUpLine, cohortDesignationPresent, acceptableChromosomes,
-                               acceptableChromosomesFilePath)
-
-                if checkEachLine:
-                    for line in inputFile:
-                        choppedUpLine = line.strip().split('\t')
-                        checkForErrors(choppedUpLine, cohortDesignationPresent, acceptableChromosomes,
-                                       acceptableChromosomesFilePath)
-
-            except AssertionError as assertionError:
-                raise InputError(str(assertionError))
+            if checkEachLine:
+                for line in inputFile:
+                    choppedUpLine = line.strip().split('\t')
+                    checkForErrors(choppedUpLine, cohortDesignationPresent, acceptableChromosomes,
+                                    acceptableChromosomesFilePath)
 
         # If everything else looks good, generate the metadata.  This directory is now ready to go!
         print("Checks passed.  Generating metadata, including mutation counts using a call to wc -l")

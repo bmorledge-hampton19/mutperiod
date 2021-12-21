@@ -4,11 +4,9 @@
 #        (Sorted first by chromosome (string) and then by nucleotide position (numeric))
 
 import os, sys
-from typing import List
+from benbiohelpers.CustomErrors import InvalidPathError, checkIfPathExists
 from benbiohelpers.TkWrappers.TkinterDialog import TkinterDialog
-from mutperiodpy.helper_scripts.UsefulFileSystemFunctions import (getDataDirectory, checkDirs)
-
-from benbiohelpers.FileSystemHandling.DirectoryHandling import checkDirs
+from mutperiodpy.helper_scripts.UsefulFileSystemFunctions import getDataDirectory
 from benbiohelpers.CountThisInThat.Counter import ThisInThatCounter
 from benbiohelpers.CountThisInThat.InputDataStructures import EncompassedDataDefaultStrand, EncompassingDataDefaultStrand, ENCOMPASSED_DATA
 from benbiohelpers.CountThisInThat.CounterOutputDataHandler import CounterOutputDataHandler
@@ -41,8 +39,10 @@ def stratifyNucleosomeMap(nucleosomeMapDir, stratifyingFeaturesMapFilePaths):
 
     for stratifyingFeaturesMapFilePath in stratifyingFeaturesMapFilePaths:
 
-        assert nucleosomeMapDir != os.path.dirname(stratifyingFeaturesMapFilePath), (
-            "Stratifying features filepath is contained within the same directory as the given nucleosome map.")
+        if nucleosomeMapDir == os.path.dirname(stratifyingFeaturesMapFilePath):
+            raise InvalidPathError(stratifyingFeaturesMapFilePath, "Each file containing feature ranges to stratify by should be "
+                                                                   "contained in its own directory, not in its parent "
+                                                                   "nucleosome map directory.  Error on: ")
 
         print('\n' + "Working in",os.path.basename(stratifyingFeaturesMapFilePath))
 
@@ -71,10 +71,13 @@ def parseArgs(args):
 
     stratifyingFeaturesFilePaths = set()
     for stratifyingFeaturesFilePath in args.stratifyingFeatures:
-        assert not os.path.isdir(stratifyingFeaturesFilePath), (
-            "Directory was given for stratifying features where file was expected.")
-        stratifyingFeaturesFilePaths.add(os.path.abspath(stratifyingFeaturesFilePath))
+        if os.path.isdir(stratifyingFeaturesFilePath):
+            raise InvalidPathError(stratifyingFeaturesFilePath,
+                                   "Directory was given for stratifying features where file was expected: ")
+        if checkIfPathExists(stratifyingFeaturesFilePath):
+            stratifyingFeaturesFilePaths.add(os.path.abspath(stratifyingFeaturesFilePath))
 
+    checkIfPathExists(args.base_nucleosome_map)
     if os.path.isfile(args.base_nucleosome_map): 
         baseNucleosomeMap = os.path.dirname(os.path.abspath(args.base_nucleosome_map))
     else: baseNucleosomeMap = os.path.abspath(args.base_nucleosome_map)

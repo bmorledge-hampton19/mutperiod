@@ -2,14 +2,16 @@
 # (Basically, it just replaces the 4th column with the auto-acquire '.' and the 5th column with "OTHER" and also generates metadata)
 
 import os
+from typing import List
 from benbiohelpers.TkWrappers.TkinterDialog import Selections, TkinterDialog
 from mutperiodpy.input_parsing.ParseCustomBed import parseCustomBed
 from mutperiodpy.helper_scripts.UsefulFileSystemFunctions import (getIsolatedParentDir, generateFilePath, getDataDirectory,
                                                                   DataTypeStr, generateMetadata, InputFormat, checkDirs,
                                                                   getAcceptableChromosomes)
+from benbiohelpers.CustomErrors import *
 
 
-def parseStandardBed(standardBedFilePaths, genomeFilePath):
+def parseStandardBed(standardBedFilePaths: List[str], genomeFilePath):
 
     customBedOutputFilePaths = list() # The list of file paths to be passed to the custom bed parser.
 
@@ -18,7 +20,8 @@ def parseStandardBed(standardBedFilePaths, genomeFilePath):
 
         print("\nWorking in:",os.path.basename(standardBedFilePath))
         if not os.path.basename(standardBedFilePath).endswith(".bed"):
-            raise ValueError("Error:  Expected bed file format.")
+            raise InvalidPathError(standardBedFilePath, 
+                                   "Given file does not appear to be in bed format. (missing \".bed\" extension)")
 
         # Store useful paths and names.
         localRootDirectory = os.path.dirname(standardBedFilePath)

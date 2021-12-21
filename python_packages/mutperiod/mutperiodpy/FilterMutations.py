@@ -1,6 +1,7 @@
 # This script filters out individual mutations from a bed file as requested through a Tkinter interface.
 
 import os
+from benbiohelpers.CustomErrors import UserInputError
 from benbiohelpers.TkWrappers.TkinterDialog import TkinterDialog, Selections
 from mutperiodpy.helper_scripts.UsefulFileSystemFunctions import getDataDirectory
 
@@ -90,7 +91,7 @@ keep = list(selections.getToggleStates())[7] # Should the selected mutations be 
 createManyFiles = list(selections.getToggleStates())[8] # Should the mutations omitted one at a time, or all together, in one file?
 mutationsToFilter = list() # If mutations need to be filtered all at once, we need to keep track of them.
 
-if omit == keep: raise ValueError("Error: You must select only one option, omit OR keep.")
+if omit == keep: raise UserInputError("Error: You must select only one option, omit OR keep.")
 
 print("Working in file",os.path.split(mutationFilePath)[1])
 

@@ -2,6 +2,7 @@
 # create a bed file with an expanded tri/pentanucleotide context around the mutation.
 
 import os
+from benbiohelpers.CustomErrors import InvalidPathError
 from benbiohelpers.TkWrappers.TkinterDialog import TkinterDialog, Selections
 from benbiohelpers.FileSystemHandling.BedToFasta import bedToFasta
 from benbiohelpers.FileSystemHandling.FastaFileIterator import FastaFileIterator
@@ -93,12 +94,14 @@ def expandContext(inputBedFilePaths, expansionContextNum):
         # Make sure file names look valid.
         print("\nWorking in:",os.path.split(inputBedFilePath)[1])
         if not DataTypeStr.mutations in os.path.split(inputBedFilePath)[1]:
-            raise ValueError("Error:  Expected file with \"" + DataTypeStr.mutations + "\" in the name.")
+            raise InvalidPathError(inputBedFilePath, "Given mutation file does not have \"" + DataTypeStr.mutations + 
+                                   "\" in the name.",
+                                   postPathMessage = "Are you sure you inputted a file from the mutperiod pipeline?")
         
         # Make sure the context of the input bed file is less than the expansion context.
         if getContext(inputBedFilePath, asInt = True) >= thisExpansionContextNum:
-            raise ValueError("The input bed file at " + inputBedFilePath + 
-                             " does not have a lower context than the desired output context.")
+            raise InvalidPathError(inputBedFilePath, "The given mutation file at does not have a lower context "
+                                   "than the desired output context.", postPathMessage = "There is nothing to expand.")
 
         # Generate paths to intermediate data files.
         intermediateFilesDirectory = os.path.join(metadata.directory,"intermediate_files")
