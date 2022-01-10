@@ -10,9 +10,9 @@ from mutperiodpy.helper_scripts.UsefulFileSystemFunctions import (Metadata, Data
 from benbiohelpers.TkWrappers.TkinterDialog import TkinterDialog, Selections
 
 
-# This function generates a file containing the frequencies of each tri/singlenuc context in a genome
-# on the given strand, including N-containing values.
-def generateGenomeContextFrequencyFile(genomeFilePath, genomeContextFrequencyFilePath, contextNum, contextText):
+# This function generates a file containing the frequencies of each sequence in a given context for a given genome
+# on the given strand, including N-containing values (but only for "acceptable chromosomes").
+def generateGenomeContextFrequencyFile(genomeFilePath, genomeContextFrequencyFilePath, contextNum, contextText, acceptableChromosomes):
 
     contextCounts=dict() # A dictionary of all the relevant tri/singlenuc contexts and their counts.
 
@@ -28,12 +28,7 @@ def generateGenomeContextFrequencyFile(genomeFilePath, genomeContextFrequencyFil
         for fastaEntry in FastaFileIterator(genomeFile, False):
 
             # Check and make sure that the sequence is one we actually want to count.
-            if (not '_' in fastaEntry.sequenceName and not "chrM" in fastaEntry.sequenceName
-                and not "pUC19" in fastaEntry.sequenceName):
-
-                if not fastaEntry.sequenceName.lower().startswith("chr"):
-                    raise ValueError(fastaEntry.sequenceName + " does not appear to be a chromosome (does not start with \"chr\").  " + 
-                                    "Did you provide a genome fasta file?")
+            if fastaEntry.sequenceName in acceptableChromosomes:
 
                 print ("Counting context sequences in ",fastaEntry.sequenceName,"...",sep='')
 
