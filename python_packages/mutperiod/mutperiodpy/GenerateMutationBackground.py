@@ -2,6 +2,7 @@
 # a genome fasta file.
 
 import os
+from benbiohelpers.CustomErrors import UserInputError, InvalidPathError
 from benbiohelpers.DNA_SequenceHandling import reverseCompliment
 from benbiohelpers.FileSystemHandling.FastaFileIterator import FastaFileIterator
 from mutperiodpy.helper_scripts.UsefulFileSystemFunctions import (Metadata, DataTypeStr, generateFilePath, getContext,
@@ -9,9 +10,9 @@ from mutperiodpy.helper_scripts.UsefulFileSystemFunctions import (Metadata, Data
 from benbiohelpers.TkWrappers.TkinterDialog import TkinterDialog, Selections
 
 
-# This function generates a file containing the frequencies of each tri/singlenuc context in a genome
-# on the given strand, including N-containing values.
-def generateGenomeContextFrequencyFile(genomeFilePath, genomeContextFrequencyFilePath, contextNum, contextText):
+# This function generates a file containing the frequencies of each sequence in a given context for a given genome
+# on the given strand, including N-containing values (but only for "acceptable chromosomes").
+def generateGenomeContextFrequencyFile(genomeFilePath, genomeContextFrequencyFilePath, contextNum, contextText, acceptableChromosomes):
 
     contextCounts=dict() # A dictionary of all the relevant tri/singlenuc contexts and their counts.
 
@@ -27,12 +28,7 @@ def generateGenomeContextFrequencyFile(genomeFilePath, genomeContextFrequencyFil
         for fastaEntry in FastaFileIterator(genomeFile, False):
 
             # Check and make sure that the sequence is one we actually want to count.
-            if (not '_' in fastaEntry.sequenceName and not "chrM" in fastaEntry.sequenceName
-                and not "pUC19" in fastaEntry.sequenceName):
-
-                if not fastaEntry.sequenceName.lower().startswith("chr"):
-                    raise ValueError(fastaEntry.sequenceName + " does not appear to be a chromosome (does not start with \"chr\").  " + 
-                                    "Did you provide a genome fasta file?")
+            if fastaEntry.sequenceName in acceptableChromosomes:
 
                 print ("Counting context sequences in ",fastaEntry.sequenceName,"...",sep='')
 
@@ -130,8 +126,8 @@ def generateMutationContextFrequencyFile(mutationFilePath, mutationContextFreque
 
                 # Make sure the file has sufficient information to generate the requested context
                 if len(surroundingBases) < contextNum:
-                    raise ValueError("The given mutation file does not have enough information to produce a " + 
-                                    contextText + " context.")
+                    raise UserInputError("The given mutation file does not have enough information to produce a " + 
+                                      contextText + " context.")
 
                 middleIndex = len(surroundingBases)/2 - 0.5
                 extensionLength = contextNum/2 - 0.5
@@ -141,7 +137,7 @@ def generateMutationContextFrequencyFile(mutationFilePath, mutationContextFreque
 
             # Make sure we didn't encounter an invalid chromosome.
             if choppedUpLine[0] not in acceptableChromosomes:
-                raise ValueError(choppedUpLine[0] + " is not a valid chromosome for the mutation file.")
+                raise UserInputError("Encountered " + choppedUpLine[0] + " which is not a valid chromosome for this genome.")
 
             contextCounts.setdefault(context,0)
             contextCounts[context] += 1
@@ -244,7 +240,9 @@ def generateMutationBackground(mutationFilePaths, backgroundContextNum):
 
         print("\nWorking in:",os.path.split(mutationFilePath)[1])
         if not DataTypeStr.mutations in os.path.split(mutationFilePath)[1]:
-            raise ValueError("Error:  Expected file with \"" + DataTypeStr.mutations + "\" in the name.")
+            raise InvalidPathError(mutationFilePath, "Given mutation file does not have \"" + DataTypeStr.mutations + 
+                                   "\" in the name.",
+                                   postPathMessage = "Are you sure you inputted a file from the mutperiod pipeline?")
 
         # Generate the file path for the genome context frequency file.
         genomeContextFrequencyFilePath = generateFilePath(directory = os.path.dirname(metadata.genomeFilePath),

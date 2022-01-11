@@ -3,7 +3,7 @@
 import os, datetime, subprocess
 from enum import Enum
 from benbiohelpers.FileSystemHandling.DirectoryHandling import checkDirs, getIsolatedParentDir
-from mutperiodpy.helper_scripts.CustomErrors import InputError, InvalidPathError
+from benbiohelpers.CustomErrors import UserInputError, InvalidPathError, MetadataPathError
 
 # Get the data directory for mutperiod, creating it from user input if necessary.
 def getDataDirectory():
@@ -44,7 +44,7 @@ def getDataDirectory():
         # Make sure a valid directory was given.  Then create the new directory (if it doesn't exist already), 
         # write it to the text file, and return it!  (Also create the __external_data directory.)
         if not os.path.exists(dataDirectoryDirectory): 
-            raise InputError("Given directory: " + dataDirectoryDirectory + " does not exist.")
+            raise UserInputError("Given directory: " + dataDirectoryDirectory + " does not exist.")
 
         dataDirectory = os.path.join(dataDirectoryDirectory,"mutperiod_data")
         checkDirs(dataDirectory)
@@ -96,9 +96,9 @@ def getAcceptableChromosomes(genomeFilePath: str, returnFilePathInstead = False)
     if os.path.isdir(genomeFilePath): genomeFilePath = os.path.join(genomeFilePath,os.path.basename(genomeFilePath) + ".fa")
 
     # Make sure we were given a reasonable file path.
-    if not getIsolatedParentDir(genomeFilePath) in genomeFilePath and genomeFilePath.endswith(".fa"): 
-        raise InvalidPathError(
-            "Given file path does not appear to be a genome file path internal to mutperiod.  Make sure to "
+    if not getIsolatedParentDir(genomeFilePath) in genomeFilePath or not genomeFilePath.endswith(".fa"): 
+        raise InvalidPathError(genomeFilePath,
+            "Given file path does not appear to be a genome fasta file path internal to mutperiod.  Make sure to "
             "choose a .fa file within the mutperiod_data/__external_data/[genome_name] directory or choose the genome directory itself."
             )
 
@@ -321,7 +321,7 @@ class Metadata:
     def __init__(self,filePath):
 
         # Make sure the given file path exists. (Otherwise, the isdir call below can be EXTREMELY misleading)
-        if not os.path.exists(filePath): raise InvalidPathError("Given path to retrieve metadata from does not exist: " + filePath)
+        if not os.path.exists(filePath): raise MetadataPathError(filePath, "Given path to retrieve metadata from does not exist: ")
 
         # Get the path to the metadata file.
         if os.path.isdir(filePath):
@@ -330,7 +330,7 @@ class Metadata:
             self.metadataFilePath = os.path.join(os.path.dirname(filePath),".metadata")
 
         # Make sure the generated metadata file path exists
-        if not os.path.exists(filePath): raise InvalidPathError("Metadata not found at expected location: " + self.metadataFilePath)
+        if not os.path.exists(filePath): raise MetadataPathError(self.metadataFilePath, "Metadata not found at expected location: ")
 
         # Read the metadata file and put its contents into and dictionary, key-value pairs in the file.
         self.metadata = dict()

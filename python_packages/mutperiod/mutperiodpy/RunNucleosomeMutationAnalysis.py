@@ -3,10 +3,11 @@
 
 import os, subprocess, sys
 from typing import List
-from mutperiodpy.helper_scripts.UsefulFileSystemFunctions import (DataTypeStr, getDataDirectory, Metadata, getIsolatedParentDir,
+
+from benbiohelpers.CustomErrors import UserInputError, InvalidPathError, checkIfPathExists
+from mutperiodpy.helper_scripts.UsefulFileSystemFunctions import (DataTypeStr, getDataDirectory, Metadata,
                                                                   rScriptsDirectory, getContext, checkForNucGroup, getExpectedPeriod)
 from benbiohelpers.FileSystemHandling.DirectoryHandling import getFilesInDirectory
-from mutperiodpy.CountNucleosomePositionMutations import countNucleosomePositionMutations
 from benbiohelpers.TkWrappers.TkinterDialog import TkinterDialog, Selections
 
 
@@ -78,12 +79,12 @@ def runNucleosomeMutationAnalysis(nucleosomeMutationCountsFilePaths: List[str], 
                                   alignStrands, filePathGroup1: List[str] = list(), filePathGroup2: List[str] = list()):
 
     # Check for valid input.
-    assert (len(filePathGroup1) == 0) == (len(filePathGroup2) == 0), (
-        "One file path group contains file paths, but the other is empty.")
-    assert len(nucleosomeMutationCountsFilePaths) > 0, (
-        "No normalized counts files given.")
-    assert outputFilePath.endswith(".rda") or outputFilePath.endswith(".tsv"), (
-        "Output file should end with \".rda\" or \".tsv\".")
+    if (len(filePathGroup1) == 0) != (len(filePathGroup2) == 0):
+        raise UserInputError("One file path group contains file paths, but the other is empty.")
+    if len(nucleosomeMutationCountsFilePaths) == 0:
+        raise UserInputError("No normalized counts files given.")
+    if not (outputFilePath.endswith(".rda") or outputFilePath.endswith(".tsv")):
+        raise InvalidPathError(outputFilePath, "Given output file does not end with \".rda\" or \".tsv\":")
 
     # Retrieve the expected periods for each of the given counts files.
     expectedPeriods = [str(getExpectedPeriod(nucleosomeMutationCountsFilePath)) for nucleosomeMutationCountsFilePath in nucleosomeMutationCountsFilePaths]
@@ -130,6 +131,7 @@ def parseArgs(args):
 
             for filePath in filePaths:
 
+                checkIfPathExists(filePath)
                 if os.path.isdir(filePath):
                     filePathGroups[i] += [os.path.abspath(filePath) for filePath in getFilesInDirectory(filePath, DataTypeStr.generalNucCounts + ".tsv")]
                 else: filePathGroups[i].append(os.path.abspath(filePath))

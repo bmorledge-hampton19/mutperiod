@@ -10,7 +10,7 @@ from mutperiodpy.helper_scripts.UsefulFileSystemFunctions import (DataTypeStr, g
                                                                   InputFormat, getAcceptableChromosomes)
 from benbiohelpers.FileSystemHandling.DirectoryHandling import getFilesInDirectory                                                                  
 from mutperiodpy.input_parsing.ParseCustomBed import parseCustomBed
-
+from benbiohelpers.CustomErrors import *
 
 # This class represents the mutation data obtained from ICGC in a more precise form.
 # It also contains functions to represent that data in the exact format required for bed files or MSIseq, if they are valid.
@@ -29,11 +29,10 @@ class ICGCMutation:
         self.mutationType = choppedUpLine[13]
         self.mutatedFrom = choppedUpLine[15]
         self.mutatedTo = choppedUpLine[16]
-        self.strand = '+'
-        
-        if choppedUpLine[11] != "1":
-            raise ValueError("Error.  Strand field does not contain \"1\" for plus strand.  " + 
-                             "Found " + str(choppedUpLine[11]) + " instead.")
+        if choppedUpLine[11] == "1": self.strand = '+'
+        elif choppedUpLine[11] == "0": self.strand = '-'
+        else: raise UserInputError("Expected strand field in 12th column containing either \"1\" for plus strand "
+                               "or \"0\" for minus strand.  Found \"" + str(choppedUpLine[11]) + "\" instead.")
 
 
 # This class takes an ICGCFile object and, when iterated over, returns exactly once each mutation present in a donor that is
@@ -87,7 +86,7 @@ class ICGCIterator:
                     self.previousDonorMutations = list(self.currentDonorMutations.values())
                     self.currentDonorMutations.clear()
                     if self.currentDonor in self.finishedDonors:
-                        raise ValueError("Error:  Donor " + self.currentDonor + " is present in more than one block of data!")
+                        raise UserInputError("Donor " + self.currentDonor + " is present in more than one block of data!")
                     print("Reading and writing from donor",self.currentDonor)
 
                 # Have we seen this mutation in this donor?
@@ -98,7 +97,7 @@ class ICGCIterator:
 
 
 # Handles the basic parsing of the script.
-def parseICGC(ICGCFilePaths, genomeFilePath, separateDonors, 
+def parseICGC(ICGCFilePaths: List[str], genomeFilePath, separateDonors, 
               stratifyByMS, stratifyByMutSig):
 
     outputBedFilePaths = list()
@@ -108,12 +107,12 @@ def parseICGC(ICGCFilePaths, genomeFilePath, separateDonors,
 
         print("\nWorking in:",os.path.split(ICGCFilePath)[1])
 
-        if not str(ICGCFilePath).endswith(".gz"):
-            raise ValueError("Error:  Expected ICGC file to be gzipped (.gz file format).")
+        if not ICGCFilePath.endswith(".gz"):
+            raise InvalidPathError(ICGCFilePath, "Given ICGC file is not gzipped (.gz file format):")
         if not "simple_somatic_mutation" in os.path.basename(ICGCFilePath):
-            raise ValueError("Error:  Expected ICGC file with \"simple_somatic_mutation\" in the name.\n" +
-                            "Note: if a directory was specified to search for ICGC input files, all files ending in .tsv.gz\
-                            are selected.")
+            raise InvalidPathError(ICGCFilePath, "Given ICGC file path does not have \"simple_somatic_mutation\" in the name:",
+                                   "Note: if a directory was specified to search for ICGC input files, "
+                                   "all files ending in .tsv.gz are selected.")
 
         # Get some important file system paths for the rest of the function and generate metadata.
         dataDirectory = os.path.dirname(ICGCFilePath)
@@ -160,7 +159,8 @@ def parseArgs(args):
 
     
     # Otherwise, check to make sure valid arguments were passed:
-    assert args.genome_file is not None, "No genome file was given."
+    if args.genome_file is None: raise UserInputError("No genome file was given.")
+    checkIfPathExists(args.genome_file)
     genomeFilePath = os.path.abspath(args.genome_file)
 
     # Get the ICGC files from the given paths, searching directories if necessary.
@@ -168,9 +168,9 @@ def parseArgs(args):
     for ICGCFilePath in args.ICGCFilePaths:
         if os.path.isdir(ICGCFilePath):
             finalICGCPaths += [os.path.abspath(filePath) for filePath in getFilesInDirectory(ICGCFilePath, ".tsv.gz")]
-        else: finalICGCPaths.append(os.path.abspath(ICGCFilePath))
+        elif checkIfPathExists(ICGCFilePath): finalICGCPaths.append(os.path.abspath(ICGCFilePath))
 
-    assert len(finalICGCPaths) > 0, "No ICGC files were found to parse."
+    if len(finalICGCPaths) == 0: raise UserInputError("No ICGC files were found to parse.")
 
     # Run the parser.
     parseICGC(list(set(finalICGCPaths)), genomeFilePath, args.stratify_by_donors, 

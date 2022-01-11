@@ -26,35 +26,36 @@ from benbiohelpers.FileSystemHandling.BedToFasta import bedToFasta
 from benbiohelpers.FileSystemHandling.FastaFileIterator import FastaFileIterator
 from benbiohelpers.DNA_SequenceHandling import isPurine, reverseCompliment
 from mutperiodpy.input_parsing.WriteManager import WriteManager
+from benbiohelpers.CustomErrors import *
 
 
 # Checks for common errors in a line of input.
 def checkForErrors(choppedUpLine: List[str], cohortDesignationPresent, acceptableChromosomes, acceptableChromosomesFilePath):
 
     if len(choppedUpLine) < 6 or len(choppedUpLine) > 7:
-        raise ValueError("Entry given with invalid number of arguments (" + str(len(choppedUpLine)) + ").  "
+        raise UserInputError("Entry given with invalid number of arguments (" + str(len(choppedUpLine)) + ").  "
                          "Each entry should contain either 6 tab separated arguments or 7 (if a cohort designation is present.")
 
     if choppedUpLine[0] not in acceptableChromosomes:
-        raise ValueError("Invalid chromosome identifier \"" + choppedUpLine[0] + "\" found.  "
+        raise UserInputError("Invalid chromosome identifier \"" + choppedUpLine[0] + "\" found.  "
                          "Expected chromosome in the set at: " + acceptableChromosomesFilePath)
 
     try:
         float(choppedUpLine[1])
         float(choppedUpLine[2])
     except ValueError:
-        raise ValueError("Base positions should be numeric values.  "
+        raise UserInputError("Base positions should be numeric values.  "
                          "The given coordinate pair, " + choppedUpLine[1] + ", " + choppedUpLine[2] + ' '
                          "does not satisfy this condition.")
 
     if float(choppedUpLine[2]) - float(choppedUpLine[1]) < 1:
-        raise ValueError("Base positions should specify a minimum range of 1 base.  "
+        raise UserInputError("Base positions should specify a minimum range of 1 base.  "
                          "The first base coordinate should be 0-based and the second should be 1-based.  " 
                          "The given coordinate pair, " + choppedUpLine[1] + ", " + choppedUpLine[2] + ' '
                          "does not satisfy these conditions.")
 
     if not {'A','C','G','T','N'}.issuperset(choppedUpLine[3]) and not choppedUpLine[3] in ('*','.'):
-        raise ValueError("Invalid reference base(s): \"" + choppedUpLine[3] + "\".  Should be a string made up of the four DNA bases "
+        raise UserInputError("Invalid reference base(s): \"" + choppedUpLine[3] + "\".  Should be a string made up of the four DNA bases "
                          "or \".\" to auto acquire the base(s) from the corresponding genome, or \"*\" to denote an insertion.")
 
     regionLength = float(choppedUpLine[2]) - float(choppedUpLine[1])
@@ -63,39 +64,39 @@ def checkForErrors(choppedUpLine: List[str], cohortDesignationPresent, acceptabl
     if choppedUpLine[3] == '*':
 
         if choppedUpLine[4] == '*':
-            raise ValueError("The reference base and mutation columns are both set to \"*\".  "
+            raise UserInputError("The reference base and mutation columns are both set to \"*\".  "
                              "(Entry cannot be insertion and deletion simultaneously)")
 
         if regionLength != 2:
-            raise ValueError("Reference column indicates an insertion, but the genome positions don't exactly flank the insertion site.  "
+            raise UserInputError("Reference column indicates an insertion, but the genome positions don't exactly flank the insertion site.  "
                              "(Indicated region should span exactly 2 bases.)")
 
     # Cases where not insertion...
     else:
 
         if choppedUpLine[3] != '.' and len(choppedUpLine[3]) < regionLength:
-            raise ValueError("References base(s): \"" + choppedUpLine[3] + "\" do not at least span the given region from "
+            raise UserInputError("References base(s): \"" + choppedUpLine[3] + "\" do not at least span the given region from "
                              "positions " + choppedUpLine[1] + " to " + choppedUpLine[2] + '.')
 
     if not {'A','C','G','T'}.issuperset(choppedUpLine[4]) and not choppedUpLine[4] in ('*',"OTHER", '.'):
-        raise ValueError("Invalid mutation designation: \"" + choppedUpLine[3] + "\".  Should be a string made up of the four DNA bases "
+        raise UserInputError("Invalid mutation designation: \"" + choppedUpLine[3] + "\".  Should be a string made up of the four DNA bases "
                          "or \"*\" to denote a deletion, or \"OTHER\" or \'.\' to denote an some other alteration.")
 
     if choppedUpLine[5] not in ('+','-','.'):
-        raise ValueError("Invalid strand designation: \"" + choppedUpLine[5] + "\".  Should be \"+\" or \"-\", or \".\" "
+        raise UserInputError("Invalid strand designation: \"" + choppedUpLine[5] + "\".  Should be \"+\" or \"-\", or \".\" "
                          "to auto acquire the base if possible.")
 
     if cohortDesignationPresent and len(choppedUpLine) == 6:
-        raise ValueError("A cohort designation was given for previous entries, but an entry was found without one.  "
+        raise UserInputError("A cohort designation was given for previous entries, but an entry was found without one.  "
                          "The designation should either be always present or always absent in the input file.  "
                          "Use \".\" to denote an entry that does not belong to a cohort.")
 
     if cohortDesignationPresent and len(choppedUpLine[6].strip()) == 0:
-        raise ValueError("Cohort designations should contain at least one non-whitespace character.  Use \".\" to denote "
+        raise UserInputError("Cohort designations should contain at least one non-whitespace character.  Use \".\" to denote "
                          "an entry that does not belong to a cohort.")
 
     if not cohortDesignationPresent and len(choppedUpLine) == 7:
-        raise ValueError("No cohort designation was given for previous entries, but an entry was found with one.  "
+        raise UserInputError("No cohort designation was given for previous entries, but an entry was found with one.  "
                          "The designation should either be always present or always absent in the input file.  "
                          "Use \".\" to denote an entry that does not belong to a cohort.")
 
@@ -165,8 +166,8 @@ def autoAcquireAndQACheck(bedInputFilePath: str, genomeFilePath, autoAcquiredFil
 
                     # Find the equivalent fasta entry.
                     while not equivalentEntries(fastaEntry, choppedUpLine):
-                        if autoAcquireFastaIterator.eof:
-                            raise ValueError("Reached end of fasta file without finding a match for: ",' '.join(choppedUpLine))
+                        assert not autoAcquireFastaIterator.eof, (
+                            "Reached end of fasta file without finding a match for: ",' '.join(choppedUpLine))
                         fastaEntry = autoAcquireFastaIterator.readEntry()
 
                     # Set the sequence.
@@ -178,15 +179,15 @@ def autoAcquireAndQACheck(bedInputFilePath: str, genomeFilePath, autoAcquiredFil
 
                     # Find the equivalent fasta entry.
                     while not equivalentEntries(fastaEntry, choppedUpLine):
-                        if autoAcquireFastaIterator.eof:
-                            raise ValueError("Reached end of fasta file without finding a match for: ",' '.join(choppedUpLine))
+                        assert not autoAcquireFastaIterator.eof, (
+                            "Reached end of fasta file without finding a match for: ",' '.join(choppedUpLine))
                         fastaEntry = autoAcquireFastaIterator.readEntry()
 
                     # Determine which strand is represented.
                     if fastaEntry.sequence == choppedUpLine[3]: choppedUpLine[5] = '+'
                     elif fastaEntry.sequence == reverseCompliment(choppedUpLine[3]): choppedUpLine[5] = '-'
-                    else: raise ValueError("The given sequence " + choppedUpLine[3] + " for location " + fastaEntry.sequenceName + ' ' +
-                                        "does not match the corresponding sequence in the given genome, or its reverse compliment.")
+                    else: assert False, ("The given sequence " + choppedUpLine[3] + " for location " + fastaEntry.sequenceName + ' ' +
+                                         "does not match the corresponding sequence in the given genome, or its reverse compliment.")
 
                 # Change any '.' characters in the "altered to" column to "OTHER"
                 if choppedUpLine[4] == '.': choppedUpLine[4] = "OTHER"
@@ -320,7 +321,7 @@ def setUpForMutSigStratification(writeManager: WriteManager, bedInputFilePath):
 def parseCustomBed(bedInputFilePaths, genomeFilePath, stratifyByMS, 
                    stratifyByMutSig, separateIndividualCohorts, onlySingleBaseSubs = False, includeIndels = False):
 
-    assert not (onlySingleBaseSubs and includeIndels), "Indels are incompatible with single nucleotide substitutions."
+    if onlySingleBaseSubs and includeIndels: raise UserInputError("Indels are incompatible with single nucleotide substitutions.")
 
     for bedInputFilePath in bedInputFilePaths:
 
@@ -371,9 +372,9 @@ def parseCustomBed(bedInputFilePaths, genomeFilePath, stratifyByMS,
                     if separateIndividualCohorts: writeManager.setUpForIndividualCohorts()
 
                 elif stratifyByMS or stratifyByMutSig: 
-                    raise ValueError("Additional stratification given, but no cohort designation given.")
+                    raise UserInputError("Additional stratification given, but no cohort designation given.")
                 elif separateIndividualCohorts:
-                    raise ValueError("Separation by individual cohorts requested, but no cohort designation given.")
+                    raise UserInputError("Separation by individual cohorts requested, but no cohort designation given.")
 
             # Sort the input data (should also ensure that the output data is sorted)
             subprocess.run(("sort",) + optionalArgument + 
@@ -399,7 +400,8 @@ def parseArgs(args):
         main(); return
 
     # Otherwise, check to make sure valid arguments were passed:
-    assert args.genome_file is not None, "No genome file was given."
+    if args.genome_file is None: raise UserInputError("No genome file was given.")
+    checkIfPathExists(args.genome_file)
     genomeFilePath = os.path.abspath(args.genome_file)
 
     # Get the custom bed files from the given paths, searching directories if necessary.
@@ -407,9 +409,9 @@ def parseArgs(args):
     for bedFilePath in args.bedFilePaths:
         if os.path.isdir(bedFilePath):
             finalCustomBedPaths += [os.path.abspath(filePath) for filePath in getFilesInDirectory(bedFilePath, "custom_input.bed")]
-        else: finalCustomBedPaths.append(os.path.abspath(bedFilePath))
+        elif checkIfPathExists(bedFilePath): finalCustomBedPaths.append(os.path.abspath(bedFilePath))
 
-    assert len(finalCustomBedPaths) > 0, "No custom bed files were found to parse."
+    if len(finalCustomBedPaths) == 0: raise UserInputError("No custom bed files were found to parse.")
 
     # Run the parser.
     parseCustomBed(list(set(finalCustomBedPaths)), genomeFilePath, args.stratify_by_Microsatellite, 

@@ -7,6 +7,7 @@ from mutperiodpy.helper_scripts.UsefulFileSystemFunctions import (Metadata, chec
                                                                   generateMetadata)
 from mutperiodpy.input_parsing.IdentifyMSI import MSIIdentifier
 from mutperiodpy.input_parsing.IdentifyMutSigs import MutSigIdentifier
+from benbiohelpers.CustomErrors import *
 
 
 class WriteManager:
@@ -156,7 +157,7 @@ class WriteManager:
 
         # Make sure this is actually a new cohort.
         if cohortID in self.completedIndividualCohorts:
-            raise ValueError("The cohort " + cohortID + " was encountered in more than one distinct block of data.")
+            raise UserInputError("The cohort " + cohortID + " was encountered in more than one distinct block of data.")
         else:
             self.currentIndividualCohortID = cohortID
 

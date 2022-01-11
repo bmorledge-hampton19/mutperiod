@@ -2,6 +2,7 @@
 
 import os, subprocess, datetime
 from typing import List, Dict
+from benbiohelpers.CustomErrors import UserInputError, InvalidPathError
 from benbiohelpers.TkWrappers.TkinterDialog import TkinterDialog, Selections
 from mutperiodpy.helper_scripts.UsefulFileSystemFunctions import (getLinkerOffset, getContext, getDataDirectory, Metadata, 
                                                                   generateFilePath, DataTypeStr, rScriptsDirectory, checkForNucGroup)
@@ -16,7 +17,7 @@ def getBackgroundRawPairs(backgroundCountsFilePaths):
     for backgroundCountsFilePath in backgroundCountsFilePaths:
 
         if not DataTypeStr.nucMutBackground in os.path.basename(backgroundCountsFilePath): 
-            raise ValueError("Background counts file should have \"" + DataTypeStr.nucMutBackground + "\" in the name.")
+            raise InvalidPathError("Background counts file should have \"" + DataTypeStr.nucMutBackground + "\" in the name.  Given:")
 
         # Generate the expected raw counts file path
         metadata = Metadata(backgroundCountsFilePath)
@@ -48,8 +49,10 @@ def getCustomBackgroundRawPairs(customRawCountsFilePaths, customBackgroundCounts
 
         rawMetadata = Metadata(customRawCountsFilePath)
         backgroundDir = os.path.join(customBackgroundCountsDir,rawMetadata.nucPosName)
-        assert os.path.exists(backgroundDir), ("Expected a directory at " + backgroundDir + " to contain the "
-                                               "background for " + customRawCountsFilePath + " but it does not exist.")
+        if not os.path.exists(backgroundDir):
+            raise UserInputError ("Expected a directory at " + backgroundDir + " to contain the background for " +
+                              customRawCountsFilePath + " but the directory does not exist.  Have you forgotten to run "
+                              "the analysis for the related nucleosome map?")
         backgroundMetadata = Metadata(backgroundDir)
 
         customBackgroundCountsFilePath = generateFilePath(
@@ -57,9 +60,10 @@ def getCustomBackgroundRawPairs(customRawCountsFilePaths, customBackgroundCounts
             linkerOffset = getLinkerOffset(customRawCountsFilePath), 
             usesNucGroup = checkForNucGroup(customRawCountsFilePath),
             dataType = DataTypeStr.rawNucCounts, fileExtension = ".tsv")
-        assert os.path.exists(customBackgroundCountsFilePath), (
-            "No counts file found to use as custom background for " + customRawCountsFilePath +
-            "\nExpected file at: " + customBackgroundCountsFilePath)
+        if not os.path.exists(customBackgroundCountsFilePath):
+            raise UserInputError("Expected file at " + customBackgroundCountsFilePath + " to use as custom background for "
+                             + customRawCountsFilePath + " but this file does not exist.  Have you forgotten to "
+                             "run the relevant analysis to generate it?")
         if customBackgroundCountsFilePath not in customBackgroundRawPairs:
             customBackgroundRawPairs[customBackgroundCountsFilePath] = list()
         customBackgroundRawPairs[customBackgroundCountsFilePath].append(customRawCountsFilePath)

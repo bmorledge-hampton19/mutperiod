@@ -31,20 +31,18 @@ class MutSigIdentifier:
         if (referenceBase not in ('A','C','G','T') or mutantBase not in ('A','C','G','T')):
             raise ValueError("Given entry should represent an SNP.  \"" + referenceBase + "\" > \"" + 
                              mutantBase + "\" does not represent an SNP.")
+        assert not self.mutSigsIdentified, (
+            "deconstructSigs has already run and the input data file has already been closed!")
 
-        if not self.mutSigsIdentified:
-            self.deconstructSigsInputDataFile.write('\t'.join((cohortID, chromosome, base1Pos, referenceBase, mutantBase)) + '\n')
-        else:
-            raise ValueError("deconstructSigs has already run and the input data file has already been closed!")
+        self.deconstructSigsInputDataFile.write('\t'.join((cohortID, chromosome, base1Pos, referenceBase, mutantBase)) + '\n')
 
 
     # Generates the mutation signatures output file from the given data.
     def identifyMutSigs(self, verbose = True):
 
-        if self.mutSigsIdentified:
-            raise ValueError("Mutation signatures have already been identified.")
-        else:
-            self.deconstructSigsInputDataFile.close()
+        assert not self.mutSigsIdentified, "Mutation signatures have already been identified."
+        
+        self.deconstructSigsInputDataFile.close()
 
         if verbose: print("Calling deconstructSigs to identify mutation signatures")
         subprocess.run(("Rscript",os.path.join(rScriptsDirectory,"GetMutSigs.R"),

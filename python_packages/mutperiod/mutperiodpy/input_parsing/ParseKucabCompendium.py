@@ -2,20 +2,22 @@
 # a trinucleotide context bed file.
 
 import os, subprocess
+from typing import List
 from benbiohelpers.TkWrappers.TkinterDialog import TkinterDialog, Selections
 from benbiohelpers.DNA_SequenceHandling import reverseCompliment, isPurine
 from mutperiodpy.helper_scripts.UsefulFileSystemFunctions import (getIsolatedParentDir, generateFilePath, getDataDirectory,
                                                                   DataTypeStr, generateMetadata, getAcceptableChromosomes)
+from benbiohelpers.CustomErrors import *
                                                                   
 
-def parseKucabCompendium(kucabSubstitutionsFilePaths, genomeFilePath, nucPosFilePath, includeAllPAHs):
+def parseKucabCompendium(kucabSubstitutionsFilePaths: List[str], genomeFilePath, nucPosFilePath, includeAllPAHs):
 
     for kucabSubstitutionsFilePath in kucabSubstitutionsFilePaths:
 
         print("\nWorking in:",os.path.basename(kucabSubstitutionsFilePath))
 
         if not kucabSubstitutionsFilePath.endswith("final.txt"):
-            raise ValueError("Error:  Expected input file from Kucab data which should end in \"final.txt\".")
+            raise InvalidPathError(kucabSubstitutionsFilePath, "Given kucab input file does not end in \"final.txt\":")
 
         # Prepare the output file path.
         localRootDirectory = os.path.dirname(kucabSubstitutionsFilePath)
@@ -129,4 +131,5 @@ if __name__ == "__main__":
     nucPosFilePath = list(selections.getIndividualFilePaths())[1]
     includeAllPAHs = list(selections.getToggleStates())[0]
 
+    
     parseKucabCompendium(kucabSubstitutionsFilePaths, genomeFilePath, nucPosFilePath, includeAllPAHs)
