@@ -1,3 +1,13 @@
+mutperiod (0.8.0-0ubuntu1) focal; urgency=low
+
+  * Major changes to error handling.  Errors are much more user friendly.
+  * Updates to R scripts for alternative scaling and NRL calculations
+  * Added options (concealed from CLI) to prepare input which is already in an acceptable form for mutperiod
+  * Input data in "unacceptable chromosomes" is now removed during input parsing.
+  * Other minor changes; see github commits for further info.
+
+ -- Ben Morledge-Hampton <b.morledge-hampton@wsu.edu>  Mon, 24 Jan 2022 12:52:55 -0800
+
 mutperiod (0.7.4-0ubuntu2) focal; urgency=low
 
   * Updated completions
