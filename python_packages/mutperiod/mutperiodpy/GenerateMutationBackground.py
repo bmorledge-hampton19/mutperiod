@@ -263,7 +263,8 @@ def generateMutationBackground(mutationFilePaths, backgroundContextNum):
         if not os.path.exists(genomeContextFrequencyFilePath):
             print("Genome", contextText, "context frequency file not found at path:",genomeContextFrequencyFilePath)
             print("Generating genome " + contextText + " context frequency file...")
-            generateGenomeContextFrequencyFile(metadata.genomeFilePath, genomeContextFrequencyFilePath, thisBackgroundContextNum, contextText)
+            generateGenomeContextFrequencyFile(metadata.genomeFilePath, genomeContextFrequencyFilePath, thisBackgroundContextNum, 
+                                               contextText, acceptableChromosomes)
 
         # Create a directory for intermediate files if it does not already exist...
         if not os.path.exists(intermediateFilesDirectory):
