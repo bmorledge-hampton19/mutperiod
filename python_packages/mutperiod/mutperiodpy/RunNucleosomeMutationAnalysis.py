@@ -82,9 +82,14 @@ def runNucleosomeMutationAnalysis(nucleosomeMutationCountsFilePaths: List[str], 
     if (len(filePathGroup1) == 0) != (len(filePathGroup2) == 0):
         raise UserInputError("One file path group contains file paths, but the other is empty.")
     if len(nucleosomeMutationCountsFilePaths) == 0:
-        raise UserInputError("No normalized counts files given.")
+        raise UserInputError("No nucleosome counts files given.")
     if not (outputFilePath.endswith(".rda") or outputFilePath.endswith(".tsv")):
         raise InvalidPathError(outputFilePath, "Given output file does not end with \".rda\" or \".tsv\":")
+    try:
+        outputFile = open(outputFilePath, 'w' )
+        outputFile.close()
+    except IOError:
+        raise InvalidPathError(outputFilePath, "Given output file path is not writeable: ")
 
     # Retrieve the expected periods for each of the given counts files.
     expectedPeriods = [str(getExpectedPeriod(nucleosomeMutationCountsFilePath)) for nucleosomeMutationCountsFilePath in nucleosomeMutationCountsFilePaths]
@@ -120,6 +125,9 @@ def parseArgs(args):
     # If only the subcommand was given, run the UI.
     if len(sys.argv) == 2: 
         main(); return
+
+    # Make sure an output file path was given.
+    if args.output_file_path is None: raise UserInputError("No output file path was given.")
 
     # Determine what files were passed to each argument.
     filePathGroups = list()

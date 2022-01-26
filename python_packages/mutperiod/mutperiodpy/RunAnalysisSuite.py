@@ -37,8 +37,9 @@ def runAnalysisSuite(mutationFilePaths: List[str], nucleosomeMapNames: List[str]
     if not useNucGroupRadius and not useSingleNucRadius:
         raise UserInputError("Must select at least one radius.")
 
-    # Make sure at least one input file was found.
+    # Make sure at least one mutation and one nucleosome file was found.
     if len(mutationFilePaths) == 0: raise UserInputError("No valid input files given.")
+    if len(nucleosomeMapNames) == 0: raise UserInputError("No valid nucleosome map files given")
 
     # Convert background context to int
     if normalizationMethod == "Singlenuc/Dinuc":

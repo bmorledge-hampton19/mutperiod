@@ -41,14 +41,17 @@ def getDataDirectory():
         selections: Selections = dialog.selections
         dataDirectoryDirectory = selections.getIndividualFilePaths()[0]
 
-        # Make sure a valid directory was given.  Then create the new directory (if it doesn't exist already), 
+        # Make sure a valid, writeable directory was given.  Then create the new directory (if it doesn't exist already), 
         # write it to the text file, and return it!  (Also create the __external_data directory.)
         if not os.path.exists(dataDirectoryDirectory): 
             raise UserInputError("Given directory: " + dataDirectoryDirectory + " does not exist.")
 
         dataDirectory = os.path.join(dataDirectoryDirectory,"mutperiod_data")
-        checkDirs(dataDirectory)
-        checkDirs(os.path.join(dataDirectory,"__external_data"))
+        try:
+            checkDirs(dataDirectory)
+            checkDirs(os.path.join(dataDirectory,"__external_data"))
+        except IOError:
+            raise InvalidPathError(dataDirectoryDirectory, "Given location for data directory is not writeable:")
         with open(dataDirectoryTextFilePath, 'w') as dataDirectoryTextFile:
             dataDirectoryTextFile.write(dataDirectory + '\n')
         return dataDirectory

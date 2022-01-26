@@ -9,14 +9,30 @@ from benbiohelpers.FileSystemHandling.DirectoryHandling import getFilesInDirecto
 from mutperiodpy.helper_scripts.UsefulFileSystemFunctions import getDataDirectory, getExpectedPeriod, rScriptsDirectory, DataTypeStr
 
 
-def generateFigures(tsvFilePaths: List[str], rdaFilePaths: List[str], exportPath, omitOutliers, smoothNucGroup, strandAlign):
+def generateFigures(tsvFilePaths: List[str], rdaFilePaths: List[str], exportPath: str,
+                    omitOutliers, smoothNucGroup, strandAlign):
 
     # Check for invalid arguments.
     if len(rdaFilePaths) + len(tsvFilePaths) == 0:
         raise UserInputError("No input files were found to generate graphs from.")
 
     if not (os.path.isdir(exportPath) or exportPath.endswith(".pdf")): 
-        raise InvalidPathError("The given export path is neither a directory nor a pdf file.")
+        raise InvalidPathError("The given export path is neither an existing directory nor a pdf file.")
+    if os.path.isdir(exportPath):
+        try:
+            # NOTE: No one in their right mind would name a file this, so I think it's safe to overwrite and delete.
+            testFilePath = os.path.join(exportPath,"_-_TeSt_fIlEeeeee.TXET")
+            testFile = open(testFilePath, 'w')
+            testFile.close()
+            os.remove(testFilePath)
+        except IOError:
+            raise InvalidPathError(exportPath, "Given export path is not writeable:")
+    else:
+        try:
+            testFile = open(exportPath, 'w')
+            testFile.close()
+        except IOError:
+            raise InvalidPathError(exportPath, "Given export path is not writeable:")
 
     for tsvFilePath in tsvFilePaths:
         if not tsvFilePath.endswith(DataTypeStr.generalNucCounts + ".tsv"):
@@ -91,7 +107,7 @@ def main():
 
     #Create the Tkinter UI
     dialog = TkinterDialog(workingDirectory=getDataDirectory())
-    dialog.createMultipleFileSelector("Nucleosome Counts Files:",0,
+    dialog.createMultipleFileSelector("Tab-Separated Nucleosome Counts Files:",0,
                                       DataTypeStr.generalNucCounts + ".tsv",("tsv files",".tsv"))
     dialog.createMultipleFileSelector("R Nucleosome Mutation Analysis Files:",1,
                                       ".rda",("rda files",".rda"))
