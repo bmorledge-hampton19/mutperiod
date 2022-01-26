@@ -24,6 +24,9 @@ class MSIIdentifier:
         # Close all opened files.
         self.cleanup()
 
+        # Clean up that pesky Hg19repeats.rda file!
+        os.remove("Hg19repeats.rda")
+
 
     # Adds an entry to the MSISeq data file.
     # NOTE: startPos and endPos should both be 1-based.
