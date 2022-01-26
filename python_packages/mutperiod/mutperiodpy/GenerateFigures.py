@@ -106,9 +106,9 @@ def main():
 
     dialog.createCheckbox("Omit Outliers", 3, 0)
     dialog.createCheckbox("Smooth Nuc Group results", 3, 1)
-    dialog.createCheckbox("Use normalized values from rda input", 4, 0)
-    dialog.createCheckbox("Use raw values from rda input", 4, 1)
-    dialog.createCheckbox("Strand align results", 5, 0)
+    dialog.createCheckbox("Strand align results", 4, 0)
+    #dialog.createCheckbox("Use normalized values from rda input", 5, 0)
+    #dialog.createCheckbox("Use raw values from rda input", 5, 1)
 
     # Run the UI
     dialog.mainloop()
@@ -125,7 +125,7 @@ def main():
 
     omitOutliers = bool(selections.getToggleStates()[0])
     smoothNucGroup = bool(selections.getToggleStates()[1])
-    strandAlign = bool(selections.getToggleStates()[4])
+    strandAlign = bool(selections.getToggleStates()[2])
 
     generateFigures(tsvFilePaths, rdaFilePaths, exportPath, omitOutliers, smoothNucGroup, 
                     strandAlign)
