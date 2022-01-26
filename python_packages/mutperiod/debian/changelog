@@ -1,3 +1,10 @@
+mutperiod (0.8.1-0ubuntu1) focal; urgency=low
+
+  * Mostly additional error handling.  
+  * A few minor bug fixes sneaked in as well!
+
+ -- Ben Morledge-Hampton <b.morledge-hampton@wsu.edu>  Wed, 26 Jan 2022 01:33:39 -0800
+
 mutperiod (0.8.0-0ubuntu1) focal; urgency=low
 
   * Major changes to error handling.  Errors are much more user friendly.
