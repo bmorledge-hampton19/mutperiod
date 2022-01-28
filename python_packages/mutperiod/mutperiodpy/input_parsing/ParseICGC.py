@@ -102,6 +102,8 @@ def parseICGC(ICGCFilePaths: List[str], genomeFilePath, separateDonors,
 
     outputBedFilePaths = list()
 
+    if len(ICGCFilePaths) == 0: raise UserInputError("No ICGC files were found to parse.")
+
     # Run the parser for each ICGC file given.
     for ICGCFilePath in ICGCFilePaths:
 
@@ -169,8 +171,6 @@ def parseArgs(args):
         if os.path.isdir(ICGCFilePath):
             finalICGCPaths += [os.path.abspath(filePath) for filePath in getFilesInDirectory(ICGCFilePath, ".tsv.gz")]
         elif checkIfPathExists(ICGCFilePath): finalICGCPaths.append(os.path.abspath(ICGCFilePath))
-
-    if len(finalICGCPaths) == 0: raise UserInputError("No ICGC files were found to parse.")
 
     # Run the parser.
     parseICGC(list(set(finalICGCPaths)), genomeFilePath, args.stratify_by_donors, 

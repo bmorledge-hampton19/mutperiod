@@ -322,6 +322,7 @@ def parseCustomBed(bedInputFilePaths, genomeFilePath, stratifyByMS,
                    stratifyByMutSig, separateIndividualCohorts, onlySingleBaseSubs = False, includeIndels = False):
 
     if onlySingleBaseSubs and includeIndels: raise UserInputError("Indels are incompatible with single nucleotide substitutions.")
+    if len(bedInputFilePaths) == 0: raise UserInputError("No bed files were found to parse.") 
 
     for bedInputFilePath in bedInputFilePaths:
 
@@ -410,8 +411,6 @@ def parseArgs(args):
         if os.path.isdir(bedFilePath):
             finalCustomBedPaths += [os.path.abspath(filePath) for filePath in getFilesInDirectory(bedFilePath, "custom_input.bed")]
         elif checkIfPathExists(bedFilePath): finalCustomBedPaths.append(os.path.abspath(bedFilePath))
-
-    if len(finalCustomBedPaths) == 0: raise UserInputError("No custom bed files were found to parse.")
 
     # Run the parser.
     parseCustomBed(list(set(finalCustomBedPaths)), genomeFilePath, args.stratify_by_Microsatellite, 

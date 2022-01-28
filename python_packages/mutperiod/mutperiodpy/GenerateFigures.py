@@ -17,7 +17,7 @@ def generateFigures(tsvFilePaths: List[str], rdaFilePaths: List[str], exportPath
         raise UserInputError("No input files were found to generate graphs from.")
 
     if not (os.path.isdir(exportPath) or exportPath.endswith(".pdf")): 
-        raise InvalidPathError("The given export path is neither an existing directory nor a pdf file.")
+        raise InvalidPathError(exportPath, "The given export path is neither an existing directory nor a pdf file.")
     if os.path.isdir(exportPath):
         try:
             # NOTE: No one in their right mind would name a file this, so I think it's safe to overwrite and delete.
