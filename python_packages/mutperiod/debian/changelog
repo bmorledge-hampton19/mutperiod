@@ -1,3 +1,9 @@
+mutperiod (0.8.2-0ubuntu1) UNRELEASED; urgency=medium
+
+  * A few more error handling updates. (Hopefully the last of them)
+
+ -- LAPTOP-73BJEL7H <bmorledge-hampton@LAPTOP-73BJEL7H.localdomain>  Fri, 28 Jan 2022 12:24:54 -0800
+
 mutperiod (0.8.1-0ubuntu1) focal; urgency=low
 
   * Mostly additional error handling.  
