@@ -1,4 +1,4 @@
-mutperiod (0.8.2-0ubuntu1) UNRELEASED; urgency=medium
+mutperiod (0.8.2-0ubuntu1) focal; urgency=low
 
   * A few more error handling updates. (Hopefully the last of them)
 
