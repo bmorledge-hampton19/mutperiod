@@ -20,7 +20,7 @@ def doesSequenceFitPattern(sequence, pattern):
 
     # Get the center of the sequence that is equal in length to the pattern.
     offset = int((len(sequence)-len(pattern))/2)
-    sequence = sequence[offset,len(sequence)-offset]
+    sequence = sequence[offset:len(sequence)-offset]
 
     # Remove N's in the pattern and any corresponding characters in the sequence.
     nonN_Indices = [i for i in range(len(pattern)) if pattern[i] != 'N']
@@ -76,12 +76,14 @@ def stratifyBySequenceContext(mutperiodPositionFilePaths: List[str], sequencesTo
         
         for sequence in sequencesToStratifyBy:
 
+            print(f"Stratifying by sequence pattern: {sequence}")
+
             sequenceDir = os.path.join(sequenceStratificationsDir, sequence)
             checkDirs(sequenceDir)
 
             dataGroupName = sequence + '_' + parentMetadata.dataGroupName
             sequenceStratifiedFilePath = generateFilePath(sequenceDir, dataGroupName, getContext(mutperiodPositionFilePath),
-                                                          DataTypeStr.mutations, ".bed")
+                                                          dataType = DataTypeStr.mutations, fileExtension = ".bed")
             
             generateMetadata(dataGroupName, parentMetadata.genomeName, 
                              os.path.join("..","..",os.path.basename(mutperiodPositionFilePath)),
