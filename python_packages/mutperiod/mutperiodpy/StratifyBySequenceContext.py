@@ -53,7 +53,8 @@ def stratifyBySequenceContext(mutperiodPositionFilePaths: List[str], sequencesTo
 
     # Make sure that all the given files match sequence parity and have the sufficient context to 
     # match the pattern, expanding files as necessary.
-    for i, mutperiodPositionFilePath in enumerate(mutperiodPositionFilePaths):
+    validPaths = list()
+    for mutperiodPositionFilePath in mutperiodPositionFilePaths:
 
         print(f"\nChecking sequence context for {os.path.basename(mutperiodPositionFilePath)}...")
 
@@ -61,9 +62,17 @@ def stratifyBySequenceContext(mutperiodPositionFilePaths: List[str], sequencesTo
 
         if fileContext%2 != parity:
             raise UserInputError("File does not have the same parity as sequences to stratify by.")
+
+        if os.path.sep + "sequence_stratifications" + os.path.sep in mutperiodPositionFilePath:
+            print("This file has already been stratified by sequence. Removing.")
+            continue
+
         if fileContext < maxSequenceLength:
             print("Found file with insufficient context.  Expanding...")
-            mutperiodPositionFilePaths[i] = expandContext([mutperiodPositionFilePath], maxSequenceLength)[0]
+            validPaths.append(expandContext([mutperiodPositionFilePath], maxSequenceLength)[0])
+        else:
+            validPaths.append(mutperiodPositionFilePath)
+    mutperiodPositionFilePaths = validPaths
 
     # Iterate through the given files, stratifying by sequence context for each.
     for mutperiodPositionFilePath in mutperiodPositionFilePaths:
@@ -87,7 +96,7 @@ def stratifyBySequenceContext(mutperiodPositionFilePaths: List[str], sequencesTo
             
             generateMetadata(dataGroupName, parentMetadata.genomeName, 
                              os.path.join("..","..",os.path.basename(mutperiodPositionFilePath)),
-                             parentMetadata.inputFormat, sequenceDir, *parentMetadata.cohorts,
+                             parentMetadata.inputFormat, sequenceDir, *parentMetadata.cohorts + [sequence],
                              callParamsFilePath = parentMetadata.callParamsFilePath)
 
             # Check each line in the input file, and output those lines that match the given sequence pattern.
