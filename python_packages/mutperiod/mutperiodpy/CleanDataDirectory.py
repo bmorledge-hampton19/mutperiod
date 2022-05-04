@@ -1,9 +1,10 @@
 # This script cleans up the data directory by deleting any files in "intermediate_files" directories.
 from mutperiodpy.helper_scripts.UsefulFileSystemFunctions import getDataDirectory
+from benbiohelpers.TkWrappers.TkinterDialog import TkinterDialog
 import os
 
 def cleanDataDirectory(directory = getDataDirectory()):
-    
+
     itemsRemoved = 0
 
     # Iterate through the given directory
@@ -27,7 +28,19 @@ def cleanDataDirectory(directory = getDataDirectory()):
 
 
 def main():
-    print("Cleaning data directory...")
-    print("Deleted",cleanDataDirectory(),"items within intermediate directories.")
+    
+    with TkinterDialog(workingDirectory = getDataDirectory()) as dialog:
+        with dialog.createDynamicSelector(0, 0) as dirDynSel:
+            dirDynSel.initCheckboxController("Clean default mutperiod data directory", True)
+            dirDynSel.initDisplay(False, "altDir").createFileSelector("Alternative directory:", 0, directory=True)
+
+
+    if dirDynSel.getControllerVar(): 
+        print(f"Cleaning {getDataDirectory()}...")
+        itemsRemoved = cleanDataDirectory()
+    else: 
+        print(f"Cleaning {dialog.selections.getIndividualFilePaths('altDir')[0]}...")
+        itemsRemoved = cleanDataDirectory(dialog.selections.getIndividualFilePaths("altDir")[0])
+    print(f"Deleted {itemsRemoved} items within intermediate directories.")
 
 if __name__ == "__main__": main()
