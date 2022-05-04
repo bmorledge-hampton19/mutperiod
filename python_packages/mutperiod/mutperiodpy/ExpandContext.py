@@ -124,6 +124,7 @@ def expandContext(inputBedFilePaths, expansionContextNum):
         expandBedPositions(inputBedFilePath,bedExpansionFilePath,thisExpansionContextNum)
 
         # Convert the expanded coordinates in the bed file to the referenced nucleotides in fasta format.
+        print("Generating fasta file from expanded bed file...")
         bedToFasta(bedExpansionFilePath,metadata.genomeFilePath,fastaReadsFilePath)
 
         # Using the newly generated fasta file, create a new bed file with the expanded context.
