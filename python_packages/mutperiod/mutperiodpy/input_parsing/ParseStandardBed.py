@@ -1,5 +1,6 @@
 # This script takes standard bed formatted data and converts it to custom bed format.
 # (Basically, it just replaces the 4th column with the auto-acquire '.' and the 5th column with "OTHER" and also generates metadata)
+# The file is then passed along to ParseCustomBed to finish formatting for the mutperiod pipeline.
 
 import os
 from typing import List
