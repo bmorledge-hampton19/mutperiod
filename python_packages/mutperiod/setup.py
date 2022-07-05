@@ -8,7 +8,7 @@ setup(
     version="0.8.2",
     description='Analyze mutational periodicity about nucleosomes',
     long_description_content_type="text/markdown",
-    url='https://github.com/bmorledge-hampton19/Nucleosome-Mutation-Analysis',
+    url='https://github.com/bmorledge-hampton19/mutperiod',
     author='Ben Morledge-Hampton',
     author_email='b.morledge-hampton@wsu.edu',
     license='MIT',
