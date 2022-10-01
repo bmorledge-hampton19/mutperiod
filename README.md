@@ -132,7 +132,7 @@ This format is a variation on the standardized bed format and contains 6-7 tab s
 - The chort the tumor belongs to (e.g. a donor ID or tumor type)
 - This column is technically optional but is required for stratifying data in future steps.
 - If any cohort designations are given, ALL entries must have designations.
-- Use the "." character in this column to used to avoid assigning an entry to another cohort without breaking the above rule.
+- Use the "." character in this column to avoid assigning an entry to another cohort without breaking the above rule.
 
 #### Example Bed Mutation Data
 ![Bed Mutation Data](readme_images/custom_bed_mutations.png)
