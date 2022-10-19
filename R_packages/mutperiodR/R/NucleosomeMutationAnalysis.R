@@ -255,6 +255,7 @@ filterCounts = function(counts, cutoff, dataGroup) {
 }
 
 # A helper function for when I want to quickly get lomb results with SNR.
+#' @export
 getPeakPeriodicityAndSNR = function(counts, lombFrom, lombTo, plot = FALSE) {
 
   # Calculate the periodicity of the data using a Lomb-Scargle periodiagram.

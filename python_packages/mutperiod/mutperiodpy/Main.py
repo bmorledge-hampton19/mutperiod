@@ -11,7 +11,7 @@ if importlib.util.find_spec("shtab") is not None:
 else:
         fileCompletion = None
 
-        
+
 
 
 def formatParseICGCParser(parseICGCParser: ArgumentParser):

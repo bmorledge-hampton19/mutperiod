@@ -1,3 +1,9 @@
+mutperiodr (0.8.1-0ubuntu1) focal; urgency=low
+
+  * Added helper function for easy lomb-scargle computation
+
+ -- Ben Morledge-Hampton <b.morledge-hampton@wsu.edu>  Wed, 14 Sep 2022 11:33:11 -0700
+
 mutperiodr (0.8.0-0ubuntu1) focal; urgency=low
 
   * Added new, more accurate function for determining NRL
