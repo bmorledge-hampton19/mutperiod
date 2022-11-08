@@ -1,3 +1,9 @@
+mutperiodr (0.8.2-0ubuntu1) focal; urgency=low
+
+  * Minor updates to function for getting NRL and convenience function for returning SNR and peak period from periodicity data.
+
+ -- Ben Morledge-Hampton <b.morledge-hampton@wsu.edu>  Tue, 08 Nov 2022 11:41:48 -0800
+
 mutperiodr (0.8.1-0ubuntu1) focal; urgency=low
 
   * Added helper function for easy lomb-scargle computation
