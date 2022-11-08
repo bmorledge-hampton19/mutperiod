@@ -255,12 +255,18 @@ filterCounts = function(counts, cutoff, dataGroup) {
 }
 
 # A helper function for when I want to quickly get lomb results with SNR.
+# If the lomb results were computed elsewhere, they can be provided with the precomputedLombResult argument
+# (In the above case, all other required values are irrelevant and should be set to NA)
 #' @export
-getPeakPeriodicityAndSNR = function(counts, lombFrom, lombTo, plot = FALSE) {
+getPeakPeriodicityAndSNR = function(counts, lombFrom, lombTo, plot = FALSE, precomputedLombResult = NA) {
 
-  # Calculate the periodicity of the data using a Lomb-Scargle periodiagram.
-  lombResult = lomb::lsp(counts, type = "period", from = lombFrom, to = lombTo,
-                         ofac = 100, plot = plot)
+  # Calculate the periodicity of the data using a Lomb-Scargle periodiagram. (Or retrieve the precomputed result)
+  if (!is.na(precomputedLombResult)) {
+    lombResult = precomputedLombResult
+  } else {
+    lombResult = lomb::lsp(counts, type = "period", from = lombFrom, to = lombTo,
+                           ofac = 100, plot = plot)
+  }
 
   # Get the peak periodicity and its associated SNR
   peakPeriodicity = lombResult$peak.at[1]
