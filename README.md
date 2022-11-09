@@ -91,7 +91,7 @@ Each individual mutation input file should be stored in its own directory under 
 All genome information should be given in standard fasta format with chromosome identifiers as headers.
 
 #### Nucleosome Positioning Data
-All nucleosome positioning data should be in bed format.  Only the first three columns, containing the chromosome identifiers, 0-based start positions, and 1-based start positions are used.  Other columns may be included after these first three, but they will be ignored.
+All nucleosome positioning data should be in bed format. Each entry in the bed file should specify a 1-bp long region that corresponds to the center of a nucleosome. Within the bed file, only the first three columns, containing the chromosome identifiers, 0-based start positions, and 1-based start positions, are used. Other columns may be included after these first three, but they will be ignored.
 
 ##### Stratifying Nucleosome Positioning Data
 Mutperiod supports stratification of nucleosome maps using any bed file of genome positions (e.g. Gene positions, regions with specific histone modifications, etc.).  The following command is used to perform this stratification:
