@@ -7,7 +7,7 @@ library(data.table)
 args = commandArgs(trailingOnly = T)
 
 if (length(args) == 2) {
-  
+
   mutperiodData = generateMutperiodData(args[1], enforceInputNamingConventions = TRUE)
   fwrite(list(getNRL(args[1])), args[2])
 
