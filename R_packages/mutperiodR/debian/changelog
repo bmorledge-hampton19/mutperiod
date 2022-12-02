@@ -1,3 +1,10 @@
+mutperiodr (0.8.3-0ubuntu1) focal; urgency=low
+
+  * Changed MSIseq from a dependency to a suggestion, since newer versions of R are having
+    troubles importing it.
+
+ -- Ben Morledge-Hampton <b.morledge-hampton@wsu.edu>  Mon, 28 Nov 2022 13:40:55 -0800
+
 mutperiodr (0.8.2-0ubuntu1) focal; urgency=low
 
   * Minor updates to function for getting NRL and convenience function for returning SNR and peak period from periodicity data.
