@@ -7,7 +7,7 @@ library(data.table)
 args = commandArgs(trailingOnly = T)
 
 if (length(args) == 2) {
-  
+
   mutperiodData = generateMutperiodData(args[1], enforceInputNamingConventions = TRUE)
   lombResult = getNRL(args[1], returnFullLombResult = TRUE)
   NRL = lombResult$peak.at[1]
