@@ -9,7 +9,12 @@ args = commandArgs(trailingOnly = T)
 if (length(args) == 2) {
   
   mutperiodData = generateMutperiodData(args[1], enforceInputNamingConventions = TRUE)
-  fwrite(list(getNRL(args[1])), args[2])
+  lombResult = getNRL(args[1], returnFullLombResult = TRUE)
+  NRL = lombResult$peak.at[1]
+  noiseBooleanVector = (lombResult$scanned < NRL - 0.5
+                        | lombResult$scanned > NRL + 0.5)
+  SNR = lombResult$peak / median(lombResult$power[noiseBooleanVector])
+  fwrite(list(NRL, paste("SNR:",SNR)), args[2], sep = '\n')
 
 } else {
   stop("Invalid arguments.  Expected 2 arguments: The path to the nucleosome map self-counts, 
