@@ -54,6 +54,8 @@ def parseStandardBed(standardBedFilePaths: List[str], genomeFilePath):
 
                     choppedUpLine[3] = '.'
                     choppedUpLine[4] = "OTHER"
+                    if choppedUpLine[5] != '+' and choppedUpLine[5] != '-':
+                        choppedUpLine[5] = '.'
 
                     customBedOutputFile.write('\t'.join(choppedUpLine[:6]) + '\n')
 
