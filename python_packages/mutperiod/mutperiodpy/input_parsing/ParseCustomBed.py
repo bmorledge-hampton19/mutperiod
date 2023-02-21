@@ -327,11 +327,22 @@ def setUpForMutSigStratification(writeManager: WriteManager, bedInputFilePath):
 
 
 # Handles the scripts main functionality.
-def parseCustomBed(bedInputFilePaths, genomeFilePath, stratifyByMS, 
-                   stratifyByMutSig, separateIndividualCohorts, onlySingleBaseSubs = False, includeIndels = False):
+def parseCustomBed(bedInputFilePaths, genomeFilePath,
+                   stratifyByMS = False, stratifyByMutSig = False, separateIndividualCohorts = False,
+                   onlySingleBaseSubs = False, includeIndels = False,
+                   simpleParsing = False):
+
+    # This needs to be here to avoid a circular reference.
+    from mutperiodpy.input_parsing.ParseStandardBed import parseStandardBed
+
+    # If simple parsing was selected, do something kinda weird where the inputs get passed to
+    # parseStandardBed first which eventually passes them back here.
+    if simpleParsing: return parseStandardBed(bedInputFilePaths, genomeFilePath)
 
     if onlySingleBaseSubs and includeIndels: raise UserInputError("Indels are incompatible with single nucleotide substitutions.")
     if len(bedInputFilePaths) == 0: raise UserInputError("No bed files were found to parse.") 
+
+    outputFilePaths = list()
 
     for bedInputFilePath in bedInputFilePaths:
 
@@ -363,6 +374,8 @@ def parseCustomBed(bedInputFilePaths, genomeFilePath, stratifyByMS,
                   "Creating a copy of the input file at:", inputFilePathCopy, "to use for reading.")
             shutil.copy2(bedInputFilePath, inputFilePathCopy)
             bedInputFilePath = inputFilePathCopy
+
+        outputFilePaths.append(expectedOutputFilePath)
 
         # Create an instance of the WriteManager to handle writing.
         with WriteManager(dataDirectory, context) as writeManager:
@@ -400,6 +413,8 @@ def parseCustomBed(bedInputFilePaths, genomeFilePath, stratifyByMS,
             # Go, go, go!
             convertToStandardInput(bedInputFilePath, writeManager, onlySingleBaseSubs, includeIndels)
 
+    return outputFilePaths
+
 
 # Given a namespace resulting from an argparser object (constructed in mutperiodpy.Main),
 # use the input to run this script.
@@ -414,6 +429,13 @@ def parseArgs(args):
     checkIfPathExists(args.genome_file)
     genomeFilePath = os.path.abspath(args.genome_file)
 
+    # If the coerce_bed argument has bee passed, make sure that no other incompatible arguments were passed.
+    if args.coerce_bed and (args.stratify_by_microsatellite or args.stratify_by_mut_sigs or 
+                            args.stratify_by_cohorts or args.only_sbs or args.include_indels):
+        raise UserInputError("When coercing bed input to custom input, the following options cannot be used: "
+                             "stratify-by-microsatellite, stratify-by-mut-sigs, stratify-by-cohorts, "
+                             "only-sbs, include-indels")
+
     # Get the custom bed files from the given paths, searching directories if necessary.
     finalCustomBedPaths = list()
     for bedFilePath in args.bedFilePaths:
@@ -422,21 +444,27 @@ def parseArgs(args):
         elif checkIfPathExists(bedFilePath): finalCustomBedPaths.append(os.path.abspath(bedFilePath))
 
     # Run the parser.
-    parseCustomBed(list(set(finalCustomBedPaths)), genomeFilePath, args.stratify_by_Microsatellite, 
-                   args.stratify_by_Mut_Sigs, args.stratify_by_cohorts, args.only_sbs, args.include_indels)
+    parseCustomBed(list(set(finalCustomBedPaths)), genomeFilePath, args.stratify_by_microsatellite, 
+                   args.stratify_by_mut_sigs, args.stratify_by_cohorts, args.only_sbs, args.include_indels,
+                   args.coerce_bed)
 
 
 def main():
+
+    FULL_CUSTOM = "FullCustom"
 
     #Create the Tkinter UI
     dialog = TkinterDialog(workingDirectory=getDataDirectory())
     dialog.createMultipleFileSelector("Custom bed Input Files:",0,"custom_input.bed",("bed files",".bed"))
     dialog.createFileSelector("Genome Fasta File:",1,("Fasta Files",".fa"))
-    dialog.createCheckbox("Stratify data by microsatellite stability?", 2, 0)
-    dialog.createCheckbox("Stratify by mutation signature?", 2, 1)
-    dialog.createCheckbox("Separate individual cohorts?", 3, 0)
-    dialog.createCheckbox("Only use single nucleotide substitutions?", 4, 0)
-    dialog.createCheckbox("Include indels in output?", 4, 1)
+    with dialog.createDynamicSelector(2, 0) as simplifiedBedDynSel:
+        simplifiedBedDynSel.initCheckboxController("Input is bed3 (or bed6+ with strand info) and must be coereced to custom bed")
+        fullCustomDialog = simplifiedBedDynSel.initDisplay(False, FULL_CUSTOM)
+        fullCustomDialog.createCheckbox("Stratify data by microsatellite stability?", 0, 0)
+        fullCustomDialog.createCheckbox("Stratify by mutation signature?", 0, 1)
+        fullCustomDialog.createCheckbox("Separate individual cohorts?", 1, 0)
+        fullCustomDialog.createCheckbox("Only use single nucleotide substitutions?", 2, 0)
+        fullCustomDialog.createCheckbox("Include indels in output?", 2, 1)
 
     # Run the UI
     dialog.mainloop()
@@ -448,14 +476,20 @@ def main():
     selections: Selections = dialog.selections
     bedInputFilePaths = selections.getFilePathGroups()[0]
     genomeFilePath = selections.getIndividualFilePaths()[0]
-    stratifyByMS = selections.getToggleStates()[0]
-    stratifyByMutSig = selections.getToggleStates()[1]
-    separateIndividualCohorts = selections.getToggleStates()[2]
-    onlySingleBaseSubs = selections.getToggleStates()[3]
-    includeIndels = selections.getToggleStates()[4]
 
+    # If we have a simplified input, we don't need any other parameters and can start parsing now.
+    if simplifiedBedDynSel.getControllerVar(): 
+        parseCustomBed(bedInputFilePaths, genomeFilePath, simpleParsing = True)
+    
+    # Otherwise, set up the parser with the additional parameters.
+    else:
+        stratifyByMS = selections.getToggleStates(FULL_CUSTOM)[0]
+        stratifyByMutSig = selections.getToggleStates(FULL_CUSTOM)[1]
+        separateIndividualCohorts = selections.getToggleStates(FULL_CUSTOM)[2]
+        onlySingleBaseSubs = selections.getToggleStates(FULL_CUSTOM)[3]
+        includeIndels = selections.getToggleStates(FULL_CUSTOM)[4]
 
-    parseCustomBed(bedInputFilePaths, genomeFilePath, stratifyByMS, 
-                   stratifyByMutSig, separateIndividualCohorts, onlySingleBaseSubs, includeIndels)
+        parseCustomBed(bedInputFilePaths, genomeFilePath, stratifyByMS, 
+                       stratifyByMutSig, separateIndividualCohorts, onlySingleBaseSubs, includeIndels)
 
 if __name__ == "__main__": main()
