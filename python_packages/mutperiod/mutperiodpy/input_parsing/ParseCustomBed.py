@@ -34,7 +34,8 @@ def checkForErrors(choppedUpLine: List[str], cohortDesignationPresent, acceptabl
 
     if len(choppedUpLine) < 6 or len(choppedUpLine) > 7:
         raise UserInputError("Entry given with invalid number of arguments (" + str(len(choppedUpLine)) + ").  "
-                         "Each entry should contain either 6 tab separated arguments or 7 (if a cohort designation is present.")
+                         "Each entry should contain either 6 tab separated arguments or 7 (if a cohort designation is present. "
+                         f"The line in question is:\n{chr(9).join(choppedUpLine)}")
 
     if choppedUpLine[0] not in acceptableChromosomes:
         raise UserInputError("Invalid chromosome identifier \"" + choppedUpLine[0] + "\" found.  "
@@ -155,7 +156,15 @@ def autoAcquireAndQACheck(bedInputFilePath: str, genomeFilePath, autoAcquiredFil
                     (choppedUpLine[5] == '.' and choppedUpLine[3] != '*'))):
                     print("Found line with auto-acquire requested.  Generating fasta...")
                     autoAcquiring = True
-                    bedToFasta(bedInputFilePath, genomeFilePath, autoAcquiredFilePath)
+                    failedAutoAcquire = False
+                    try:
+                        bedToFasta(bedInputFilePath, genomeFilePath, autoAcquiredFilePath)
+                    except subprocess.CalledProcessError:
+                        failedAutoAcquire = True
+                    if failedAutoAcquire:
+                        raise UserInputError("The given custom bed file has lines with auto-acquire requested "
+                                             "(symbolized by a '.' character), but a fasta file could not be generated from "
+                                             "the given bed file.")
                     autoAcquiredFile = open(autoAcquiredFilePath, 'r')
                     autoAcquireFastaIterator = FastaFileIterator(autoAcquiredFile)
                     fastaEntry = autoAcquireFastaIterator.readEntry()
