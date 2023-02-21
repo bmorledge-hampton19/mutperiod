@@ -174,7 +174,7 @@ def parseArgs(args):
 
     # Run the parser.
     parseICGC(list(set(finalICGCPaths)), genomeFilePath, args.stratify_by_donors, 
-              args.stratify_by_Microsatellite, args.stratify_by_Mut_Sigs)
+              args.stratify_by_microsatellite, args.stratify_by_mut_sigs)
 
 
 def main():
