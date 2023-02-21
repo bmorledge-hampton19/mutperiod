@@ -3,44 +3,76 @@
 import os, datetime, subprocess
 from enum import Enum
 from benbiohelpers.FileSystemHandling.DirectoryHandling import checkDirs, getIsolatedParentDir
-from benbiohelpers.CustomErrors import UserInputError, InvalidPathError, MetadataPathError
+from benbiohelpers.CustomErrors import UserInputError, InvalidPathError, MetadataPathError, checkIfPathExists
+
+
+# This function serves as the interface for the CLI to create a new data directory
+def parseArgsForNewDataDirectory(args):
+    getDataDirectory(args.newDataDirectoryLocation[0])
 
 # Get the data directory for mutperiod, creating it from user input if necessary.
-def getDataDirectory():
+# The newDataDirectoryDirectory argument can be supplied to create/overwrite the data directory location.
+def getDataDirectory(newDataDirectoryDirectory = None):
+
+    # If a new directory was given, make sure it exists.
+    if newDataDirectoryDirectory is not None: checkIfPathExists(newDataDirectoryDirectory)
 
     # Check for the text file which should contain the path to the data directory.
     dataDirectoryTextFilePath = os.path.join(os.getenv("HOME"), ".mutperiod", "data_dir.txt")
 
-    # If it exists, return the directory path within.
+    # If it exists, return the directory path within. (Or overwrite it if a new directory path was supplied.)
     if os.path.exists(dataDirectoryTextFilePath):
-        with open(dataDirectoryTextFilePath, 'r') as dataDirectoryTextFile:
-            
-            dataDirectory = dataDirectoryTextFile.readline().strip()
-            
-            # Double check to make sure the data directory is still intact.  
-            # If it isn't, inform the user, and progress through the function to recreate it.
-            if not os.path.isdir(dataDirectory):
-                print("Data directory not found at expected location: {}".format(dataDirectory))
-                print("Please select a new location to create a data directory.")
-            else: return dataDirectory
+
+        if newDataDirectoryDirectory is not None:
+            userChoice = ''
+            userChoice = input(f"A new location for the data directory has been given: {newDataDirectoryDirectory}\n"
+                               "Are you sure you want to update the current data directory location? ")
+            while userChoice.upper() not in ('Y', "YES", 'N', "NO"):
+                userChoice = input("Invalid choice. Please answer (y)es or (n)o ")
+
+            if userChoice.upper() == 'Y' or userChoice.upper() == "YES":
+                dataDirectoryDirectory = newDataDirectoryDirectory
+            else:
+                print("Not updating data directory. Proceeding with current directory.")
+
+        else:
+            with open(dataDirectoryTextFilePath, 'r') as dataDirectoryTextFile:
+                
+                dataDirectory = dataDirectoryTextFile.readline().strip()
+                
+                # Double check to make sure the data directory is still intact.  
+                # If it isn't, inform the user, and progress through the function to recreate it.
+                if not os.path.isdir(dataDirectory):
+                    print("Data directory not found at expected location: {}".format(dataDirectory))
+                    print("Please select a new location to create a data directory.")
+                else: return dataDirectory
 
     # Create a simple dialog to select a new data directory location.
     # NOTE: The following code is not part of an else statement because the above "if" block will return
     # the data directory if it proceeds correctly, and if it doesn't, the data directory text file
     # needs to be recreated anyway.
-    from benbiohelpers.TkWrappers.TkinterDialog import TkinterDialog, Selections
-    checkDirs(os.path.dirname(dataDirectoryTextFilePath))
-    dialog = TkinterDialog(workingDirectory = os.path.dirname(dataDirectoryTextFilePath))
-    dialog.createFileSelector("Location to create new data directory:",0,("Fasta Files",".fa"), directory = True)
+    if newDataDirectoryDirectory is not None:
+        dataDirectoryDirectory = newDataDirectoryDirectory
+    else:
+        from benbiohelpers.TkWrappers.TkinterDialog import TkinterDialog, Selections
+        from _tkinter import TclError
+        try:
+            checkDirs(os.path.dirname(dataDirectoryTextFilePath))
+            dialog = TkinterDialog(workingDirectory = os.path.dirname(dataDirectoryTextFilePath))
+            dialog.createFileSelector("Location to create new data directory:",0,("Fasta Files",".fa"), directory = True)
 
-    # Run the UI
-    dialog.mainloop()
+            # Run the UI
+            dialog.mainloop()
 
-    # If no input was received (i.e. the UI was terminated prematurely), then quit!
-    if dialog.selections is None: quit()
+            # If no input was received (i.e. the UI was terminated prematurely), then quit!
+            if dialog.selections is None: quit()
 
-    selections: Selections = dialog.selections
-    dataDirectoryDirectory = selections.getIndividualFilePaths()[0]
+            selections: Selections = dialog.selections
+            dataDirectoryDirectory = selections.getIndividualFilePaths()[0]
+        except TclError:
+            dataDirectoryDirectory = input("Unable to open the GUI to select a data directory. Please supply one here: ")
+            while not os.path.exists(dataDirectoryDirectory):
+                dataDirectoryDirectory = input("The given path does not exist. Please give the full path to an existing directory. ")
 
     # Make sure a valid, writeable directory was given.  Then create the new directory (if it doesn't exist already), 
     # write it to the text file, and return it!  (Also create the __external_data directory.)
