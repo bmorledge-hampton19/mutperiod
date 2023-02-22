@@ -1,4 +1,24 @@
 library(data.table)
+library(ggplot2)
+
+ROTATIONAL = 1
+TRANSLATIONAL = 2
+
+# Default text scaling
+defaultTextScaling = theme(plot.title = element_text(size = 20, hjust = 0.5),
+                           axis.title = element_text(size = 22), axis.text = element_text(size = 18),
+                           legend.title = element_text(size = 22), legend.text = element_text(size = 18),
+                           strip.text = element_text(size = 22))
+
+# Blank background theme
+blankBackground = theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+                        panel.background = element_blank(), axis.line = element_line(colour = "black"))
+
+# Actual domain colors
+domainColors = c("BLACK" = "black", "black" = "black", "BLUE" = "blue", "blue" = "blue",
+                 "GREEN" = "forestgreen", "green" = "forestgreen",
+                 "RED" = "red", "red" = "red", "YELLOW" = "gold2", "yellow" = "gold2",
+                 "GRAY" = "gray", "gray" = "gray")
 
 # Creates figures for the given data and exports them to one or many pdf files.
 # Files can be given in tsv form, or as an rda file containing a mutperiodData object.
@@ -80,21 +100,6 @@ generateFigures = function(tsvFilePaths = list(), tsvExpectedPeriods = list(), r
     
   }
   
-  # Coloring function for use in plotCounts later.
-  colorInRange = function(range, color, data, dataCol, includeNegative = TRUE) {
-    
-    lines(data[Dyad_Position %in% range, Dyad_Position], 
-          data[Dyad_Position %in% range][[dataCol]], type = 'l', lwd = 3, col = color)
-    
-    if (includeNegative) {
-      
-      lines(data[Dyad_Position %in% -range, Dyad_Position], 
-            data[Dyad_Position %in% -range][[dataCol]], type = 'l', lwd = 3, col = color)
-      
-    }
-    
-  }
-  
   # Takes a single counts table and title and plots it!
   # If requested, opens up a new pdf stream and omits outliers
   plotCounts = function(dataSetName) {
@@ -108,10 +113,16 @@ generateFigures = function(tsvFilePaths = list(), tsvExpectedPeriods = list(), r
     # Set up plot margins.
     par(mar = c(5,5,4,1))
     
-    # Does this appear to be a nuc-group dyad radius?
-    if (nrow(countsTable) > 1998) {
-      nucGroup = TRUE
-    } else nucGroup = FALSE
+    # Determine whether the data is rotational, rotational+linker, or translational.
+    rotational = FALSE
+    rotationalPlus = FALSE
+    translational = FALSE
+    if (min(countsTable$Dyad_Position) >= -73) {
+      rotational = TRUE
+    } else if (min(countsTable$Dyad_Position) > -999) {
+      rotational = TRUE
+      rotationalPlus = TRUE
+    } else translational = TRUE
     
     # Get the relevant data from the counts table.
     if (!useAlignedStrands) {
@@ -142,7 +153,7 @@ generateFigures = function(tsvFilePaths = list(), tsvExpectedPeriods = list(), r
       
     }
     
-    if (omitOutliers && smoothNucGroup && nucGroup) {
+    if (omitOutliers && smoothNucGroup && translational) {
       warning(paste0("Combining outlier filtering with smoothing may have undesired consequences as the ",
                      "window for averaging is not adjusted due to omitted outliers."))
     }
@@ -154,48 +165,81 @@ generateFigures = function(tsvFilePaths = list(), tsvExpectedPeriods = list(), r
     }
     
     # If smoothing is requested for nuc group tables, and we have such a table, smooth away!
-    if (nucGroup && smoothNucGroup) {
+    if (translational && smoothNucGroup) {
       countsTable[, (dataCol) := sapply(countsTable$Dyad_Position, smoothValues, 
                                         data = countsTable, dataCol = dataCol)]
     }
     
-    # Plot it!
-    print(paste("Generating plot for",dataSetName))
-    plot(countsTable$Dyad_Position, countsTable[[dataCol]], type = 'l', main = dataSetName,
-         ylab = ylab, xlab = xlab,
-         cex.lab = 2, cex.main = 1.75, lwd = 2, col = "black")
-    
-    # Color the graph based on relevant nucleosome features.
-    if (!nucGroup) {
-      captureOutput = sapply(minorInPositions, colorInRange, data = countsTable, 
-                             color = "blue", dataCol = dataCol)
-      captureOutput = sapply(minorOutPositions, colorInRange, data = countsTable, 
-                             color = "light green", dataCol = dataCol)
-    } else {
+    if (rotational) {
+      # Color rotational positioning
+      countsTable[abs(Dyad_Position) %in% abs(unlist(minorInPositions)),
+                 Periodic_Position_Color := "cyan3"]
+      countsTable[abs(Dyad_Position) %in% abs(unlist(minorOutPositions)),
+                 Periodic_Position_Color := "darkorange"]
+      countsTable[is.na(Periodic_Position_Color), Periodic_Position_Color := "Black"]
       
+    }
+    
+    if (rotationalPlus) {
+      # Color linker DNA in linker+ plots.
+      countsTable[Dyad_Position <= -73 | Dyad_Position >= 73, Periodic_Position_Color := "deeppink2"]
+      
+    }
+    
+    if (translational) {
       # For translational coloring, get the linker and nucleosome positions based on the expected period.
       nucRepLen = round(expectedPeriods[[dataSetName]])
       
-      nucleosomePositions = lapply(1:10, function(x) return(append((-73+x*nucRepLen):(73+x*nucRepLen), 
+      nucleosomePositions = sapply(1:10, function(x) return(append((-73+x*nucRepLen):(73+x*nucRepLen),
                                                                    (-72.5+x*nucRepLen):(72.5+x*nucRepLen))))
-      nucleosomePositions = append(nucleosomePositions, list(0:73, 0.5:72.5))
-      linkerPositions = lapply(0:8, function(x) return( append((73+x*nucRepLen):(-73+(x+1)*nucRepLen), 
-                                                               (72.5+x*nucRepLen):(-72.5+(x+1)*nucRepLen))))
+      nucleosomePositions = append(nucleosomePositions, c(0:73, 0.5:72.5))
+      linkerPositions = sapply(0:8, function(x) return( append((74+x*nucRepLen):(-74+(x+1)*nucRepLen),
+                                                               (73.5+x*nucRepLen):(-73.5+(x+1)*nucRepLen))))
       
-      captureOutput = sapply(linkerPositions, colorInRange, data = countsTable, 
-                             color = "blue", dataCol = dataCol)
-      captureOutput = sapply(nucleosomePositions, colorInRange, data = countsTable, 
-                             color = "light green", dataCol = dataCol)
+      # Color translational positioning
+      countsTable[Dyad_Position %in% nucleosomePositions | -Dyad_Position %in% nucleosomePositions,
+                  Periodic_Position_Color := "darkblue"]
+      countsTable[Dyad_Position %in% linkerPositions | -Dyad_Position %in% linkerPositions,
+                  Periodic_Position_Color := "deeppink2"]
+      
     }
     
-    # Add the legend based on the nucleosome features being investigated.
-    if (!nucGroup) {
-      labels = c("Minor-In Positions", "Minor-Out Positions")
+    # Plot it!
+    print(paste("Generating plot for",dataSetName))
+    
+    periodicityPlot = ggplot(countsTable, aes_string("Dyad_Position", dataCol,
+                                                    color = "Periodic_Position_Color"))
+    if (packageVersion("ggplot2") >= 3.4) {
+      periodicityPlot = periodicityPlot + geom_path(linewidth = 1.25, lineend = "round", aes(group = 1))
     } else {
-      labels = c("Linker DNA", "Nucleosomal DNA")
+      periodicityPlot = periodicityPlot + geom_path(size = 1.25, lineend = "round", aes(group = 1))
     }
-    legend("topleft", labels, col=c("blue", "light green"), 
-           lwd=c(3,3), cex = 0.8, bg = "white")
+    
+    if (rotationalPlus) {
+      periodicityPlot = periodicityPlot +
+        scale_color_identity(name = '', guide = "legend",
+                             breaks = c("cyan3", "darkorange", "deeppink2"),
+                             #breaks = c("#1bcc44", "#993299", "Gold"),
+                             labels = c("Minor-in", "Minor-out", "Linker"))
+    } else if (rotational) {
+      periodicityPlot = periodicityPlot +
+        scale_color_identity(name = '', guide = "legend",
+                             breaks = c("cyan3", "darkorange"),
+                             #breaks = c("#1bcc44", "#993299"),
+                             labels = c("Minor-in", "Minor-out"))
+    } else if (translational) {
+      periodicityPlot = periodicityPlot +
+        scale_color_identity(name = '', guide = "legend",
+                             breaks = c("darkblue", "deeppink2"),
+                             #breaks = c("#0571b0", "#ca0020"),
+                             labels = c("Nucleosome","Linker"))
+    }
+  
+  periodicityPlot = periodicityPlot +
+    labs(title = dataSetName, x = xlab, y = ylab) +
+    defaultTextScaling + blankBackground
+  
+  print(periodicityPlot)
     
     # Make sure to close any open streams.
     if (!oneFile) dev.off()

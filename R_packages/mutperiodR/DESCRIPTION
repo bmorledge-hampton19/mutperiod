@@ -16,7 +16,8 @@ LazyData: true
 Imports:
   data.table,
   lomb,
-  deconstructSigs
+  deconstructSigs,
+  ggplot2
 Suggests:
   MSIseq
 RoxygenNote: 7.2.2

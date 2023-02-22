@@ -9,9 +9,10 @@ Build-Depends: debhelper-compat (= 12),
                r-cran-data.table,
                r-cran-lomb,
                r-cran-msiseq,
-               r-cran-deconstructsigs
+               r-cran-deconstructsigs,
+               r-cran-ggplot2
 Standards-Version: 4.4.0
-Homepage: 
+Homepage:
 
 Package: mutperiodr
 Architecture: any
