@@ -261,7 +261,10 @@ class MutperiodArgParser():
     def parse_args(self): return self._parser.parse_args()
     def print_help(self, **_):
         self._parser.print_help()
-        
+
+def getMainParser():
+    mutperiodArgParser = MutperiodArgParser()
+    return mutperiodArgParser._parser   
 
 def main():
 
