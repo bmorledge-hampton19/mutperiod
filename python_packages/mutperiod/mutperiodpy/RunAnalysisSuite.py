@@ -121,8 +121,7 @@ def parseArgs(args):
     if args.nucleosome_maps is None: raise UserInputError("No nucleosome maps were given.")
     for nucleosomeMapPath in args.nucleosome_maps:
         checkIfPathExists(nucleosomeMapPath)
-        if os.path.isdir(nucleosomeMapPath): nucleosomeMapNames.append(os.path.basename(nucleosomeMapPath))
-        else: nucleosomeMapNames.append(getIsolatedParentDir(os.path.abspath(nucleosomeMapPath)))
+        nucleosomeMapNames.append(getIsolatedParentDir(os.path.abspath(nucleosomeMapPath)))
 
     if len(nucleosomeMapNames) == 0: raise UserInputError("No nucleosome maps were found.")
 
