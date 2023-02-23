@@ -9,6 +9,7 @@ import argparse, importlib.util, sys, traceback, textwrap
 if importlib.util.find_spec("shtab") is not None: 
         import shtab
         fileCompletion = shtab.FILE
+        directoryCompletion = shtab.DIRECTORY
 else:
         fileCompletion = None
 
@@ -140,7 +141,8 @@ class MutperiodArgParser():
         mainPipelineParser.add_argument("--nucleosome-maps", nargs = '*',
                                         help = "One or more nucleosome map files or directories containing them.  "
                                             "Each directory should contain files of or related to exactly ONE nucleosome map, and "
-                                            "the base nucleosome map file name should match the directory name (without the file extension).")
+                                            "the base nucleosome map file name should match the directory name "
+                                            "(without the file extension).").complete = directoryCompletion
 
         normGroup = mainPipelineParser.add_mutually_exclusive_group()
         normGroup.add_argument("-c", "--context-normalization", type = int, choices = (1,2,3,4,5,6),
@@ -222,7 +224,7 @@ class MutperiodArgParser():
 
         outputGroup.add_argument("-d", "--output-directory",
                                         help = "A directory to to send each of the generated figures to.  "
-                                                "Each figure is sent to a separate pdf file.").complete = fileCompletion
+                                                "Each figure is sent to a separate pdf file.").complete = directoryCompletion
 
         generateFiguresParser.add_argument("-r", "--remove-outliers", action = "store_true",
                                         help = "Remove any statistical outliers from the data before figure generation.")
@@ -246,7 +248,7 @@ class MutperiodArgParser():
 
         nucStratifierParser.add_argument("-n", "--base-nucleosome-map", 
                                         help = "The directory containing the nucleosome map to stratify "
-                                                "using the given stratifying features.").complete = fileCompletion
+                                                "using the given stratifying features.").complete = directoryCompletion
 
 
     def _formatCreateDataDirectoryParser(self, dataDirectoryParser: ArgumentParser):
@@ -255,7 +257,7 @@ class MutperiodArgParser():
 
         dataDirectoryParser.add_argument("newDataDirectoryLocation", nargs = 1,
                                          help = "The path to an existing directory where the mutperiod data directory can be "
-                                                "created.").complete = fileCompletion
+                                                "created.").complete = directoryCompletion
 
 
     def parse_args(self): return self._parser.parse_args()
