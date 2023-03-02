@@ -12,6 +12,7 @@ if importlib.util.find_spec("shtab") is not None:
         directoryCompletion = shtab.DIRECTORY
 else:
         fileCompletion = None
+        directoryCompletion = None
 
 
 class MutperiodArgParser():
