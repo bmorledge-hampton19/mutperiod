@@ -1,2 +1,2 @@
-library(deconstructSigs)
+suppressMessages(library(deconstructSigs))
 print("DeconstructSigs verified!")
