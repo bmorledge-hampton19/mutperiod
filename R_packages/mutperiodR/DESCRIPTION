@@ -1,7 +1,7 @@
 Package: mutperiodR
 Type: Package
 Title: The R portion of the larger "mutperiod" package
-Version: 0.8.3
+Version: 0.8.4
 Author: Ben Morledge-Hampton
 Authors@R: person("Ben", "Morledge-Hampton", email = "b.morledge-hampton@wsu.edu",
     role = c("aut", "cre"))
@@ -16,8 +16,8 @@ LazyData: true
 Imports:
   data.table,
   lomb,
-  deconstructSigs,
   ggplot2
 Suggests:
-  MSIseq
+  MSIseq,
+  deconstructSigs
 RoxygenNote: 7.2.2

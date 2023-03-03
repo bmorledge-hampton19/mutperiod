@@ -1,3 +1,35 @@
+mutperiodr (0.8.4-0ubuntu5) jammy; urgency=low
+
+  * test build with debhelper-compat = 10
+
+ -- Ben Morledge-Hampton <b.morledge-hampton@wsu.edu>  Wed, 01 Mar 2023 18:06:07 -0800
+
+mutperiodr (0.8.4-0ubuntu4) focal; urgency=low
+
+  * test build with debhelper-compat = 10
+
+ -- Ben Morledge-Hampton <b.morledge-hampton@wsu.edu>  Wed, 01 Mar 2023 18:02:40 -0800
+
+mutperiodr (0.8.4-0ubuntu3) jammy; urgency=medium
+
+  * Changed deconstructsigs to suggested in R package.
+
+ -- Ben Morledge-Hampton <b.morledge-hampton@wsu.edu>  Wed, 01 Mar 2023 13:16:27 -0800
+
+mutperiodr (0.8.4-0ubuntu2) jammy; urgency=low
+
+  * Packaging changes for jammy distro (22.04).
+    - Removed deconstructsigs dependency
+
+ -- Ben Morledge-Hampton <b.morledge-hampton@wsu.edu>  Tue, 28 Feb 2023 22:28:41 -0800
+
+mutperiodr (0.8.4-0ubuntu1) focal; urgency=low
+
+  * Companion update to mutperiod v0.8.4
+  * Specific to mutperiodr, this update contains new convenience functions for standalone periodicity analysis outside of mutperiod.
+
+ -- Ben Morledge-Hampton <b.morledge-hampton@wsu.edu>  Thu, 23 Feb 2023 14:12:41 -0800
+
 mutperiodr (0.8.3-0ubuntu1) focal; urgency=low
 
   * Changed MSIseq from a dependency to a suggestion, since newer versions of R are having

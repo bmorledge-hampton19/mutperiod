@@ -1,3 +1,35 @@
+mutperiod (0.8.4.1-0ubuntu2) focal; urgency=medium
+
+  * Minor bug fix in command line interface
+
+ -- Ben Morledge-Hampton <b.morledge-hampton@wsu.edu>  Wed, 01 Mar 2023 17:52:47 -0800
+
+mutperiod (0.8.4.1-0ubuntu1) jammy; urgency=medium
+
+  * Minor bug fix in command line interface
+
+ -- Ben Morledge-Hampton <b.morledge-hampton@wsu.edu>  Wed, 01 Mar 2023 17:45:06 -0800
+
+mutperiod (0.8.4-0ubuntu2) jammy; urgency=low
+
+  * Packaging changes for jammy distro (22.04).
+    - Removed deconstructsigs dependency
+
+ -- Ben Morledge-Hampton <b.morledge-hampton@wsu.edu>  Tue, 28 Feb 2023 22:24:25 -0800
+
+mutperiod (0.8.4-0ubuntu1) focal; urgency=low
+
+  * Created function for parsing iNPS output (not included in CLI)
+  * Various changes to mutperiodR to allow for more convenient use outside of mutperiod
+  * Created the GetNRL script for standalone NRL calculations
+  * Updated the main help page of the CLI to display descriptions for all subcommands
+  * Added the getDataDirectory command to the CLI to circumvent the GUI when setting mutperiod's data directory
+  * Added error checks for the lack of a GUI
+  * Added the option to directly coerce standard bed input to custom bed input, both through the CLI and GUI
+  * Various minoir changes, mostly to error detection and reporting
+
+ -- Ben Morledge-Hampton <b.morledge-hampton@wsu.edu>  Thu, 23 Feb 2023 13:58:25 -0800
+
 mutperiod (0.8.3-0ubuntu1) focal; urgency=low
 
   * Added standalone function for stratifying mutperiod data by sequence context.
