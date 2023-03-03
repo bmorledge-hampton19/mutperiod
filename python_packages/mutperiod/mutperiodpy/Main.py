@@ -3,6 +3,7 @@ from argparse import ArgumentParser
 from mutperiodpy import RunNucleosomeMutationAnalysis, RunAnalysisSuite, GenerateFigures, StratifyNucleosomeMap
 from mutperiodpy.input_parsing import ParseCustomBed, ParseICGC
 from mutperiodpy.helper_scripts.UsefulFileSystemFunctions import DataTypeStr, parseArgsForNewDataDirectory
+from mutperiodpy.helper_scripts.CustomErrors import *
 from benbiohelpers.CustomErrors import *
 from _tkinter import TclError
 import argparse, importlib.util, sys, traceback, textwrap
@@ -287,6 +288,13 @@ def main():
         sys.exit("Error finding metadata expected at:\n" + error.path + "\n"
                  "Make sure that the related directory was created through mutperiod and that "
                  "you have not manually altered the file structure within the \"mutperiod_data\" directory.")
+    except MissingDeconstructSigsError as error:
+        sys.exit("Error loading the deconstructSigs R package to stratify by mutation signature. If you are using Ubuntu distro focal fossa (20.04), "
+                 "this can be installed with the command \"sudo apt install r-cran-deconstructsigs\". If you are using another distro, it must be installed "
+                 "from source. Sorry about that!")
+    except MissingMSISeqError as error:
+        sys.exit("Error loading the MSIseq R package to stratify by microsatellite instability. This can be installed with the command "
+                 "\"sudo apt install r-cran-msiseq\".")
     except UserInputError as error:
         sys.exit("Error: " + str(error))
     except Exception:

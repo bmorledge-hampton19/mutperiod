@@ -1,13 +1,14 @@
 # This script reads one or more "simple somatic mutation" data file(s) from ICGC and 
 # writes information on single base substitution mutations to a new bed file or files for further analysis.
 
-import os, gzip, sys
+import os, gzip, sys, subprocess
 from typing import IO, List
 
 from benbiohelpers.TkWrappers.TkinterDialog import TkinterDialog, Selections
 from mutperiodpy.helper_scripts.UsefulFileSystemFunctions import (DataTypeStr, generateFilePath, getDataDirectory, checkDirs,
-                                                                  generateMetadata, getIsolatedParentDir,
+                                                                  generateMetadata, getIsolatedParentDir, rScriptsDirectory,
                                                                   InputFormat, getAcceptableChromosomes)
+from mutperiodpy.helper_scripts.CustomErrors import *
 from benbiohelpers.FileSystemHandling.DirectoryHandling import getFilesInDirectory                                                                  
 from mutperiodpy.input_parsing.ParseCustomBed import parseCustomBed
 from benbiohelpers.CustomErrors import *
@@ -99,6 +100,21 @@ class ICGCIterator:
 # Handles the basic parsing of the script.
 def parseICGC(ICGCFilePaths: List[str], genomeFilePath, separateDonors, 
               stratifyByMS, stratifyByMutSig):
+
+    # Make sure suggested dependencies are installed as necessary.
+    if stratifyByMS:
+        failedToLoadMSISeq = False
+        print("Verifying MSIseq installation...")
+        try: subprocess.run(("Rscript",os.path.join(rScriptsDirectory,"TestMSIseq.R")), check = True)
+        except subprocess.CalledProcessError: failedToLoadMSISeq = True
+        if failedToLoadMSISeq: raise MissingMSISeqError
+
+    if stratifyByMutSig:
+        failedToLoadDeconstructSigs = False
+        print("Verifying deconstructSigs installation...")
+        try: subprocess.run(("Rscript",os.path.join(rScriptsDirectory,"TestDeconstructSigs.R")), check = True)
+        except subprocess.CalledProcessError: failedToLoadDeconstructSigs = True
+        if failedToLoadDeconstructSigs: raise MissingDeconstructSigsError
 
     outputBedFilePaths = list()
 

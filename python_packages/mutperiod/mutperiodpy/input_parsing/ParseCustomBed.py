@@ -20,7 +20,9 @@ import os, subprocess, sys, shutil
 from typing import List
 from benbiohelpers.TkWrappers.TkinterDialog import TkinterDialog, Selections
 from mutperiodpy.helper_scripts.UsefulFileSystemFunctions import (getDataDirectory, getIsolatedParentDir, generateMetadata, checkDirs, 
-                                                                  DataTypeStr, InputFormat, getAcceptableChromosomes, generateFilePath)
+                                                                  DataTypeStr, InputFormat, getAcceptableChromosomes, generateFilePath,
+                                                                  rScriptsDirectory)
+from mutperiodpy.helper_scripts.CustomErrors import *
 from benbiohelpers.FileSystemHandling.DirectoryHandling import getFilesInDirectory
 from benbiohelpers.FileSystemHandling.BedToFasta import bedToFasta
 from benbiohelpers.FileSystemHandling.FastaFileIterator import FastaFileIterator
@@ -334,6 +336,22 @@ def parseCustomBed(bedInputFilePaths, genomeFilePath,
 
     # This needs to be here to avoid a circular reference.
     from mutperiodpy.input_parsing.ParseStandardBed import parseStandardBed
+
+    # Make sure suggested dependencies are installed as necessary.
+    if stratifyByMS:
+        failedToLoadMSISeq = False
+        print("Verifying MSIseq installation...")
+        try: subprocess.run(("Rscript",os.path.join(rScriptsDirectory,"TestMSIseq.R")), check = True)
+        except subprocess.CalledProcessError: failedToLoadMSISeq = True
+        if failedToLoadMSISeq: raise MissingMSISeqError
+
+    if stratifyByMutSig:
+        failedToLoadDeconstructSigs = False
+        print("Verifying deconstructSigs installation...")
+        try: subprocess.run(("Rscript",os.path.join(rScriptsDirectory,"TestDeconstructSigs.R")), check = True)
+        except subprocess.CalledProcessError: failedToLoadDeconstructSigs = True
+        if failedToLoadDeconstructSigs: raise MissingDeconstructSigsError
+
 
     # If simple parsing was selected, do something kinda weird where the inputs get passed to
     # parseStandardBed first which eventually passes them back here.
