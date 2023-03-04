@@ -13,10 +13,12 @@
 ***
 ## Quickstart Guide
 #### 1. Install mutperiod 
-Install mutperiod through apt using the following two commands (available on Ubuntu version 20.04, Focal Fossa):  
+Install mutperiod through apt using the following two commands (available on Ubuntu versions 20.04 (Focal Fossa) and 22.04 (Jammy Jellyfish)):  
   `sudo add-apt-repository ppa:ben-morledge-hampton/mutperiod`  
   `sudo apt update`  
   `sudo apt install mutperiod`  
+Optionally, the following commands may be run to install the deconstructSigs R package for stratification of data by mutation signature (only available for Focal Fossa; see the section on [stratifying mutation data](#stratifying-mutation-data))  
+  `sudo apt install r-cran-deconstructsigs`
 
 #### 2. Set up the Data Directory
 After installing, run the following command:  
@@ -74,12 +76,12 @@ To install through this ppa, run the following commands:
   `sudo apt update`  
   `sudo apt install mutperiod`  
 
-Currently, this installation method is only available on Ubuntu version 20.04, Focal Fossa, due to a dependency on a Python install of at least version 3.7.  However, installation on other linux distributions is certainly possible through manual installation of the Python and R packages provided in this repository.  If you believe a specific linux distribution should be supported by the ppa, but isn't, please contact me at b.morledge-hampton@wsu.edu
+Currently, this installation method is only available on Ubuntu versions 20.04 (Focal Fossa) and 22.04 (Jammy Jellyfish).  However, installation on other distributions is certainly possible through manual installation of the Python and R packages provided in this repository.  If you would like to see support for addition Ubuntu distributions by the ppa, please contact me at b.morledge-hampton@wsu.edu
 
 ***
 ## Input Files and Formats
 #### Directory Structure
-All data files should be stored within the mutperiod_data directory.  
+All data files should be stored within the mutperiod_data directory. You will be prompted to select a location for this directory the first time it is accessed. If you ever wish to change this location, use the `mutperiod createDataDirectory` command in the terminal.
 
 Genome data should be stored in the "\_\_external_data" directory under a sub-directory with the same name as the corresponding genome fasta file.  (e.g. "hg19.fa" should be stored in the "mutperiod_data\\\_\_external_data\\hg19" directory.)  
 
@@ -141,7 +143,7 @@ This format is a variation on the standardized bed format and contains 6-7 tab s
 With either of the above input formats, mutations can stratified in a number of different ways:   
 - For ICGC data, mutations are first stratified by the donor ID's present in the original input data.  
 - For custom bed data, the 7th column, if present, contains identifiers to similarly stratify mutations into user-specified cohorts.  
-- Beyond this initial stratification, mutperiod uses the MSIseq and deconstructSigs R packages to support stratification of cohorts by microsatellite stability or dominant mutation signature.  Both stratification options are selectable through the dialogues used to specify input data.  
+- Beyond this initial stratification, mutperiod uses the MSIseq and deconstructSigs R packages to support stratification of cohorts by microsatellite stability or dominant mutation signature.  Both stratification options are selectable through the dialogues used to specify input data. However, stratification by mutation signature is only supported on the Focal Fossa (20.04) Ubuntu distro and must be installed separately with the following command: `sudo apt install r-cran-deconstructsigs`.
 
 ***
 ## The Primary Data Pipeline
