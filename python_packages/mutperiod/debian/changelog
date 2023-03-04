@@ -1,3 +1,21 @@
+mutperiod (0.8.4.3-0ubuntu2) jammy; urgency=medium
+
+  * Suppressed loading messages during deconstructSigs and MSIseq loading tests.
+
+ -- Ben Morledge-Hampton <b.morledge-hampton@wsu.edu>  Fri, 03 Mar 2023 11:18:06 -0800
+
+mutperiod (0.8.4.3-0ubuntu1) focal; urgency=medium
+
+  * Suppressed loading messages during deconstructSigs and MSIseq loading tests.
+
+ -- Ben Morledge-Hampton <b.morledge-hampton@wsu.edu>  Fri, 03 Mar 2023 10:42:12 -0800
+
+mutperiod (0.8.4.2-0ubuntu1) focal; urgency=medium
+
+  * Added error checks for missing R packages.
+
+ -- Ben Morledge-Hampton <b.morledge-hampton@wsu.edu>  Thu, 02 Mar 2023 23:09:03 -0800
+
 mutperiod (0.8.4.1-0ubuntu2) focal; urgency=medium
 
   * Minor bug fix in command line interface
