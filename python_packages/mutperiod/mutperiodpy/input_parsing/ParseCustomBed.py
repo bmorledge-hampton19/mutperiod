@@ -472,7 +472,7 @@ def main():
     FULL_CUSTOM = "FullCustom"
 
     #Create the Tkinter UI
-    dialog = TkinterDialog(workingDirectory=getDataDirectory())
+    dialog = TkinterDialog(workingDirectory=getDataDirectory(), title = "Parse Custom Bed Data")
     dialog.createMultipleFileSelector("Custom bed Input Files:",0,"custom_input.bed",("bed files",".bed"))
     dialog.createFileSelector("Genome Fasta File:",1,("Fasta Files",".fa"))
     with dialog.createDynamicSelector(2, 0) as simplifiedBedDynSel:

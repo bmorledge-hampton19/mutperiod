@@ -61,7 +61,7 @@ def groupCohorts(dataSetDirectory):
 def main():
 
     #Create the Tkinter UI
-    dialog = TkinterDialog(workingDirectory=getDataDirectory())
+    dialog = TkinterDialog(workingDirectory=getDataDirectory(), title = "Group Cohorts")
     dialog.createFileSelector("Data Set Directory:",0,directory=True)
     
     # TODO: Maybe allow for different cohort selections here.  Right now, I'm assuming that we group MS data by mut sigs.

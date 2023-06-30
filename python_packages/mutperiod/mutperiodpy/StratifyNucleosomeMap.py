@@ -88,7 +88,7 @@ def parseArgs(args):
 def main():
 
     # Create the Tkinter UI
-    dialog = TkinterDialog(workingDirectory=getDataDirectory())
+    dialog = TkinterDialog(workingDirectory=getDataDirectory(), title = "Stratify Nucleosome Map")
     dialog.createFileSelector("Original Nucleosome Map Directory:",0, directory = True)    
     dialog.createMultipleFileSelector("Stratifying Feature Ranges:",1,"stratifying_feature_ranges.narrowPeak",
                                       ("Bed Files",".bed"), ("Narrow Peak File", ".narrowPeak"))

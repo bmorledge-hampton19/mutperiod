@@ -50,7 +50,7 @@ def parseiNPS(likeBedFilePaths: List[str]):
 
 def main():
 
-    with TkinterDialog(workingDirectory = getDataDirectory()) as dialog:
+    with TkinterDialog(workingDirectory = getDataDirectory(), title = "Parse iNPS Data") as dialog:
         dialog.createMultipleFileSelector("iNPS like_bed Files:", 0, "Gathering.like_bed", ("\"Like Bed\" Files", ".like_bed"))
 
     parseiNPS(dialog.selections.getFilePathGroups()[0])

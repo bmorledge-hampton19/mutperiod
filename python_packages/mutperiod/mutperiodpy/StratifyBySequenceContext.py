@@ -113,7 +113,7 @@ def stratifyBySequenceContext(mutperiodPositionFilePaths: List[str], sequencesTo
 
 def main():
     # Create the Tkinter dialog.
-    with TkinterDialog(workingDirectory= getDataDirectory()) as dialog:
+    with TkinterDialog(workingDirectory= getDataDirectory(), title = "Stratify by Sequence Context") as dialog:
         dialog.createMultipleFileSelector("Bed Feature Files:",0,DataTypeStr.mutations + ".bed", ("Bed Files",".bed"))
         dialog.createTextField("Sequence contexts to filter by: ", 1, 0, defaultText = "TCG, NCG")
 

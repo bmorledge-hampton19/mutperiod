@@ -146,7 +146,7 @@ def normalizeCounts(backgroundCountsFilePaths: List[str], customRawCountsFilePat
 def main():
 
     #Create the Tkinter UI
-    dialog = TkinterDialog(workingDirectory=getDataDirectory())
+    dialog = TkinterDialog(workingDirectory=getDataDirectory(), title = "Normalize Mutation Counts")
     dialog.createMultipleFileSelector("Background Nucleosome Mutation Counts Files:",0,
                                       DataTypeStr.nucMutBackground + ".tsv",("Tab Seperated Values Files",".tsv"))
 

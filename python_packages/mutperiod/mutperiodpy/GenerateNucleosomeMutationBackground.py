@@ -317,7 +317,7 @@ def generateNucleosomeMutationBackground(mutationBackgroundFilePaths, nucleosome
 def main():
 
     #Create the Tkinter UI
-    dialog = TkinterDialog(workingDirectory=getDataDirectory())
+    dialog = TkinterDialog(workingDirectory=getDataDirectory(), title = "Generate Nucleosome Mutation Background")
     dialog.createMultipleFileSelector("Mutation Background Files:",0,DataTypeStr.mutBackground + ".tsv",("Tab Seperated Values Files",".tsv"))
     dialog.createMultipleFileSelector("Nucleosome Map Files:", 1, "nucleosome_map.bed", ("Bed Files", ".bed"))
 

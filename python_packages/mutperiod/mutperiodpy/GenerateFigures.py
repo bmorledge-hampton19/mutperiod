@@ -106,7 +106,7 @@ def parseArgs(args):
 def main():
 
     #Create the Tkinter UI
-    dialog = TkinterDialog(workingDirectory=getDataDirectory())
+    dialog = TkinterDialog(workingDirectory=getDataDirectory(), title = "Generate Figures")
     dialog.createMultipleFileSelector("Tab-Separated Nucleosome Counts Files:",0,
                                       DataTypeStr.generalNucCounts + ".tsv",("tsv files",".tsv"))
     dialog.createMultipleFileSelector("R Nucleosome Mutation Analysis Files:",1,

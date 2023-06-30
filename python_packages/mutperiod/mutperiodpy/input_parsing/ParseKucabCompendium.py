@@ -112,7 +112,7 @@ def parseKucabCompendium(kucabSubstitutionsFilePaths: List[str], genomeFilePath,
 if __name__ == "__main__":
 
     #Create the Tkinter UI
-    dialog = TkinterDialog(workingDirectory=getDataDirectory())
+    dialog = TkinterDialog(workingDirectory=getDataDirectory(), title = "Parse Kucab Compendium Data")
     dialog.createMultipleFileSelector("Kucab Substitutions File Paths:",0,"final.txt",("text files",".txt")) #NOTE: Weird file ending?
     dialog.createFileSelector("Genome Fasta File:",1,("Fasta Files",".fa"))
     dialog.createFileSelector("Strongly Positioned Nucleosome File:",2,("Bed Files",".bed"))

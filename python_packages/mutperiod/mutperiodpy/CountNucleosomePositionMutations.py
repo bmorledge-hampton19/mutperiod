@@ -160,7 +160,7 @@ def countNucleosomePositionMutations(mutationFilePaths, nucleosomeMapNames, coun
 def main():
 
     #Create the Tkinter UI
-    dialog = TkinterDialog(workingDirectory=getDataDirectory())
+    dialog = TkinterDialog(workingDirectory=getDataDirectory(), title = "Count Nucleosome Position Mutations")
     dialog.createMultipleFileSelector("Mutation Files:",0,DataTypeStr.mutations+".bed",("Bed Files",".bed"))
     dialog.createMultipleFileSelector("Nucleosome Map Files:", 1, "nucleosome_map.bed", ("Bed Files", ".bed"))
     selectSingleNuc = dialog.createDynamicSelector(2,0)

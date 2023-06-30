@@ -147,7 +147,7 @@ def parseArgs(args):
 def main():
 
     # Create the Tkinter dialog.
-    dialog = TkinterDialog(workingDirectory=getDataDirectory())
+    dialog = TkinterDialog(workingDirectory=getDataDirectory(), title = "Analysis Suite")
     dialog.createMultipleFileSelector("Bed Mutation Files:",0,DataTypeStr.mutations + ".bed",("Bed Files",".bed"))
 
     dialog.createMultipleFileSelector("Nucleosome Map Files", 1, "nucleosome_map.bed", ("Bed Files", ".bed"))

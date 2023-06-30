@@ -142,7 +142,7 @@ def expandContext(inputBedFilePaths, expansionContextNum):
 def main():
 
     # Create the Tkinter dialog.
-    dialog = TkinterDialog(workingDirectory=getDataDirectory())
+    dialog = TkinterDialog(workingDirectory=getDataDirectory(), title = "Expand Context")
     dialog.createMultipleFileSelector("Bed Mutation File:",0,"singlenuc_" + DataTypeStr.mutations + ".bed",("Bed Files",".bed"))
     dialog.createDropdown("Expansion Context",1,0,("Trinuc/Quadrunuc", "Pentanuc/Hexanuc"))
 

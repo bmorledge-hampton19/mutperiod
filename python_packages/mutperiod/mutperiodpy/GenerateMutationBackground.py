@@ -286,7 +286,7 @@ def generateMutationBackground(mutationFilePaths, backgroundContextNum):
 def main():
 
     #Create the Tkinter UI
-    dialog = TkinterDialog(workingDirectory=getDataDirectory())
+    dialog = TkinterDialog(workingDirectory=getDataDirectory(), title = "Generate Mutation Background")
     dialog.createMultipleFileSelector("Bed Mutation Files:",0,DataTypeStr.mutations + ".bed",("Bed Files",".bed"))
     dialog.createDropdown("Background Context",1,0,("Singlenuc/Dinuc", "Trinuc/Quadrunuc", "Pentanuc/Hexanuc"))
 

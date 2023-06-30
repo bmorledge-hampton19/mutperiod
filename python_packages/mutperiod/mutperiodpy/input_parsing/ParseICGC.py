@@ -196,7 +196,7 @@ def parseArgs(args):
 def main():
 
     #Create the Tkinter UI
-    dialog = TkinterDialog(workingDirectory=getDataDirectory())
+    dialog = TkinterDialog(workingDirectory=getDataDirectory(), title = "Parse ICGC Data")
     dialog.createMultipleFileSelector("ICGC Mutation Files:",0,".tsv.gz",("gzip files",".gz"))
     dialog.createFileSelector("Genome Fasta File:",1,("Fasta Files",".fa"))
     dialog.createCheckbox("Create individual bed files for each donor.",2, 0)

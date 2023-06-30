@@ -156,7 +156,7 @@ def parseArgs(args):
 def main():
 
     #Create the Tkinter UI
-    dialog = TkinterDialog(workingDirectory=getDataDirectory(), scrollable=True)
+    dialog = TkinterDialog(workingDirectory=getDataDirectory(), scrollable=True, title = "Nucleosome Mutation Analysis")
     dialog.createMultipleFileSelector("Nucleosome Mutation Counts files:",0,
                                       DataTypeStr.normNucCounts + ".tsv",("Tab Seperated Values Files",".tsv"),
                                       additionalFileEndings = (DataTypeStr.rawNucCounts + ".tsv",))

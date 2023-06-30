@@ -29,7 +29,7 @@ def cleanDataDirectory(directory = getDataDirectory()):
 
 def main():
     
-    with TkinterDialog(workingDirectory = getDataDirectory()) as dialog:
+    with TkinterDialog(workingDirectory = getDataDirectory(), title = "Clean Data Directory") as dialog:
         with dialog.createDynamicSelector(0, 0) as dirDynSel:
             dirDynSel.initCheckboxController("Clean default mutperiod data directory", True)
             dirDynSel.initDisplay(False, "altDir").createFileSelector("Alternative directory:", 0, directory=True)

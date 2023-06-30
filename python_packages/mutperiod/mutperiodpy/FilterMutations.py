@@ -63,7 +63,7 @@ print()
 mutations = ("C>A","C>G","C>T","T>A","T>C","T>G")
 
 #Create the Tkinter UI
-dialog = TkinterDialog(workingDirectory=getDataDirectory())
+dialog = TkinterDialog(workingDirectory=getDataDirectory(), title = "Filter Mutations")
 dialog.createFileSelector("Bed Mutation File:",0,("Bed Files",".bed"))
 # DEPRECATED: dialog.createDropdown("Mutation to omit:",1,0,options=mutations)
 dialog.createLabel("Mutations:",1,0)

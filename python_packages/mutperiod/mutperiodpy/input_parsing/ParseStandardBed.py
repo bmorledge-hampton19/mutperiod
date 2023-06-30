@@ -78,7 +78,7 @@ def parseStandardBed(standardBedFilePaths: List[str], genomeFilePath):
 if __name__ == "__main__":
 
     # Create the Tkinter UI
-    dialog = TkinterDialog(workingDirectory=getDataDirectory())
+    dialog = TkinterDialog(workingDirectory=getDataDirectory(), title = "Parse Standard Bed Data")
     dialog.createMultipleFileSelector("Standard Bed Data:",0,"dipy.bed",("Bed Files",".bed"),additionalFileEndings=("TA.bed",))    
     dialog.createFileSelector("Genome Fasta File:",1,("Fasta Files",".fa"))
 

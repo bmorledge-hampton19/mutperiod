@@ -349,7 +349,7 @@ def parseXRSeq(inputDataFilePaths, callParamsFilePath, genomeFilePath):
 if __name__ == "__main__":
 
     # Create the Tkinter UI
-    dialog = TkinterDialog(workingDirectory=getDataDirectory())
+    dialog = TkinterDialog(workingDirectory=getDataDirectory(), title = "Parse XR-seq Data")
     dialog.createMultipleFileSelector("XR-seq bigwig data (plus strand):",0,
                                       "+.bigWig",("BigWig Files",".bigWig"))
     dialog.createMultipleFileSelector("XR-seq bed data (alternative to bigwig):",1,"aligned_reads.bed",

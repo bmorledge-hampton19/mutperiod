@@ -60,7 +60,7 @@ def parsePreparedInput(inputFilePaths: List[str], genomeFilePath, checkEachLine 
 def main():
 
     #Create the Tkinter UI
-    dialog = TkinterDialog(workingDirectory=getDataDirectory())
+    dialog = TkinterDialog(workingDirectory=getDataDirectory(), title = "Parse Prepared Input")
     dialog.createMultipleFileSelector("Prepared Input Files:",0,DataTypeStr.mutations + ".bed",("bed files",".bed"))
     dialog.createFileSelector("Genome Fasta File:",1,("Fasta Files",".fa"))
     dialog.createCheckbox("Skip formatting checks for all but the first line",2,0)

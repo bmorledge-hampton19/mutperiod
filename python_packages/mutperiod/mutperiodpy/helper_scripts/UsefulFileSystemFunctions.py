@@ -58,7 +58,7 @@ def getDataDirectory(newDataDirectoryDirectory = None):
         from _tkinter import TclError
         try:
             checkDirs(os.path.dirname(dataDirectoryTextFilePath))
-            dialog = TkinterDialog(workingDirectory = os.path.dirname(dataDirectoryTextFilePath))
+            dialog = TkinterDialog(workingDirectory = os.path.dirname(dataDirectoryTextFilePath), title = "Mutperiod Data Directory Selection")
             dialog.createFileSelector("Location to create new data directory:",0,("Fasta Files",".fa"), directory = True)
 
             # Run the UI
