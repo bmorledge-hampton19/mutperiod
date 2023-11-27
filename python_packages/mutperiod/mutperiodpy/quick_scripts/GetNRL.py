@@ -7,17 +7,19 @@ from mutperiodpy.helper_scripts.UsefulFileSystemFunctions import rScriptsDirecto
 from benbiohelpers.TkWrappers.TkinterDialog import TkinterDialog
 
 
-def getNRL(nucleosomeMapFilePaths: List[str]):
+def getNRL(nucleosomeMapFilePaths: List[str], regenerate = False):
 
     NRLs = list()
 
     for nucMapFilePath in nucleosomeMapFilePaths:
-        print(f"Generating nucleosome repeat length file for {os.path.basename(nucMapFilePath)}...")
         nucMapRepeatLengthFilePath = nucMapFilePath.rsplit('.',1)[0] + "_repeat_length.txt"
-        nucMapSelfCountsFilePath = countNucleosomePositionMutations((nucMapFilePath,), (getIsolatedParentDir(nucMapFilePath),),
-                                                                    None, None, None)[0]
-        subprocess.run(("Rscript",os.path.join(rScriptsDirectory,"GetNucleosomeRepeatLength.R"),
-                        nucMapSelfCountsFilePath, nucMapRepeatLengthFilePath), check = True)
+        if not os.path.exists(nucMapRepeatLengthFilePath) or regenerate:
+            print(f"Generating nucleosome repeat length file for {os.path.basename(nucMapFilePath)}...")
+            
+            nucMapSelfCountsFilePath = countNucleosomePositionMutations((nucMapFilePath,), (getIsolatedParentDir(nucMapFilePath),),
+                                                                        None, None, None)[0]
+            subprocess.run(("Rscript",os.path.join(rScriptsDirectory,"GetNucleosomeRepeatLength.R"),
+                            nucMapSelfCountsFilePath, nucMapRepeatLengthFilePath), check = True)
         with open(nucMapRepeatLengthFilePath, 'r') as nucMapRepeatLengthFile:
             NRLs.append(float(nucMapRepeatLengthFile.readline().strip()))
 
