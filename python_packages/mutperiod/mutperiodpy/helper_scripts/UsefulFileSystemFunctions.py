@@ -124,6 +124,7 @@ class InputFormat(Enum):
     standardBed = "standardBed"
     customBed = "customBed"
     prepared = "prepared"
+    alexandrov = "alexandrov"
 
 
 # Given a genome fasta file (or directory containing a genome fasta file), return the chromosomes present in that file.  

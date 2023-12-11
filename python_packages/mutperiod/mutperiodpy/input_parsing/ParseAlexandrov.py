@@ -8,18 +8,18 @@ from mutperiodpy.helper_scripts.UsefulFileSystemFunctions import (generateFilePa
 from mutperiodpy.input_parsing.ParseCustomBed import parseCustomBed
 
 
-def parseAlexandrov (bedInputFilePaths, genomeFilePath, nucPosFilePath):
+def parseAlexandrov (alexandrovInputFilePaths, genomeFilePath):
 
     outputBedFilePaths = list()
 
-    for bedInputFilePath in bedInputFilePaths:
+    for alexandrovInputFilePath in alexandrovInputFilePaths:
 
-        print("\nWorking in:",os.path.basename(bedInputFilePath))
+        print("\nWorking in:",os.path.basename(alexandrovInputFilePath))
 
         # Get some important file system paths for the rest of the function and generate metadata.
-        dataDirectory = os.path.dirname(bedInputFilePath)
-        generateMetadata(os.path.basename(dataDirectory), getIsolatedParentDir(genomeFilePath), getIsolatedParentDir(nucPosFilePath), 
-                            os.path.basename(bedInputFilePath), InputFormat.customBed, os.path.dirname(bedInputFilePath))
+        dataDirectory = os.path.dirname(alexandrovInputFilePath)
+        generateMetadata(os.path.basename(dataDirectory), getIsolatedParentDir(genomeFilePath), 
+                         os.path.basename(alexandrovInputFilePath), InputFormat.alexandrov, os.path.dirname(alexandrovInputFilePath))
 
         intermediateFilesDir = os.path.join(dataDirectory,"intermediate_files")
         checkDirs(intermediateFilesDir)
@@ -28,14 +28,14 @@ def parseAlexandrov (bedInputFilePaths, genomeFilePath, nucPosFilePath):
         acceptableChromosomes = getAcceptableChromosomes(genomeFilePath)
 
         # Generate the output file.
-        outputBedFilePath = generateFilePath(directory = intermediateFilesDir, dataGroup = getIsolatedParentDir(bedInputFilePath),
+        outputBedFilePath = generateFilePath(directory = intermediateFilesDir, dataGroup = getIsolatedParentDir(alexandrovInputFilePath),
                                              dataType = DataTypeStr.customInput, fileExtension = ".bed")
 
         # Write data to the output file.
-        with open(bedInputFilePath, 'r') as bedInputFile:
+        with open(alexandrovInputFilePath, 'r') as alexandrovInputFile:
             with open(outputBedFilePath, 'w') as outputBedFile:
 
-                for line in bedInputFile:
+                for line in alexandrovInputFile:
 
                     choppedUpLine = str(line).strip().split('\t')
 
@@ -53,7 +53,7 @@ def parseAlexandrov (bedInputFilePaths, genomeFilePath, nucPosFilePath):
 
     # Pass the data to the custome bed parser.
     print("\nPassing data to custom bed parser.\n")
-    parseCustomBed(outputBedFilePaths, genomeFilePath, nucPosFilePath, False, False, False)
+    return parseCustomBed(outputBedFilePaths, genomeFilePath, onlySingleBaseSubs = True)
 
 
 if __name__ == "__main__":
@@ -62,7 +62,6 @@ if __name__ == "__main__":
     dialog = TkinterDialog(workingDirectory=getDataDirectory())
     dialog.createMultipleFileSelector("Input Files:",0,"alexandrov.txt",("text files",".txt"))
     dialog.createFileSelector("Genome Fasta File:",1,("Fasta Files",".fa"))
-    dialog.createFileSelector("Strongly Positioned Nucleosome File:",2,("Bed Files",".bed"))
 
     # Run the UI
     dialog.mainloop()
@@ -74,6 +73,5 @@ if __name__ == "__main__":
     selections: Selections = dialog.selections
     bedInputFilePaths = list(selections.getFilePathGroups())[0]
     genomeFilePath = list(selections.getIndividualFilePaths())[0]
-    nucPosFilePath = list(selections.getIndividualFilePaths())[1]
 
-    parseAlexandrov(bedInputFilePaths, genomeFilePath, nucPosFilePath)
+    parseAlexandrov(bedInputFilePaths, genomeFilePath)
