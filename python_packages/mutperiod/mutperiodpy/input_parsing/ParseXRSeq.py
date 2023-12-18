@@ -355,7 +355,7 @@ def parseXRSeq(inputDataFilePaths, callParamsFilePath, genomeFilePath):
         xRSeqOutputFilePaths.append(xRSeqInputDataPipeline.generateLesionsBedOutputFile())
 
     # Send the output files to the custom bed parser.
-    parseCustomBed(xRSeqOutputFilePaths, genomeFilePath, False, False, False)
+    return parseCustomBed(xRSeqOutputFilePaths, genomeFilePath, False, False, False)
  
 
 if __name__ == "__main__":
