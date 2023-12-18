@@ -3,6 +3,7 @@
 
 from typing import List
 import os, subprocess
+from enum import Enum
 from benbiohelpers.TkWrappers.TkinterDialog import TkinterDialog, Selections
 from benbiohelpers.FileSystemHandling.BedToFasta import bedToFasta
 from benbiohelpers.FileSystemHandling.FastaFileIterator import FastaFileIterator
@@ -10,6 +11,14 @@ from mutperiodpy.helper_scripts.UsefulFileSystemFunctions import (getIsolatedPar
                                                                   DataTypeStr, generateMetadata, InputFormat, getAcceptableChromosomes)
 from benbiohelpers.CustomErrors import *
 from mutperiodpy.input_parsing.ParseCustomBed import parseCustomBed
+
+
+class PresetCallParams(Enum):
+
+    BPDE = "BPDE_call_params.tsv"
+    DROSOPHILA_CPD = "drosophila_CPD_call_params.tsv"
+    HUMAN_64 = "human_6-4_call_params.tsv"
+    HUMAN_UV_DIMER = "human_UV_dimer_call_params.tsv"
 
 
 # Estimates (Most likely with perfect accuracy) the minimum adjusted counts value that is then assumed to represent one count.
@@ -79,7 +88,7 @@ def trimBedGraphXRSeqData(xRSeqBedGraphReadsFilePathPair: List[str], trimmedRead
                             trimmedReadsFile.write('\t'.join((choppedUpLine[0],choppedUpLine[1],choppedUpLine[2],'NA','NA',plusOrMinus)) + '\n')
 
 
-# Create a new reads file which filters out any reads with a length greater than 28 or less than 26.
+# Create a new reads file which filters out reads that do not conform to the call params file.
 # Also, replace the columns with the read ID and score with NA.
 # The input format should be a bed file.
 def trimBedXRSeqData(xRSeqBedReadsFilePath: str, trimmedReadsFilePath, acceptableLengths, acceptableChromosomes):
@@ -329,6 +338,9 @@ class XRSeqInputDataPipeline:
 def parseXRSeq(inputDataFilePaths, callParamsFilePath, genomeFilePath):
 
     xRSeqOutputFilePaths = list()
+
+    if type(callParamsFilePath) is PresetCallParams:
+        callParamsFilePath = os.path.join(os.path.dirname(os.path.abspath(__file__)), callParamsFilePath.value)
 
     # Use the XRSeqInputDataPipeline object to convert the input data to the output data!
     for inputDataFilePath in inputDataFilePaths:
