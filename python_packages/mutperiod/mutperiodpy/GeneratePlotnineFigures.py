@@ -121,21 +121,21 @@ def plotPeriodicity(nucleosomeCountsData, dataCol = "Normalized_Both_Strands", t
     if rotationalPlus:
         periodicityPlot = (
             periodicityPlot +
-            scale_color_identity(name = '', guide = "legend",
+            scale_color_identity(name = ' ', guide = "legend",
                                  breaks = (nucleosomeColorPalette.minorIn, nucleosomeColorPalette.minorOut, nucleosomeColorPalette.linker),
                                  labels = ("Minor-in", "Minor-out", "Linker"))
         )
     elif rotational:
         periodicityPlot = (
             periodicityPlot +
-            scale_color_identity(name = '', guide = "legend",
+            scale_color_identity(name = ' ', guide = "legend",
                                  breaks = (nucleosomeColorPalette.minorIn, nucleosomeColorPalette.minorOut),
                                  labels = ("Minor-in", "Minor-out"))
         )
     elif translational:
         periodicityPlot = (
             periodicityPlot +
-            scale_color_identity(name = '', guide = "legend",
+            scale_color_identity(name = ' ', guide = "legend",
                                  breaks = (nucleosomeColorPalette.nucleosomal, nucleosomeColorPalette.linker),
                                  labels = ("Nucleosomal","Linker"))
         )
