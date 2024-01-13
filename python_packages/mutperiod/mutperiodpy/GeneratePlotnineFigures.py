@@ -55,6 +55,9 @@ def parseNucleosomeCountsDataForPlotting(nucleosomeCountsData: pandas.DataFrame,
     # Determine whether the data is rotational, rotational+linker, or translational.
     rotational, rotationalPlus, translational = _getPeriodicityTypes(nucleosomeCountsData)
 
+    # Create a copy of the original data frame so that it is not altered by this function.
+    nucleosomeCountsData = nucleosomeCountsData.copy()
+
     # If only rotational, trim to the cutoff value
     if rotational and not rotationalPlus:
         nucleosomeCountsData = nucleosomeCountsData.loc[
