@@ -16,7 +16,7 @@ from mutperiodpy.NormalizeMutationCounts import normalizeCounts
 
 # Used to generate the relevant background counts files for normalization before the rest of the analysis.
 def generateCustomBackground(customBackgroundDir, nucleosomeMapNames, useSingleNucRadius,
-                             includeLinker, useNucGroupRadius):
+                             includeLinker, useNucGroupRadius, useNucStrand = False):
 
     print("Generating background counts...")
 
@@ -25,13 +25,13 @@ def generateCustomBackground(customBackgroundDir, nucleosomeMapNames, useSingleN
         raise UserInputError("No parsed mutation files found in custom background directory: " + customBackgroundDir)
 
     runAnalysisSuite((customBackgroundMutationFilePath,), nucleosomeMapNames, "No Normalization", None, 
-                        useSingleNucRadius, includeLinker, useNucGroupRadius)
+                        useSingleNucRadius, includeLinker, useNucGroupRadius, useNucStrand = useNucStrand)
 
     print ("Finished generating background!\n")
 
 
 def runAnalysisSuite(mutationFilePaths: List[str], nucleosomeMapNames: List[str], normalizationMethod, customBackgroundDir, 
-                     useSingleNucRadius, includeLinker, useNucGroupRadius, includeAlternativeScaling = False):
+                     useSingleNucRadius, includeLinker, useNucGroupRadius, includeAlternativeScaling = False, useNucStrand = False):
 
     # Make sure at least one radius was selected.
     if not useNucGroupRadius and not useSingleNucRadius:
@@ -81,7 +81,7 @@ def runAnalysisSuite(mutationFilePaths: List[str], nucleosomeMapNames: List[str]
 
     print("\nCounting mutations at each dyad position...")
     nucleosomeMutationCountsFilePaths = countNucleosomePositionMutations(updatedMutationFilePaths, nucleosomeMapNames,
-                                                                         useSingleNucRadius, useNucGroupRadius, linkerOffset)
+                                                                         useSingleNucRadius, useNucGroupRadius, linkerOffset, useNucStrand)
 
     if normalizationMethodNum is not None:
 
@@ -90,7 +90,7 @@ def runAnalysisSuite(mutationFilePaths: List[str], nucleosomeMapNames: List[str]
 
         print("\nGenerating nucleosome mutation background...")
         nucleosomeMutationBackgroundFilePaths = generateNucleosomeMutationBackground(mutationBackgroundFilePaths, nucleosomeMapNames,
-                                                                                     useSingleNucRadius, useNucGroupRadius, linkerOffset)
+                                                                                     useSingleNucRadius, useNucGroupRadius, linkerOffset, useNucStrand)
 
         print("\nNormalizing counts with nucleosome background data...")
         normalizeCounts(nucleosomeMutationBackgroundFilePaths)
@@ -170,6 +170,7 @@ def main():
     selectNucleosomeDyadRadius.initDisplayState()
 
     dialog.createCheckbox("Count with a nucleosome group radius (1000 bp)", 6, 0)
+    dialog.createCheckbox("Use strand designation in \"nucleosomes\" file", 7, 0)
 
     # Run the UI
     dialog.mainloop()
@@ -196,6 +197,7 @@ def main():
     else: includeLinker = False
     useNucGroupRadius = selections.getToggleStates()[1] # Whether or not to generate data with a 1000 bp nuc group dyad radius
     includeAlternativeScaling = selections.getToggleStates()[0] # Whether or not to include scaling independent of nucleosome map
+    useNucStrand = selections.getToggleStates()[2]
 
     # If requested, generate the background counts file(s).
     if generateCustomBackgroundNow:
@@ -203,7 +205,7 @@ def main():
                                  includeLinker, useNucGroupRadius)
 
     runAnalysisSuite(mutationFilePaths, nucleosomeMapNames, normalizationMethod, customBackgroundDir, useSingleNucRadius, 
-                     includeLinker, useNucGroupRadius, includeAlternativeScaling)
+                     includeLinker, useNucGroupRadius, includeAlternativeScaling, useNucStrand)
 
 
 if __name__ == "__main__": main()

@@ -16,7 +16,7 @@ from mutperiodpy.helper_scripts.UsefulFileSystemFunctions import (getContext, ge
 # If a linker offset is requested, the expansion will be even greater to accomodate.
 # The expanded bed file is then used to generate a fasta file of nucleosome sequences.
 # Returns the file path to the fasta file.
-def generateNucleosomeFasta(baseNucPosFilePath, genomeFilePath, dyadRadius, linkerOffset):
+def generateNucleosomeFasta(baseNucPosFilePath, genomeFilePath, dyadRadius, linkerOffset, useNucStrand = False):
 
     # Ensure that an intermediate files directory exists for the current nucleosome map.
     intermediateFilesDir = os.path.join(os.path.dirname(baseNucPosFilePath), "intermediate_files")
@@ -62,7 +62,7 @@ def generateNucleosomeFasta(baseNucPosFilePath, genomeFilePath, dyadRadius, link
                                             
     # Convert the expanded bed file to fasta format.
     print("Converting expanded coordinates to fasta file...")
-    bedToFasta(expandedNucPosBedFilePath,genomeFilePath,nucPosFastaFilePath, includeStrand=False)
+    bedToFasta(expandedNucPosBedFilePath,genomeFilePath,nucPosFastaFilePath, includeStrand=useNucStrand)
 
     return nucPosFastaFilePath
 
@@ -239,7 +239,7 @@ def generateNucleosomeMutationBackgroundFile(dyadPosContextCountsFilePath, mutat
 
 
 def generateNucleosomeMutationBackground(mutationBackgroundFilePaths, nucleosomeMapNames, useSingleNucRadius, 
-                                         useNucGroupRadius, linkerOffset):
+                                         useNucGroupRadius, linkerOffset, useNucStrand = False):
 
     if not (useSingleNucRadius or useNucGroupRadius):
         raise UserInputError("Must generate background in either a single nucleosome or group nucleosome radius.")
@@ -290,7 +290,7 @@ def generateNucleosomeMutationBackground(mutationBackgroundFilePaths, nucleosome
                     print("Dyad position " + contextText + " counts file not found at",dyadPosContextCountsFilePath)
                     print("Generating genome wide dyad position " + contextText + " counts file...")
                     # Make sure we have a fasta file for strongly positioned nucleosome coordinates
-                    nucPosFastaFilePath = generateNucleosomeFasta(metadata.baseNucPosFilePath, metadata.genomeFilePath, dyadRadius, currentLinkerOffset)
+                    nucPosFastaFilePath = generateNucleosomeFasta(metadata.baseNucPosFilePath, metadata.genomeFilePath, dyadRadius, currentLinkerOffset, useNucStrand)
                     generateDyadPosContextCounts(nucPosFastaFilePath, dyadPosContextCountsFilePath,
                                                 contextNum, dyadRadius, currentLinkerOffset)
 
@@ -329,6 +329,7 @@ def main():
     selectSingleNuc.initDisplayState()
 
     dialog.createCheckbox("Generate background with a nucleosome group radius (1000 bp)", 3, 0)
+    dialog.createCheckbox("Use strand designation in \"nucleosomes\" file", 4, 0)
 
     # Run the UI
     dialog.mainloop()
@@ -347,11 +348,12 @@ def main():
         useSingleNucRadius = False
         includeLinker = False
     useNucGroupRadius = selections.getToggleStates()[0]
+    useNucStrand = selections.getToggleStates()[1]
 
     if includeLinker: linkerOffset = 30
     else: linkerOffset = 0
 
     generateNucleosomeMutationBackground(mutationBackgroundFilePaths, nucleosomeMapNames, useSingleNucRadius, 
-                                         useNucGroupRadius, linkerOffset)
+                                         useNucGroupRadius, linkerOffset, useNucStrand)
 
 if __name__ == "__main__": main()

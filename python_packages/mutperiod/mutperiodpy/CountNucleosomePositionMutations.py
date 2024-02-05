@@ -10,7 +10,7 @@ from mutperiodpy.helper_scripts.UsefulFileSystemFunctions import (Metadata, gene
                                                                   DataTypeStr, getAcceptableChromosomes, checkDirs, getIsolatedParentDir)
 
 from benbiohelpers.CountThisInThat.Counter import ThisInThatCounter
-from benbiohelpers.CountThisInThat.InputDataStructures import EncompassedDataDefaultStrand, EncompassingDataDefaultStrand
+from benbiohelpers.CountThisInThat.InputDataStructures import EncompassedDataDefaultStrand, EncompassingDataDefaultStrand, EncompassingData
 from benbiohelpers.CountThisInThat.CounterOutputDataHandler import AmbiguityHandling, OutputDataWriter
 
 
@@ -43,7 +43,21 @@ class NucleosomesInNucleosomesCounter(MutationsInNucleosomesCounter):
         return EncompassedDataDefaultStrand(line, self.acceptableChromosomes)
 
 
-def countNucleosomePositionMutations(mutationFilePaths, nucleosomeMapNames, countSingleNuc, countNucGroup, linkerOffset):
+class MutationsInStrandedNucleosomesCounter(ThisInThatCounter):
+
+    def setUpOutputDataHandler(self):
+        super().setUpOutputDataHandler()
+        self.outputDataHandler.addRelativePositionStratifier(self.currentEncompassingFeature, extraRangeRadius = self.encompassingFeatureExtraRadius,
+                                                             outputName = "Dyad_Position", strandSpecificPos = True)
+        self.outputDataHandler.addStrandComparisonStratifier(strandAmbiguityHandling = AmbiguityHandling.tolerate)
+        self.outputDataHandler.createOutputDataWriter(self.outputFilePath, customStratifyingNames=(None, {True:"Plus_Strand_Counts", False:"Minus_Strand_Counts"}),
+                                                      getCountDerivatives = getCountDerivatives)
+
+    def constructEncompassingFeature(self, line) -> EncompassingData:
+        return EncompassingData(line, self.acceptableChromosomes)
+
+
+def countNucleosomePositionMutations(mutationFilePaths, nucleosomeMapNames, countSingleNuc, countNucGroup, linkerOffset, useNucStrand = False):
 
     # Check for the special case where a nucleosome map is being counted against itself to determine the nucleosome repeat length.
     if (len(mutationFilePaths) == 1 and len(nucleosomeMapNames) == 1 and 
@@ -118,6 +132,10 @@ def countNucleosomePositionMutations(mutationFilePaths, nucleosomeMapNames, coun
             # Get the list of acceptable chromosomes
             acceptableChromosomes = getAcceptableChromosomes(metadata.genomeFilePath)
 
+            # Determine which counter class to use.
+            if useNucStrand: CounterClass = MutationsInStrandedNucleosomesCounter
+            else: CounterClass = MutationsInNucleosomesCounter
+
             # Generate the counts file for a single nucleosome region if requested.
             if countSingleNuc:
 
@@ -128,9 +146,9 @@ def countNucleosomePositionMutations(mutationFilePaths, nucleosomeMapNames, coun
 
                 # Ready, set, go!
                 print("Counting mutations at each nucleosome position in a 73 bp radius +", str(linkerOffset), "bp linker DNA.")
-                counter = MutationsInNucleosomesCounter(mutationFilePath, metadata.baseNucPosFilePath, nucleosomeMutationCountsFilePath, 
-                                                        encompassingFeatureExtraRadius=73 + linkerOffset, acceptableChromosomes=acceptableChromosomes,
-                                                        checkForSortedFiles = (True, not nucleosomeMapSortingChecked))
+                counter = CounterClass(mutationFilePath, metadata.baseNucPosFilePath, nucleosomeMutationCountsFilePath, 
+                                       encompassingFeatureExtraRadius=73 + linkerOffset, acceptableChromosomes=acceptableChromosomes,
+                                       checkForSortedFiles = (True, not nucleosomeMapSortingChecked))
                 counter.count()
 
                 nucleosomeMutationCountsFilePaths.append(nucleosomeMutationCountsFilePath)
@@ -145,9 +163,9 @@ def countNucleosomePositionMutations(mutationFilePaths, nucleosomeMapNames, coun
 
                 # Ready, set, go!
                 print("Counting mutations at each nucleosome position in a 1000 bp radius.")
-                counter = MutationsInNucleosomesCounter(mutationFilePath, metadata.baseNucPosFilePath, nucleosomeMutationCountsFilePath, 
-                                                        encompassingFeatureExtraRadius=1000, acceptableChromosomes=acceptableChromosomes,
-                                                        checkForSortedFiles = (True, not nucleosomeMapSortingChecked))
+                counter = CounterClass(mutationFilePath, metadata.baseNucPosFilePath, nucleosomeMutationCountsFilePath, 
+                                       encompassingFeatureExtraRadius=1000, acceptableChromosomes=acceptableChromosomes,
+                                       checkForSortedFiles = (True, not nucleosomeMapSortingChecked))
                 counter.count()
 
                 nucleosomeMutationCountsFilePaths.append(nucleosomeMutationCountsFilePath)
@@ -169,8 +187,8 @@ def main():
     linkerSelectionDialog.createCheckbox("Include 30 bp linker DNA on either side of single nucleosome radius.",0,0)
     selectSingleNuc.initDisplay(0)
     selectSingleNuc.initDisplayState()
-
     dialog.createCheckbox("Count with a nucleosome group radius (1000 bp)", 3, 0)
+    dialog.createCheckbox("Use strand designation in \"nucleosomes\" file", 4, 0)
 
     # Run the UI
     dialog.mainloop()
@@ -189,10 +207,11 @@ def main():
         countSingleNuc = False
         includeLinker = False
     countNucGroup = selections.getToggleStates()[0]
+    useNucStrand = selections.getToggleStates()[1]
 
     if includeLinker: linkerOffset = 30
     else: linkerOffset = 0
 
-    countNucleosomePositionMutations(mutationFilePaths, nucleosomeMapNames, countSingleNuc, countNucGroup, linkerOffset)
+    countNucleosomePositionMutations(mutationFilePaths, nucleosomeMapNames, countSingleNuc, countNucGroup, linkerOffset, useNucStrand)
 
 if __name__ == "__main__": main()
