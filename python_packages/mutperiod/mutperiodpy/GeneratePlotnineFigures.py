@@ -139,8 +139,8 @@ def plotPeriodicity(nucleosomeCountsData, dataCol = "Normalized_Both_Strands", t
         periodicityPlot = (
             periodicityPlot +
             scale_color_identity(name = ' ', guide = "legend",
-                                 breaks = (nucleosomeColorPalette.nucleosomal, nucleosomeColorPalette.linker),
-                                 labels = ("Nucleosomal","Linker"))
+                                 breaks = (nucleosomeColorPalette.linker, nucleosomeColorPalette.nucleosomal),
+                                 labels = ("Linker","Nucleosomal"))
         )
 
     periodicityPlot = (
@@ -174,8 +174,8 @@ def plotPlusAndMinus(nucleosomeCountsData: pandas.DataFrame, title = "Stranded P
         geom_path(aes(y = plusStrandColumnName, color = nucleosomeColorPalette.plus), size = 1.25, lineend = "round") +
         geom_path(aes(y = minusStrandColumnName, color = nucleosomeColorPalette.minus), size = 1.25, lineend = "round") +
         scale_color_identity(name = '', guide = "legend",
-                                breaks = (nucleosomeColorPalette.plus, nucleosomeColorPalette.minus),
-                                labels = ("Plus Strand", "Minus Strand")) +
+                                breaks = (nucleosomeColorPalette.minus, nucleosomeColorPalette.plus),
+                                labels = ("Minus Strand", "Plus Strand")) +
         coord_cartesian(ylim = ylim) + 
         xlab(xAxisLabel) + ylab(yAxisLabel) + ggtitle(title) +
         defaultTextScaling + blankBackground + theme(figure_size = (12,6))
