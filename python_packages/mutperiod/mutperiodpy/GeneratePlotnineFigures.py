@@ -19,17 +19,21 @@ for start, stop in zip((9, 20, 31, 41, 51, 61), (14, 24, 35, 46, 56, 66)):
 # Set persistent column names
 DYAD_POS_COL = "Dyad_Position"
 PERIODIC_POS_COLOR_COL = "Periodic_Position_Color"
+PERIODIC_POS_UNDERLAID_COLOR_COL = "Periodic_Position_Underlaid_Color"
 
 
 class NucleosomeColorPalette:
 
     def __init__(self, minorIn = "#1E8449", minorOut = "#7D3C98", intermediate = "black",
-                 nucleosomal = "#B03A2E", linker = "#2874A6", plus = "red", minus = "black"):
+                 nucleosomal = "#B03A2E", linker = "#2874A6", nucleosomalUnderlaid = "#B08884", linkerUnderlaid = "#7C95A6",
+                 plus = "red", minus = "black"):
         self.minorIn = minorIn
         self.minorOut = minorOut
         self.intermediate = intermediate
         self.nucleosomal = nucleosomal
         self.linker = linker
+        self.nucleosomalUnderlaid = nucleosomalUnderlaid
+        self.linkerUnderlaid = linkerUnderlaid
         self.plus = plus
         self.minus = minus
 
@@ -66,7 +70,7 @@ def parseNucleosomeCountsDataForPlotting(nucleosomeCountsData: pandas.DataFrame,
 
     # Smooth if translational and requested
     if translational and smoothTranslational:
-        nucleosomeCountsData[dataCol] = nucleosomeCountsData[dataCol].rolling(11, center = True, min_periods=1).mean()
+        nucleosomeCountsData[dataCol+"_Smoothed"] = nucleosomeCountsData[dataCol].rolling(11, center = True, min_periods=1).mean()
 
     # Color positions
     if rotational:
@@ -105,19 +109,41 @@ def parseNucleosomeCountsDataForPlotting(nucleosomeCountsData: pandas.DataFrame,
                                  PERIODIC_POS_COLOR_COL] = nucleosomeColorPalette.nucleosomal
         nucleosomeCountsData.loc[(pos in linkerPositions for pos in nucleosomeCountsData[DYAD_POS_COL].abs()),
                                  PERIODIC_POS_COLOR_COL] = nucleosomeColorPalette.linker
+        nucleosomeCountsData.loc[(pos in nucleosomePositions for pos in nucleosomeCountsData[DYAD_POS_COL].abs()),
+                                 PERIODIC_POS_UNDERLAID_COLOR_COL] = nucleosomeColorPalette.nucleosomalUnderlaid
+        nucleosomeCountsData.loc[(pos in linkerPositions for pos in nucleosomeCountsData[DYAD_POS_COL].abs()),
+                                 PERIODIC_POS_UNDERLAID_COLOR_COL] = nucleosomeColorPalette.linkerUnderlaid
 
     return(nucleosomeCountsData)
 
 
 # Plot the given periodicity data.
 def plotPeriodicity(nucleosomeCountsData, dataCol = "Normalized_Both_Strands", title = "Periodicity", ylim = None,
-                    xAxisLabel = "Position Relative to Dyad (bp)", yAxisLabel = "Repair/Damage", nucleosomeColorPalette = NucleosomeColorPalette()):
+                    xAxisLabel = "Position Relative to Dyad (bp)", yAxisLabel = "Repair/Damage", nucleosomeColorPalette = NucleosomeColorPalette(),
+                    overlaySmoothedAndNormal = False):
 
-    periodicityPlot = (
-        ggplot(nucleosomeCountsData, aes(DYAD_POS_COL, dataCol, color = PERIODIC_POS_COLOR_COL)) +
-        geom_path(aes(group=1), size = 1.25, lineend = "round")
-    )
-    
+    # If overlaid smoothing is requested, determine if the relevant columns are actually present.
+    if overlaySmoothedAndNormal:
+        if dataCol.endswith("_Smoothed"):
+            smoothedDataCol = dataCol
+            dataCol = dataCol.rsplit("_Smoothed",1)[0]
+        else: smoothedDataCol = dataCol + "_Smoothed"
+
+    # Ensure that the expected data columns are actually present.
+    if dataCol not in nucleosomeCountsData:
+        raise ValueError(f"Expected data column named {dataCol} but it is not present in the given data frame.")
+    if overlaySmoothedAndNormal and smoothedDataCol not in nucleosomeCountsData:
+        raise ValueError(f"Expected smoothed data column named {smoothedDataCol} but it is not present in the given data frame.")
+
+    periodicityPlot = ggplot(nucleosomeCountsData, aes(DYAD_POS_COL, dataCol, color = PERIODIC_POS_COLOR_COL))
+
+    if overlaySmoothedAndNormal:
+        periodicityPlot = (periodicityPlot +
+            geom_path(aes(color = PERIODIC_POS_UNDERLAID_COLOR_COL, group = 1), size = 1, lineend = "round") +
+            geom_path(aes(y = smoothedDataCol, group = 2), size = 1.25, lineend = "round")
+        )
+    else: periodicityPlot = periodicityPlot + geom_path(aes(group=1), size = 1.25, lineend = "round")
+
     # Determine whether the data is rotational, rotational+linker, or translational.
     rotational, rotationalPlus, translational = _getPeriodicityTypes(nucleosomeCountsData)
 
@@ -156,9 +182,15 @@ def plotPeriodicity(nucleosomeCountsData, dataCol = "Normalized_Both_Strands", t
 # Combines the parsePeriodicityData and plotPeriodicity functions into one convenience function
 def parseAndPlotPeriodicity(nucleosomeCountsData, rotationalOnlyCutoff = 60, dataCol = "Normalized_Both_Strands",
                             smoothTranslational = True, nucRepLen = None, title = "Periodicity", ylim = None,
-                            xAxisLabel = "Position Relative to Dyad (bp)", yAxisLabel = "Counts"):
+                            xAxisLabel = "Position Relative to Dyad (bp)", yAxisLabel = "Counts", overlaySmoothedAndNormal = False):
     parsedData = parseNucleosomeCountsDataForPlotting(nucleosomeCountsData, rotationalOnlyCutoff, dataCol, smoothTranslational, nucRepLen)
-    return plotPeriodicity(parsedData, dataCol, title, ylim, xAxisLabel, yAxisLabel)
+    if smoothTranslational and dataCol+"_Smoothed" in parsedData:
+        dataCol += "_Smoothed"
+        smoothedDataPresent = True
+    else: smoothedDataPresent = False
+    if not smoothedDataPresent and overlaySmoothedAndNormal:
+        raise ValueError("Smoothed overlay was requested, but no smoothed data was created. Is this a rotational data set?")
+    return plotPeriodicity(parsedData, dataCol, title, ylim, xAxisLabel, yAxisLabel, NucleosomeColorPalette(), overlaySmoothedAndNormal)
 
 
 # Plot the plus and minus strands (aligned) as two lines on the same graph.
@@ -171,9 +203,9 @@ def plotPlusAndMinus(nucleosomeCountsData: pandas.DataFrame, title = "Stranded P
 
     plusAndMinusPlot = (
         ggplot(nucleosomeCountsData, aes(x = DYAD_POS_COL)) +
-        geom_path(aes(y = plusStrandColumnName, color = nucleosomeColorPalette.plus), size = 1.25, lineend = "round") +
-        geom_path(aes(y = minusStrandColumnName, color = nucleosomeColorPalette.minus), size = 1.25, lineend = "round") +
-        scale_color_identity(name = '', guide = "legend",
+        geom_path(aes(y = plusStrandColumnName, color = 'nucleosomeColorPalette.plus'), size = 1, lineend = "round") +
+        geom_path(aes(y = minusStrandColumnName, color = 'nucleosomeColorPalette.minus'), size = 1, lineend = "round") +
+        scale_color_identity(name = ' ', guide = "legend",
                                 breaks = (nucleosomeColorPalette.minus, nucleosomeColorPalette.plus),
                                 labels = ("Minus Strand", "Plus Strand")) +
         coord_cartesian(ylim = ylim) + 
