@@ -6,6 +6,11 @@ from benbiohelpers.Plotting.PlotnineHelpers import defaultTextScaling, blankBack
 
 # Defines individual minor-in and minor-out positions for coloring.
 # From Cui and Zhurkin, 2010 with 1 added to each side and half-base positions included.
+# NOTE: These ranges are not quite suitable for coloring geom_path, since they color from the given position to the next.
+#       I.e., the coloring will extend one position beyond the given range. There is also overlapping of regions which may lead to undesirable behavior.
+#       However, I don't want to change the actual ranges, since they would misrepresent the actual features on the DNA.
+#       I recommend that future me creates a class to wrap these data with special access methods for coloring ranges.
+#       (Present me just needs to ship the analysis for the sake of my dissertation :P)
 minorInPositions = set()
 for start, stop in zip((4, 14, 25, 36, 46, 56, 66), (9, 19, 30, 41, 51, 61, 71)):
     minorInPositions.update(range(start-74,stop-74+1), [i - 0.5 for i in range(start+1-74,stop-74+1)])
@@ -16,6 +21,49 @@ for start, stop in zip((9, 20, 31, 41, 51, 61), (14, 24, 35, 46, 56, 66)):
     minorOutPositions.update(range(start-74,stop-74+1), [i - 0.5 for i in range(start+1-74,stop-74+1)])
     minorOutPositions.update([abs(p) for p in minorOutPositions])
 
+# Add the central region to minor out positions.
+minorOutPositions.update([-2,-1.5,-1,-0.5,0,0.5,1,1.5,2])
+
+# Determine transitioning positions between minor-in and minor-out regions
+minorInToMinorOutPositions = set()
+lastMinorIn = min(minorInPositions)
+for minorIn in sorted(minorInPositions)[1:]:
+
+    if minorIn - lastMinorIn != 0.5:
+
+        # Determine what kind of a transition we have. Overlapping or adjacent?
+        if lastMinorIn in minorOutPositions: start = lastMinorIn - 2
+        else: start = lastMinorIn - 1
+
+        # Add the relevant positions.
+        for pos in range(start, lastMinorIn+2):
+            minorInToMinorOutPositions.add(pos)
+            minorInToMinorOutPositions.add(pos + 0.5)
+        minorInToMinorOutPositions.add(lastMinorIn+2)
+
+    lastMinorIn = minorIn
+
+minorOutToMinorInPositions = set()
+lastMinorOut = min(minorOutPositions)
+for minorOut in sorted(minorOutPositions)[1:]:
+
+    if minorOut - lastMinorOut != 0.5:
+
+        # Determine what kind of a transition we have. Overlapping or adjacent?
+        if lastMinorOut in minorInPositions: start = lastMinorOut - 2
+        else: start = lastMinorOut - 1
+
+        # Add the relevant positions.
+        for pos in range(start, lastMinorOut+2):
+            minorOutToMinorInPositions.add(pos)
+            minorOutToMinorInPositions.add(pos + 0.5)
+        minorOutToMinorInPositions.add(lastMinorOut+2)
+
+    lastMinorOut = minorOut
+
+# Don't forget to add the positions at the end!
+minorOutToMinorInPositions.update([63,63.5,64,64.5,65,65.5,66,66.5,67])
+
 # Set persistent column names
 DYAD_POS_COL = "Dyad_Position"
 PERIODIC_POS_COLOR_COL = "Periodic_Position_Color"
@@ -24,11 +72,13 @@ PERIODIC_POS_UNDERLAID_COLOR_COL = "Periodic_Position_Underlaid_Color"
 
 class NucleosomeColorPalette:
 
-    def __init__(self, minorIn = "#1E8449", minorOut = "#7D3C98", intermediate = "black",
-                 nucleosomal = "#B03A2E", linker = "#2874A6", nucleosomalUnderlaid = "#B08884", linkerUnderlaid = "#7C95A6",
-                 plus = "red", minus = "black"):
+    def __init__(self, minorIn = "#1E8449", minorOut = "#7D3C98", minorInToMinorOut = "#DC0AB4", minorOutToMinorIn = "#FFA300", intermediate = "black",
+                 nucleosomal = "#B01200", linker = "#0063A6", nucleosomalUnderlaid = "#B08884", linkerUnderlaid = "#7C95A6",
+                 plus = "#CC0000", minus = "#000000", plusUnderlaid = "#CC9999", minusUnderlaid = "#BFBFBF"):
         self.minorIn = minorIn
         self.minorOut = minorOut
+        self.minorInToMinorOut = minorInToMinorOut
+        self.minorOutToMinorIn = minorOutToMinorIn
         self.intermediate = intermediate
         self.nucleosomal = nucleosomal
         self.linker = linker
@@ -36,6 +86,9 @@ class NucleosomeColorPalette:
         self.linkerUnderlaid = linkerUnderlaid
         self.plus = plus
         self.minus = minus
+        self.plusUnderlaid = plusUnderlaid
+        self.minusUnderlaid = minusUnderlaid
+
 
 def _getPeriodicityTypes(nucleosomeCountsData: pandas.DataFrame) -> Tuple[bool, bool, bool]:
     "Determines whether the data is rotational, rotational+linker, or translational"
@@ -54,7 +107,8 @@ def _getPeriodicityTypes(nucleosomeCountsData: pandas.DataFrame) -> Tuple[bool, 
 
 
 def parseNucleosomeCountsDataForPlotting(nucleosomeCountsData: pandas.DataFrame, rotationalOnlyCutoff = 60, dataCol = "Normalized_Both_Strands",
-                                         smoothTranslational = True, nucRepLen = None, nucleosomeColorPalette = NucleosomeColorPalette()):
+                                         smoothTranslational = True, nucRepLen = None, nucleosomeColorPalette = NucleosomeColorPalette(),
+                                         colorRotationalTransitions = False):
 
     # Determine whether the data is rotational, rotational+linker, or translational.
     rotational, rotationalPlus, translational = _getPeriodicityTypes(nucleosomeCountsData)
@@ -74,12 +128,21 @@ def parseNucleosomeCountsDataForPlotting(nucleosomeCountsData: pandas.DataFrame,
 
     # Color positions
     if rotational:
-        # Color rotational positioning
-        nucleosomeCountsData.loc[(pos in minorInPositions for pos in nucleosomeCountsData[DYAD_POS_COL]),
-                                 PERIODIC_POS_COLOR_COL] = nucleosomeColorPalette.minorIn
-        nucleosomeCountsData.loc[(pos in minorOutPositions for pos in nucleosomeCountsData[DYAD_POS_COL]),
-                                 PERIODIC_POS_COLOR_COL] = nucleosomeColorPalette.minorOut
-        nucleosomeCountsData.loc[nucleosomeCountsData[PERIODIC_POS_COLOR_COL] == "nan", PERIODIC_POS_COLOR_COL] = nucleosomeColorPalette.intermediate
+
+        if not colorRotationalTransitions:
+            # Color rotational positioning minor-in or minor-out
+            nucleosomeCountsData.loc[(pos in minorInPositions for pos in nucleosomeCountsData[DYAD_POS_COL]),
+                                    PERIODIC_POS_COLOR_COL] = nucleosomeColorPalette.minorIn
+            nucleosomeCountsData.loc[(pos in minorOutPositions for pos in nucleosomeCountsData[DYAD_POS_COL]),
+                                    PERIODIC_POS_COLOR_COL] = nucleosomeColorPalette.minorOut
+            nucleosomeCountsData.loc[nucleosomeCountsData[PERIODIC_POS_COLOR_COL] == "nan", PERIODIC_POS_COLOR_COL] = nucleosomeColorPalette.intermediate
+        else:
+            # Color transitions between minor-in and minor-out
+            nucleosomeCountsData.loc[(pos in minorInToMinorOutPositions for pos in nucleosomeCountsData[DYAD_POS_COL]),
+                                    PERIODIC_POS_COLOR_COL] = nucleosomeColorPalette.minorInToMinorOut
+            nucleosomeCountsData.loc[(pos in minorOutToMinorInPositions for pos in nucleosomeCountsData[DYAD_POS_COL]),
+                                    PERIODIC_POS_COLOR_COL] = nucleosomeColorPalette.minorOutToMinorIn
+            nucleosomeCountsData.loc[nucleosomeCountsData[PERIODIC_POS_COLOR_COL] == "nan", PERIODIC_POS_COLOR_COL] = nucleosomeColorPalette.intermediate
 
     if rotationalPlus:
         # Color linker DNA in linker+ plots.
@@ -120,7 +183,7 @@ def parseNucleosomeCountsDataForPlotting(nucleosomeCountsData: pandas.DataFrame,
 # Plot the given periodicity data.
 def plotPeriodicity(nucleosomeCountsData, dataCol = "Normalized_Both_Strands", title = "Periodicity", ylim = None,
                     xAxisLabel = "Position Relative to Dyad (bp)", yAxisLabel = "Repair/Damage", nucleosomeColorPalette = NucleosomeColorPalette(),
-                    overlaySmoothedAndNormal = False):
+                    overlaySmoothedAndNormal = False, colorRotationalTransitions = False):
 
     # If overlaid smoothing is requested, determine if the relevant columns are actually present.
     if overlaySmoothedAndNormal:
@@ -148,25 +211,41 @@ def plotPeriodicity(nucleosomeCountsData, dataCol = "Normalized_Both_Strands", t
     rotational, rotationalPlus, translational = _getPeriodicityTypes(nucleosomeCountsData)
 
     if rotationalPlus:
-        periodicityPlot = (
-            periodicityPlot +
-            scale_color_identity(name = ' ', guide = "legend",
-                                 breaks = (nucleosomeColorPalette.minorIn, nucleosomeColorPalette.minorOut, nucleosomeColorPalette.linker),
-                                 labels = ("Minor-in", "Minor-out", "Linker"))
-        )
+        if not colorRotationalTransitions:
+            periodicityPlot = (
+                periodicityPlot +
+                scale_color_identity(name = ' ', guide = "legend",
+                                    breaks = (nucleosomeColorPalette.minorIn, nucleosomeColorPalette.minorOut, nucleosomeColorPalette.linker),
+                                    labels = ("Minor-in", "Minor-out", "Linker"))
+            )
+        else:
+            periodicityPlot = (
+                periodicityPlot +
+                scale_color_identity(name = ' ', guide = "legend",
+                                    breaks = (nucleosomeColorPalette.minorInToMinorOut, nucleosomeColorPalette.minorOutToMinorIn, nucleosomeColorPalette.linker),
+                                    labels = ("Minor-in to -out", "Minor-out to -in", "Linker"))
+            )
     elif rotational:
-        periodicityPlot = (
-            periodicityPlot +
-            scale_color_identity(name = ' ', guide = "legend",
-                                 breaks = (nucleosomeColorPalette.minorIn, nucleosomeColorPalette.minorOut),
-                                 labels = ("Minor-in", "Minor-out"))
-        )
+        if not colorRotationalTransitions:
+            periodicityPlot = (
+                periodicityPlot +
+                scale_color_identity(name = ' ', guide = "legend",
+                                    breaks = (nucleosomeColorPalette.minorIn, nucleosomeColorPalette.minorOut),
+                                    labels = ("Minor-in", "Minor-out"))
+            )
+        else:
+            periodicityPlot = (
+                periodicityPlot +
+                scale_color_identity(name = ' ', guide = "legend",
+                                    breaks = (nucleosomeColorPalette.minorInToMinorOut, nucleosomeColorPalette.minorOutToMinorIn),
+                                    labels = ("Minor-in to -out", "Minor-out to -in"))
+            )
     elif translational:
         periodicityPlot = (
             periodicityPlot +
             scale_color_identity(name = ' ', guide = "legend",
-                                 breaks = (nucleosomeColorPalette.linker, nucleosomeColorPalette.nucleosomal),
-                                 labels = ("Linker","Nucleosomal"))
+                                 breaks = (nucleosomeColorPalette.nucleosomal, nucleosomeColorPalette.linker),
+                                 labels = ("Nucleosomal", "Linker"))
         )
 
     periodicityPlot = (
@@ -182,15 +261,17 @@ def plotPeriodicity(nucleosomeCountsData, dataCol = "Normalized_Both_Strands", t
 # Combines the parsePeriodicityData and plotPeriodicity functions into one convenience function
 def parseAndPlotPeriodicity(nucleosomeCountsData, rotationalOnlyCutoff = 60, dataCol = "Normalized_Both_Strands",
                             smoothTranslational = True, nucRepLen = None, title = "Periodicity", ylim = None,
-                            xAxisLabel = "Position Relative to Dyad (bp)", yAxisLabel = "Counts", overlaySmoothedAndNormal = False):
-    parsedData = parseNucleosomeCountsDataForPlotting(nucleosomeCountsData, rotationalOnlyCutoff, dataCol, smoothTranslational, nucRepLen)
+                            xAxisLabel = "Position Relative to Dyad (bp)", yAxisLabel = "Counts", overlaySmoothedAndNormal = False,
+                            nucleosomeColorPalette = NucleosomeColorPalette(), colorRotationalTransitions = False):
+    parsedData = parseNucleosomeCountsDataForPlotting(nucleosomeCountsData, rotationalOnlyCutoff, dataCol, smoothTranslational, nucRepLen,
+                                                      nucleosomeColorPalette, colorRotationalTransitions)
     if smoothTranslational and dataCol+"_Smoothed" in parsedData:
         dataCol += "_Smoothed"
         smoothedDataPresent = True
     else: smoothedDataPresent = False
     if not smoothedDataPresent and overlaySmoothedAndNormal:
         raise ValueError("Smoothed overlay was requested, but no smoothed data was created. Is this a rotational data set?")
-    return plotPeriodicity(parsedData, dataCol, title, ylim, xAxisLabel, yAxisLabel, NucleosomeColorPalette(), overlaySmoothedAndNormal)
+    return plotPeriodicity(parsedData, dataCol, title, ylim, xAxisLabel, yAxisLabel, nucleosomeColorPalette, overlaySmoothedAndNormal, colorRotationalTransitions)
 
 
 # Plot the plus and minus strands (aligned) as two lines on the same graph.
