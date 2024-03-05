@@ -195,16 +195,44 @@ def parseAndPlotPeriodicity(nucleosomeCountsData, rotationalOnlyCutoff = 60, dat
 
 # Plot the plus and minus strands (aligned) as two lines on the same graph.
 def plotPlusAndMinus(nucleosomeCountsData: pandas.DataFrame, title = "Stranded Periodicity", ylim = None,
-                     xAxisLabel = "Position Relative to Dyad (bp)", yAxisLabel = "Repair/Damage", nucleosomeColorPalette = NucleosomeColorPalette()):
+                     xAxisLabel = "Position Relative to Dyad (bp)", yAxisLabel = "Repair/Damage", nucleosomeColorPalette = NucleosomeColorPalette(),
+                     smoothData = False, overlaySmoothedAndNormal = False):
+
+    if overlaySmoothedAndNormal and not smoothData:
+        raise ValueError("Cannot overlay smoothed and normal data if data is not smoothed in the first place.")
 
     for columnName in nucleosomeCountsData.columns:
         if "Plus_Strand" in columnName: plusStrandColumnName = columnName
         if "Minus_Strand" in columnName: minusStrandColumnName = columnName
 
-    plusAndMinusPlot = (
-        ggplot(nucleosomeCountsData, aes(x = DYAD_POS_COL)) +
-        geom_path(aes(y = plusStrandColumnName, color = 'nucleosomeColorPalette.plus'), size = 1, lineend = "round") +
-        geom_path(aes(y = minusStrandColumnName, color = 'nucleosomeColorPalette.minus'), size = 1, lineend = "round") +
+    if smoothData:
+        smoothedPlusStrandColumnName = plusStrandColumnName + "_Smoothed"
+        smoothedMinusStrandColumnName = minusStrandColumnName + "_Smoothed"
+        nucleosomeCountsData[smoothedPlusStrandColumnName] = nucleosomeCountsData[plusStrandColumnName].rolling(11, center = True, min_periods=1).mean()
+        nucleosomeCountsData[smoothedMinusStrandColumnName] = nucleosomeCountsData[minusStrandColumnName].rolling(11, center = True, min_periods=1).mean()
+
+    plusAndMinusPlot = ggplot(nucleosomeCountsData, aes(x = DYAD_POS_COL))
+
+    if overlaySmoothedAndNormal:
+        plusAndMinusPlot = (plusAndMinusPlot +
+            geom_path(aes(y = plusStrandColumnName, color = 'nucleosomeColorPalette.plusUnderlaid'), size = 1, lineend = "round") +
+            geom_path(aes(y = minusStrandColumnName, color = 'nucleosomeColorPalette.minusUnderlaid'), size = 1, lineend = "round") +
+            geom_path(aes(y = smoothedPlusStrandColumnName, color = 'nucleosomeColorPalette.plus'), size = 1, lineend = "round") +
+            geom_path(aes(y = smoothedMinusStrandColumnName, color = 'nucleosomeColorPalette.minus'), size = 1, lineend = "round")
+        )
+    elif smoothData:
+        plusAndMinusPlot = (plusAndMinusPlot +
+            geom_path(aes(y = smoothedPlusStrandColumnName, color = 'nucleosomeColorPalette.plus'), size = 1, lineend = "round") +
+            geom_path(aes(y = smoothedMinusStrandColumnName, color = 'nucleosomeColorPalette.minus'), size = 1, lineend = "round")
+        )
+    else:
+        plusAndMinusPlot = (plusAndMinusPlot +
+            geom_path(aes(y = plusStrandColumnName, color = 'nucleosomeColorPalette.plus'), size = 1, lineend = "round") +
+            geom_path(aes(y = minusStrandColumnName, color = 'nucleosomeColorPalette.minus'), size = 1, lineend = "round")
+        )
+
+
+    plusAndMinusPlot = (plusAndMinusPlot +
         scale_color_identity(name = ' ', guide = "legend",
                                 breaks = (nucleosomeColorPalette.minus, nucleosomeColorPalette.plus),
                                 labels = ("Minus Strand", "Plus Strand")) +
