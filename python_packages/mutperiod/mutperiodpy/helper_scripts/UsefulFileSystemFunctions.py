@@ -70,7 +70,7 @@ def getDataDirectory(newDataDirectoryDirectory = None):
             selections: Selections = dialog.selections
             dataDirectoryDirectory = selections.getIndividualFilePaths()[0]
         except TclError:
-            dataDirectoryDirectory = input("Unable to open the GUI to select a data directory. Please supply one here: ")
+            dataDirectoryDirectory = input("Unable to open the GUI to select a data directory for mutperiod. Please supply one here: ")
             while not os.path.exists(dataDirectoryDirectory):
                 dataDirectoryDirectory = input("The given path does not exist. Please give the full path to an existing directory. ")
 
