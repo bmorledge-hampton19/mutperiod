@@ -52,20 +52,24 @@ normalizeNucleosomeMutationCounts = function(rawCountsFilePath, backgroundCounts
                       sum(rawCounts$Both_Strands_Counts)
 
   # Create a table of normalized values from the given data
-  normalizedData = data.table::data.table()
-  normalizedData[,Dyad_Position := backgroundCounts$Dyad_Position]
-  normalizedData[,Normalized_Minus_Strand := mapply(normalize,rawCounts$Minus_Strand_Counts,
-                                                    backgroundCounts$Expected_Mutations_Minus_Strand,
-                                                    MoreArgs = list(scalingFactor = scalingFactor))]
-  normalizedData[,Normalized_Plus_Strand := mapply(normalize,rawCounts$Plus_Strand_Counts,
-                                                   backgroundCounts$Expected_Mutations_Plus_Strand,
-                                                   MoreArgs = list(scalingFactor = scalingFactor))]
-  normalizedData[,Normalized_Both_Strands := mapply(normalize,rawCounts$Both_Strands_Counts,
-                                                    backgroundCounts$Expected_Mutations_Both_Strands,
-                                                    MoreArgs = list(scalingFactor = scalingFactor))]
-  normalizedData[,Normalized_Aligned_Strands := mapply(normalize,rawCounts$Aligned_Strands_Counts,
-                                                       backgroundCounts$Expected_Mutations_Aligned_Strands,
-                                                       MoreArgs = list(scalingFactor = scalingFactor))]
+  normalizedMinusStrand = mapply(normalize,rawCounts$Minus_Strand_Counts,
+                                 backgroundCounts$Expected_Mutations_Minus_Strand,
+                                 MoreArgs = list(scalingFactor = scalingFactor))
+  normalizedPlusStrand = mapply(normalize,rawCounts$Plus_Strand_Counts,
+                                backgroundCounts$Expected_Mutations_Plus_Strand,
+                                MoreArgs = list(scalingFactor = scalingFactor))
+  normalizedBothStrands = mapply(normalize,rawCounts$Both_Strands_Counts,
+                                 backgroundCounts$Expected_Mutations_Both_Strands,
+                                 MoreArgs = list(scalingFactor = scalingFactor))
+  normalizedAlignedStrands = mapply(normalize,rawCounts$Aligned_Strands_Counts,
+                                    backgroundCounts$Expected_Mutations_Aligned_Strands,
+                                    MoreArgs = list(scalingFactor = scalingFactor))
+
+  normalizedData = data.table::data.table(Dyad_Position = backgroundCounts$Dyad_Position,
+                                          Normalized_Minus_Strand = normalizedMinusStrand,
+                                          Normalized_Plus_Strand = normalizedPlusStrand,
+                                          Normalized_Both_Strands = normalizedBothStrands,
+                                          Normalized_Aligned_Strands = normalizedAlignedStrands)
 
   # If an alternative scaling factor was given, compute additional normalized values with this factor
   if (!is.null(alternativeScalingFactor)) {
