@@ -8,7 +8,6 @@ Build-Depends: debhelper-compat (= 12),
                r-base-dev,
                r-cran-data.table,
                r-cran-lomb,
-               r-cran-msiseq,
                r-cran-ggplot2
 Standards-Version: 4.4.0
 Homepage:
@@ -17,8 +16,8 @@ Package: mutperiodr
 Architecture: any
 Depends: ${R:Depends},
          ${misc:Depends},
-         r-cran-lomb, r-cran-msiseq, r-cran-data.table, r-cran-ggplot2
-Recommends: ${R:Recommends}
+         r-cran-lomb, r-cran-data.table, r-cran-ggplot2
+Recommends: ${R:Recommends}, r-cran-msiseq, r-cran-deconstructsigs
 Suggests: ${R:Suggests}
 Description: The R portion of the larger "mutperiod" package
  The R portion of the larger "mutperiod" package which characterizes

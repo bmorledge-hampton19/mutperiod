@@ -1,7 +1,7 @@
 Package: mutperiodR
 Type: Package
 Title: The R portion of the larger "mutperiod" package
-Version: 0.8.4
+Version: 0.9.1
 Author: Ben Morledge-Hampton
 Authors@R: person("Ben", "Morledge-Hampton", email = "b.morledge-hampton@wsu.edu",
     role = c("aut", "cre"))

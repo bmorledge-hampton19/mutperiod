@@ -1,3 +1,46 @@
+mutperiod (0.9.1-0ubuntu3) bionic; urgency=medium
+
+  * Concurrent release for bionic
+
+ -- Benjamin Morledge-Hampton <b.morledge-hampton@wsu.edu>  Thu, 06 Jun 2024 14:58:26 -0700
+
+mutperiod (0.9.1-0ubuntu2) focal; urgency=medium
+
+  * Concurrent release for focal
+
+ -- Benjamin Morledge-Hampton <b.morledge-hampton@wsu.edu>  Thu, 06 Jun 2024 14:52:43 -0700
+
+mutperiod (0.9.1-0ubuntu1) jammy; urgency=medium
+
+  * Clearer prompt when selecting data directory through CLI
+  * Reduced verbosity of normalization R script.
+
+ -- Benjamin Morledge-Hampton <b.morledge-hampton@wsu.edu>  Thu, 06 Jun 2024 14:01:35 -0700
+
+mutperiod (0.9.0-0ubuntu3) bionic; urgency=medium
+
+  * Concurrent release for focal
+  * Plotnine plotting is an optional dependency
+
+ -- Benjamin Morledge-Hampton <b.morledge-hampton@wsu.edu>  Wed, 05 Jun 2024 10:26:16 -0700
+
+mutperiod (0.9.0-0ubuntu2) focal; urgency=medium
+
+  * Concurrent release for focal.
+  * Plotnine plotting might be broken due to lower Python version
+
+ -- Benjamin Morledge-Hampton <b.morledge-hampton@wsu.edu>  Wed, 05 Jun 2024 08:49:42 -0700
+
+mutperiod (0.9.0-0ubuntu1) jammy; urgency=medium
+
+  * Added plotnine plotting
+  * Various tweaks to accommodate BPDE analysis
+    - Added option for stranded analysis (for TFBSs)
+    - Updated input parsing, including BPDE call parameters.
+  * Other small improvements I'm not going to take the time to list here.
+
+ -- Benjamin Morledge-Hampton <b.morledge-hampton@wsu.edu>  Tue, 04 Jun 2024 12:31:52 -0700
+
 mutperiod (0.8.4.3-0ubuntu2) jammy; urgency=medium
 
   * Suppressed loading messages during deconstructSigs and MSIseq loading tests.

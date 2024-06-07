@@ -1,3 +1,53 @@
+mutperiodr (0.9.1-0ubuntu3) bionic; urgency=medium
+
+  * Concurrent release for bionic
+
+ -- Benjamin Morledge-Hampton <b.morledge-hampton@wsu.edu>  Thu, 06 Jun 2024 13:44:41 -0700
+
+mutperiodr (0.9.1-0ubuntu2) focal; urgency=medium
+
+  * Concurrent release for focal
+
+ -- Benjamin Morledge-Hampton <b.morledge-hampton@wsu.edu>  Thu, 06 Jun 2024 13:43:43 -0700
+
+mutperiodr (0.9.1-0ubuntu1) jammy; urgency=medium
+
+  * Restructured normalization to not break old R versions in bionic.
+    - Execution should still be functionally identical.
+
+ -- Benjamin Morledge-Hampton <b.morledge-hampton@wsu.edu>  Thu, 06 Jun 2024 12:23:48 -0700
+
+mutperiodr (0.9.0-0ubuntu5) bionic; urgency=medium
+
+  * Removed .Rdata and .history files
+
+ -- Benjamin Morledge-Hampton <b.morledge-hampton@wsu.edu>  Tue, 04 Jun 2024 23:11:12 -0700
+
+mutperiodr (0.9.0-0ubuntu4) bionic; urgency=medium
+
+  * Alterring control file for bionic
+
+ -- Benjamin Morledge-Hampton <b.morledge-hampton@wsu.edu>  Tue, 04 Jun 2024 19:05:16 -0700
+
+mutperiodr (0.9.0-0ubuntu3) bionic; urgency=medium
+
+  * Concurrent release for bionic
+
+ -- Benjamin Morledge-Hampton <b.morledge-hampton@wsu.edu>  Tue, 04 Jun 2024 18:07:30 -0700
+
+mutperiodr (0.9.0-0ubuntu2) focal; urgency=medium
+
+  * Concurrent release for focal
+
+ -- Benjamin Morledge-Hampton <b.morledge-hampton@wsu.edu>  Tue, 04 Jun 2024 17:56:56 -0700
+
+mutperiodr (0.9.0-0ubuntu1) jammy; urgency=medium
+
+  * Actually, I don't think anything has changed on the R side of this package, but I'm updating it
+    just in case.
+
+ -- Benjamin Morledge-Hampton <b.morledge-hampton@wsu.edu>  Tue, 04 Jun 2024 17:39:42 -0700
+
 mutperiodr (0.8.4-0ubuntu5) jammy; urgency=low
 
   * test build with debhelper-compat = 10

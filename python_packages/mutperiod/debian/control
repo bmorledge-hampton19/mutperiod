@@ -4,7 +4,7 @@ Build-Depends: debhelper (>= 11.0.0),dh-python,python3-all,python3-setuptools,ba
 Section: python
 Priority: optional
 Standards-Version: 3.9.6
-X-Python3-Version: >= 3.7
+X-Python3-Version: >= 3.8
 
 Package: mutperiod
 Architecture: all

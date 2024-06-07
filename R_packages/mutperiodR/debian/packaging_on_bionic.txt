@@ -1,0 +1,1 @@
+Use debhelper-compat (= 10) in control
