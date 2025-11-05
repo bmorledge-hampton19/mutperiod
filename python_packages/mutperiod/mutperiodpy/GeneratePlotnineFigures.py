@@ -11,15 +11,18 @@ from benbiohelpers.Plotting.PlotnineHelpers import defaultTextScaling, blankBack
 #       However, I don't want to change the actual ranges, since they would misrepresent the actual features on the DNA.
 #       I recommend that future me creates a class to wrap these data with special access methods for coloring ranges.
 #       (Present me just needs to ship the analysis for the sake of my dissertation :P)
+# ANOTHER NOTE: Really, the problem stems from trying to represent a 10.2-bp periodic effect with whole numbers. It's a recipe for off-by-one errors...
+#               A better system would define true centers for each 10.2-bp region, even if some of those centers are fractional. 
+#               Then, you could just derive whole-base identities (i.e., for coloring) from those true ranges.
 minorInPositions = set()
 for start, stop in zip((4, 14, 25, 36, 46, 56, 66), (9, 19, 30, 41, 51, 61, 71)):
     minorInPositions.update(range(start-74,stop-74+1), [i - 0.5 for i in range(start+1-74,stop-74+1)])
-    minorInPositions.update([abs(p) for p in minorInPositions])
+minorInPositions.update([abs(p) for p in minorInPositions])
 
 minorOutPositions = set()
 for start, stop in zip((9, 20, 31, 41, 51, 61), (14, 24, 35, 46, 56, 66)):
     minorOutPositions.update(range(start-74,stop-74+1), [i - 0.5 for i in range(start+1-74,stop-74+1)])
-    minorOutPositions.update([abs(p) for p in minorOutPositions])
+minorOutPositions.update([abs(p) for p in minorOutPositions])
 
 # Add the central region to minor out positions.
 minorOutPositions.update([-2,-1.5,-1,-0.5,0,0.5,1,1.5,2])
@@ -63,6 +66,13 @@ for minorOut in sorted(minorOutPositions)[1:]:
 
 # Don't forget to add the positions at the end!
 minorOutToMinorInPositions.update([63,63.5,64,64.5,65,65.5,66,66.5,67])
+
+# And for some reason we have dead spots around -46.5 and 46.5. So... Just add them manually I guess?
+# (I think this has to do with the surrounding regions being adjacent instead of overlapping and also being slightly larger.
+# Ugh... I wish the rotational period was a whole number... SEE ABOVE NOTE ABOUT REVISING SYSTEM)
+minorInToMinorOutPositions.update([-46, -45.5, 47, 47.5])
+minorOutToMinorInPositions.update([-47.5, -47, 46, 46.5])
+
 
 # Set persistent column names
 DYAD_POS_COL = "Dyad_Position"
