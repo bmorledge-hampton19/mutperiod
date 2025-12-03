@@ -1,5 +1,5 @@
 # mutperiod
-##### A hybrid Python and R toolset for characterizing nucleosome mutational periodicities.
+##### A hybrid Python and R toolset for characterizing nucleosome mutational periodicities. Further described in the paper [Mutperiod: Analysis of periodic mutation rates in nucleosomes](https://doi.org/10.1016/j.csbj.2021.07.025)
 ***
 ## Table of Contents
 1. [Quickstart Guide](#quickstart-guide)
