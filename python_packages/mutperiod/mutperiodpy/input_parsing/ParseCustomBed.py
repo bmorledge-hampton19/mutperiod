@@ -476,7 +476,7 @@ def main():
     dialog.createMultipleFileSelector("Custom bed Input Files:",0,"custom_input.bed",("bed files",".bed"))
     dialog.createFileSelector("Genome Fasta File:",1,("Fasta Files",".fa"))
     with dialog.createDynamicSelector(2, 0) as simplifiedBedDynSel:
-        simplifiedBedDynSel.initCheckboxController("Input is bed3 (or bed6+ with strand info) and must be coereced to custom bed")
+        simplifiedBedDynSel.initCheckboxController("Input is bed3 (or bed6+ with strand info) and must be coerced to custom bed")
         fullCustomDialog = simplifiedBedDynSel.initDisplay(False, FULL_CUSTOM)
         fullCustomDialog.createCheckbox("Stratify data by microsatellite stability?", 0, 0)
         fullCustomDialog.createCheckbox("Stratify by mutation signature?", 0, 1)
