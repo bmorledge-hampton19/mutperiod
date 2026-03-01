@@ -80,7 +80,7 @@ def getParentDataFeatureCounts(filePath):
 
 
 def normalizeCounts(backgroundCountsFilePaths: List[str], customRawCountsFilePaths: List[str] = list(), 
-                    customBackgroundCountsDir = None, includeAlternativeScaling = False):
+                    customBackgroundCountsDir = None, includeAlternativeScaling = False, forceAlternativeScalingToOne = False):
 
     normalizedCountsFilePaths = list()
 
@@ -117,7 +117,7 @@ def normalizeCounts(backgroundCountsFilePaths: List[str], customRawCountsFilePat
             if includeAlternativeScaling:
 
                 # If we are normalizing by sequence context, just revert the automatic scaling.
-                if customBackgroundCountsDir is None: args.append(1)
+                if customBackgroundCountsDir is None or forceAlternativeScalingToOne: args.append("1")
 
                 # If we are normalizing by a custom context, scale based on the relative sizes of the parent background and raw data sets.
                 else:
@@ -158,7 +158,17 @@ def main():
     customBackgroundFileSelector.createFileSelector("Data Directory for nucleosome counts to be used as background", 1, directory = True)
     customBackgroundSelector.initDisplayState()
 
-    dialog.createCheckbox("Include alternative scaling factor indepedent of nucleosome map.", 2, 0)
+    alternativeScalingSelector = dialog.createDynamicSelector(2, 0)
+    alternativeScalingSelector.initCheckboxController("Include alternative scaling factor indepedent of nucleosome map")
+    alternativeScalingCustomBackgroundSelector = alternativeScalingSelector.initDisplay(True, "customBackgroundAlternativeScaling")
+    alternativeScalingCustomBackgroundSelector.createCheckbox("Force custom background scaling factor to 1", 0, 0)
+    # alternativeScalingCustomBackgroundSelector.createLabel(
+    #     "(If the above box is not checked and normalization uses a custom background,\n" \
+    #     "the scaling factor will be the ratio of total feature counts between the\n"\
+    #     "parent raw and background data sets.)",
+    #     1, 0, sticky = False
+    # )
+    alternativeScalingSelector.initDisplayState()
 
     # Run the UI
     dialog.mainloop()
@@ -177,8 +187,14 @@ def main():
         customRawCountsFilePaths = None
         customBackgroundCountsDir = None
 
-    includeAlternativeScaling = selections.getToggleStates()[0]
+    includeAlternativeScaling = alternativeScalingSelector.getControllerVar()
+    if includeAlternativeScaling and selections.getToggleStates("customBackgroundAlternativeScaling")[0]:
+        forceAlternativeScalingToOne = True
+    else:
+        forceAlternativeScalingToOne = False
 
-    normalizeCounts(backgroundCountsFilePaths, customRawCountsFilePaths, customBackgroundCountsDir, includeAlternativeScaling)
+    normalizeCounts(
+        backgroundCountsFilePaths, customRawCountsFilePaths, customBackgroundCountsDir, includeAlternativeScaling, forceAlternativeScalingToOne
+    )
 
 if __name__ == "__main__": main()
